@@ -12,9 +12,9 @@
 #include "Game.h"
 #include "Random.h"
 #include "Actors/Actor.h"
-#include "Actors/Ship.h"
 #include "Actors/BlockObstacle.h"
 #include "Camera.h"
+#include "Actors/GridCursor.h"
 #include "UI/Screens/HUD.h"
 #include "UI/Screens/MainMenu.h"
 
@@ -29,10 +29,6 @@ Game::Game()
         ,mCamera(nullptr)
         ,mAudio(nullptr)
         ,mHUD(nullptr)
-        ,mNextBlock(0)
-        ,mNextObstacle(0)
-        , mScore(0)
-        , mNextScoreObstacle(0)
 {
 
 }
@@ -88,6 +84,8 @@ bool Game::Initialize()
     mRenderer = new Renderer(mWindow);
     mRenderer->Initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
+
+    mGrid = nullptr;
     // start at main menu
     SetScene(GameScene::MainMenu);
     mTicksCount = SDL_GetTicks();
@@ -127,24 +125,31 @@ void Game::SetScene(GameScene nextScene)
 
         case GameScene::Level1:
         {
+            // const
+            const int ROWS = 4;
+            const int COLS = 4;
+            const float SIZE = 500.0f;
+
             // log controls
             SDL_Log("E/Q: forward/backward; W/S: up/down; A/D: right/left; SPACE: shoot");
 
             // hud
-            mHUD = new HUD(this, "../Assets/Fonts/Arial.ttf");
-            mHUD->SetScore(0);
+            // mHUD = new HUD(this, "../Assets/Fonts/Arial.ttf");
+            // mHUD->SetScore(0);
 
-            // create player
-            mShip = new Ship(this);
-
-            // create camera
-            Vector3 eye(-300.0f, 0.0f, 0.0f);
-            Vector3 target(20.0f, 0.0f, 0.0f);
-            Vector3 up(0.0f, 0.0f, 1.0f);
-            mCamera = new Camera(this, eye, target, up, 70.0f, 10.0f, 10000.0f);
 
             // spawn floor
-            SpawnWalls();
+            SpawnWalls(ROWS, COLS);
+
+            // Teste grid
+            mGrid = new GridMap(this, ROWS, COLS, SIZE);
+            mCursor = new GridCursor(this);
+
+            // create camera
+            Vector3 eye(0.0f, -2500.0f, 1000.0f);
+            Vector3 target(0.0f, 0.0f, 0.0f);
+            Vector3 up(0.0f, 0.0f, 1.0f);
+            mCamera = new Camera(this, eye, target, up, 70.0f, 10.0f, 10000.0f);
         }
     }
 }
@@ -196,6 +201,10 @@ void Game::ProcessInput()
                     mUIStack.back()->HandleKeyPress(event.key.keysym.sym);
                 }
 
+                if (mCursor) {
+                    mCursor->OnKeyDown(event.key.keysym.sym);
+                }
+
                 break;
         }
     }
@@ -213,43 +222,42 @@ void Game::SpawnObstacles()
 
 }
 
-void Game::SpawnWalls()
+void Game::SpawnWalls(int rows, int cols)
 {
-    // spawn the floor using multiple cubes
+    //SDL_Log("SPAWNWALLS -> Rows: %d, Cols: %d", rows, cols);
     const float spacing = 500.0f;
-    const Vector3 center(mNextBlock * spacing, 0.0f, -500.0f);
-    int n = 2; // size scale
 
-    // construct a grid of n x n blocks centered at 'center'
-    float offset = (n - 1) * 0.5f;
+    float totalWidth = cols * spacing;
+    float totalHeight = rows * spacing;
 
-    for (int y = 0; y < n; y++)
+    float startX = -totalWidth / 2.0f;
+    float startY = -totalHeight / 2.0f;
+
+    float zPos = -500.0f; // Centro do cubo
+
+    for (int y = 0; y < rows; y++)
     {
-        for (int x = 0; x < n; x++)
+        for (int x = 0; x < cols; x++)
         {
             Block* wall = new Block(this);
-            wall->SetScale(Vector3(500.0f, 500.0f, 500.0f));
+            wall->SetScale(Vector3(spacing, spacing, spacing)); // cubo tamanho 1x1 -> vira 500x500
 
             Vector3 pos;
-            pos.x = center.x + (x - offset) * spacing;
-            pos.y = center.y + (y - offset) * spacing;
-            pos.z = center.z;
+            // Move o ponto da "borda" para o "centro" do bloco
+            pos.x = startX + (x * spacing) + (spacing * 0.5f);
+            pos.y = startY + (y * spacing) + (spacing * 0.5f);
+            pos.z = zPos;
 
             wall->SetPosition(pos);
             wall->SetTexture(0);
         }
     }
-
 }
 
 void Game::UpdateGame(float deltaTime)
 {
     // Update all actors and pending actors
     UpdateActors(deltaTime);
-
-    // update camera
-    if (mCamera && mShip)
-        mCamera->Update(deltaTime, mShip);
 
 
     // Update UI screens

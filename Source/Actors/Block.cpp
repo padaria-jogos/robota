@@ -4,7 +4,6 @@
 
 #include "Block.h"
 #include "../Game.h"
-#include "../Actors/Ship.h"
 
 Block::Block(class Game* game)
         :Actor(game)
@@ -23,13 +22,5 @@ Block::~Block()
 
 void Block::OnUpdate(float deltaTime)
 {
-    Ship* ship = mGame->GetPlayer();
-    if (!ship)  return;
 
-    float shipX  = ship->GetPosition().x;
-    float blockX = GetPosition().x;
-
-    // destroy block if it is far behind the ship
-    if (blockX + 600.0f < shipX) // talvez aumentar esse valor
-        SetState(ActorState::Destroy);
 }

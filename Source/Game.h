@@ -13,6 +13,7 @@
 #include <vector>
 #include "Renderer/Renderer.h"
 #include "AudioSystem.h"
+#include "Map/GridMap.h"
 
 struct BlockObstacleItem
 {
@@ -60,6 +61,7 @@ public:
     class Renderer* GetRenderer() { return mRenderer; }
     class Ship* GetPlayer() { return mShip; }
     class HUD* GetHUD() { return mHUD; }
+    class GridMap* GetGrid() { return mGrid; }
 
     const std::vector<class BlockObstacle*>& GetObstacles() const { return mObstacles; }
 
@@ -83,7 +85,7 @@ private:
     void LoadObstaclePatterns(const std::string& dirName, const int nBlockPatterns);
 
     // Wall management
-    void SpawnWalls();
+    void SpawnWalls(int rows, int cols);
     void SpawnObstacles();
 
     // All the actors in the game
@@ -110,17 +112,15 @@ private:
 
     // Game-specific
     class Ship *mShip;
+    class GridCursor* mCursor;
     class Camera *mCamera;
     class HUD *mHUD;
 
-    int mNextBlock;
-    int mNextObstacle;
 
     // List of obstacle patterns
     std::vector<class BlockObstacle*> mObstacles;
     std::vector<std::vector<BlockObstacleItem *>> mObstaclePatterns;
 
-    // points
-    int mScore;
-    int mNextScoreObstacle;
+    // GridMap
+    GridMap* mGrid;
 };

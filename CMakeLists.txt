@@ -5,7 +5,7 @@ project(robota LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 
 # dependencies
-find_package(SDL2 2.32.2 EXACT REQUIRED)
+find_package(SDL2 2.32.2 REQUIRED)
 find_package(SDL2_image REQUIRED)
 find_package(SDL2_mixer REQUIRED)
 find_package(SDL2_ttf REQUIRED)
@@ -25,7 +25,13 @@ file(GLOB_RECURSE SRC_FILES
 )
 
 # executable
-add_executable(${PROJECT_NAME} ${SRC_FILES})
+add_executable(${PROJECT_NAME} ${SRC_FILES}
+        Source/Map/GridMap.cpp
+        Source/Map/GridMap.h
+        Source/Actors/Tile.cpp
+        Source/Actors/Tile.h
+        Source/Actors/GridCursor.cpp
+        Source/Actors/GridCursor.h)
 
 # includes
 target_include_directories(${PROJECT_NAME} PRIVATE ${SOURCE_DIRS})
