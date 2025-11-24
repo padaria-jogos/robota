@@ -15,6 +15,7 @@
 #include "Actors/BlockObstacle.h"
 #include "Camera.h"
 #include "Actors/GridCursor.h"
+#include "Actors/Robot.h"
 #include "UI/Screens/HUD.h"
 #include "UI/Screens/MainMenu.h"
 
@@ -125,6 +126,9 @@ void Game::SetScene(GameScene nextScene)
 
         case GameScene::Level1:
         {
+            mBattleState = BattleState::Exploration;
+            mSelectedUnit = nullptr;
+
             // const
             const int ROWS = 4;
             const int COLS = 4;
@@ -141,8 +145,23 @@ void Game::SetScene(GameScene nextScene)
             // spawn floor
             SpawnWalls(ROWS, COLS);
 
+
             // Teste grid
             mGrid = new GridMap(this, ROWS, COLS, SIZE);
+
+            // teste robos
+            Robot* playerUnit = new Robot(this, Team::Player);
+            playerUnit->EquipPart(PartSlot::RightArm,
+                                    RobotPart("Iron Fist", "../Assets/Cube.gpmesh",
+                                        50, SkillType::Punch, 30, 1));
+            playerUnit->SetGridPosition(1, 1);
+
+            Robot* enemyUnit = new Robot(this, Team::Enemy);
+            enemyUnit->EquipPart(PartSlot::Torso,
+                                    RobotPart("Heavy Armor", "../Assets/Cube.gpmesh",
+                                        100, SkillType::None, 0, 0));
+            enemyUnit->SetGridPosition(3, 3);
+
             mCursor = new GridCursor(this);
 
             // create camera

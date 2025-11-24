@@ -27,6 +27,12 @@ enum class GameScene
     Level1
 };
 
+enum class BattleState {
+    Exploration,    // Navegando livremente
+    MoveSelection,  // Robô selecionado, escolhendo destino
+    ActionSelection // Robô moveu, escolhendo ataque (Wait/Attack)
+};
+
 class Game
 {
 public:
@@ -61,7 +67,14 @@ public:
     class Renderer* GetRenderer() { return mRenderer; }
     class Ship* GetPlayer() { return mShip; }
     class HUD* GetHUD() { return mHUD; }
+
+    // Mechanics
     class GridMap* GetGrid() { return mGrid; }
+    BattleState GetBattleState() const { return mBattleState; }
+    void SetBattleState(BattleState state) { mBattleState = state; }
+    class Robot* GetSelectedUnit() { return mSelectedUnit; }
+    void SetSelectedUnit(class Robot* robot) { mSelectedUnit = robot; }
+
 
     const std::vector<class BlockObstacle*>& GetObstacles() const { return mObstacles; }
 
@@ -123,4 +136,8 @@ private:
 
     // GridMap
     GridMap* mGrid;
+
+    // Battle
+    BattleState mBattleState;
+    class Robot* mSelectedUnit;
 };

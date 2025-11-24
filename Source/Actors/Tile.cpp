@@ -9,21 +9,71 @@
 
 Tile::Tile(Game* game)
     : Actor(game)
+    , mIsSelected(false)
 {
     mMeshComp = new MeshComponent(this);
-
     Mesh* mesh = game->GetRenderer()->GetMesh("../Assets/Tile.gpmesh");
     mMeshComp->SetMesh(mesh);
 
+    UpdateTexture();
 }
 
-void Tile::SetSelected(bool selected) {
-    if (selected) {
-        Texture* selectTex = GetGame()->GetRenderer()->GetTexture("../Assets/TileSelected.png");
-        mMeshComp->SetTextureOverride(selectTex);
-    }else {
-        mMeshComp->SetTextureOverride(nullptr);
+void Tile::SetTileType(TileType type)
+{
+    if (mType != type) {
+        mType = type;
+        UpdateTexture();
+    }
+}
+
+void Tile::SetSelected(bool selected)
+{
+    if (mIsSelected != selected) {
+        mIsSelected = selected;
+        UpdateTexture();
+    }
+}
+
+void Tile::UpdateTexture()
+{
+    std::string textureName = "";
+    if (mIsSelected)
+    {
+        switch (mType) {
+            case TileType::Path:
+                textureName = "../Assets/TileSelectBlue.png";
+                break;
+            case TileType::Attack:
+                textureName = "../Assets/TileSelectRed.png";
+                break;
+            default: // Default
+                textureName = "../Assets/TileSelectStd.png";
+                break;
+        }
+    }
+    else
+    {
+        switch (mType) {
+            case TileType::Path:
+                textureName = "../Assets/TileBlue.png";
+                break;
+            case TileType::Attack:
+                textureName = "../Assets/TileRed.png";
+                break;
+            default: // Default
+                textureName = "../Assets/TileGrid.png";
+                break;
+        }
     }
 
+    // Aplica a textura
+    auto* renderer = GetGame()->GetRenderer();
+    if (!textureName.empty()) {
+        mMeshComp->SetTextureOverride(renderer->GetTexture(textureName));
+    } else {
+        mMeshComp->SetTextureOverride(nullptr);
+    }
 }
+
+
 

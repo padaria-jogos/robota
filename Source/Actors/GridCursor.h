@@ -14,16 +14,20 @@ class GridCursor : public Actor{
         void OnUpdate(float deltaTime) override;
         void OnKeyDown(int key);
 
-        void Move(int xOffset, int yOffset);
 
         int GetGridX() const { return mGridX; }
         int GetGridY() const { return mGridY; }
 
     private:
+        void Move(int xOffset, int yOffset);
+        void HandleAction();
+        void HandleCancel();
+
         int mGridX;
         int mGridY;
 
         float mBaseHeight;
         float mAnimTimer;
+
 
 };

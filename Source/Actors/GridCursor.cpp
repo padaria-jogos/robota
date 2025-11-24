@@ -5,6 +5,8 @@
 #include "GridCursor.h"
 
 #include "Game.h"
+#include "Robot.h"
+#include "Tile.h"
 #include "Components/Drawing/MeshComponent.h"
 
 
@@ -62,12 +64,8 @@ void GridCursor::OnUpdate(float deltaTime)
         // Animação de Flutuar
         mAnimTimer += deltaTime;
         Vector3 pos = GetPosition();
-
-
         float bobbing = std::sin(mAnimTimer * 5.0f) * 20.0f;
-
         pos.z = mBaseHeight + bobbing;
-
         SetPosition(pos);
 }
 
@@ -103,7 +101,138 @@ void GridCursor::OnKeyDown(int key)
                 case SDLK_SPACE:
                 case SDLK_RETURN:
                         SDL_Log("Selecionou Tile: %d, %d", mGridX, mGridY);
-                        // TODO: mGame->GetTurnResolver()->SelectUnit(mGridX, mGridY);
+                        HandleAction();
                         break;
+
+                case SDLK_BACKSPACE:
+                case SDLK_ESCAPE:
+                    if (GetGame()->GetBattleState() == BattleState::MoveSelection) {
+                        GetGame()->SetBattleState(BattleState::Exploration);
+                        GetGame()->SetSelectedUnit(nullptr);
+                        SDL_Log("Cancelado.");
+                    }
+                    break;
         }
+}
+
+void GridCursor::HandleAction()
+{
+    Game* game = GetGame();
+    GridMap* grid = game->GetGrid();
+    if (!grid) return;
+
+    BattleState state = game->GetBattleState();
+
+    // EXPLORAÇÃO
+    if (state == BattleState::Exploration)
+    {
+        Robot* unit = grid->GetUnitAt(mGridX, mGridY);
+
+        // Se tem um robô E é do meu time
+        if (unit && unit->GetTeam() == Team::Player)
+        {
+            game->SetSelectedUnit(unit);
+            game->SetBattleState(BattleState::MoveSelection);
+
+            //BFS azul
+            int range = unit->GetMovementRange();
+            auto tiles = grid->GetWalkableTiles(mGridX, mGridY, range);
+
+            for (const auto& node : tiles) {
+                Tile* t = grid->GetTileAt(node.x, node.y);
+                if (t) t->SetTileType(TileType::Path);
+            }
+
+            SDL_Log("Unidade Selecionada! Escolha o destino.");
+
+        }
+        else if (unit) {
+            SDL_Log("Essa unidade nao e sua.");
+        }
+    }
+
+    // MOVIMENTO
+    else if (state == BattleState::MoveSelection)
+    {
+        Robot* selected = game->GetSelectedUnit();
+        if (!selected) return;
+
+        Tile* targetVisual = grid->GetTileAt(mGridX, mGridY);
+        if (targetVisual && targetVisual->GetType() == TileType::Path)
+        {
+            // Verifica se não tem ninguém no destino (exceto eu mesmo)
+            Robot* obstacle = grid->GetUnitAt(mGridX, mGridY);
+            if (obstacle && obstacle != selected) {
+                SDL_Log("Tile ocupado!");
+                return;
+            }
+
+
+            selected->MoveTo(mGridX, mGridY);   // Move
+            grid->ClearTileStates(); // Apaga o azul do mapa
+
+            game->SetBattleState(BattleState::ActionSelection);
+            SDL_Log("Moveu. Escolha Ataque ou Espere.");
+        }
+        else {
+            SDL_Log("Movimento Invalido (Fora de alcance).");
+        }
+    }
+
+    // AÇÃO
+    else if (state == BattleState::ActionSelection)
+    {
+        Robot* attacker = game->GetSelectedUnit();
+        Robot* target = grid->GetUnitAt(mGridX, mGridY);
+        if (target && target->GetTeam() == Team::Enemy)
+        {
+            // Teste de Alcance Melee (mudar dado range das skills)
+            int dist = std::abs(mGridX - attacker->GetGridX()) +
+                       std::abs(mGridY - attacker->GetGridY());
+
+            if (dist <= 1) {
+                attacker->Attack(target, PartSlot::RightArm);
+                game->SetBattleState(BattleState::Exploration);
+                game->SetSelectedUnit(nullptr);
+                SDL_Log("Ataque Feito. Turno Encerrado.");
+            }
+            else {
+                SDL_Log("Alvo muito longe!");
+            }
+        }
+        //Clicou em si memso (WAIT)
+        else if (mGridX == attacker->GetGridX() && mGridY == attacker->GetGridY())
+        {
+            // Apenas espera
+            game->SetBattleState(BattleState::Exploration);
+            game->SetSelectedUnit(nullptr);
+            SDL_Log("Esperou. Turno Encerrado.");
+        }
+    }
+}
+
+void GridCursor::HandleCancel()
+{
+    Game* game = GetGame();
+    BattleState state = game->GetBattleState();
+
+    if (state == BattleState::MoveSelection)
+    {
+        game->GetGrid()->ClearTileStates();
+        game->SetSelectedUnit(nullptr);
+        game->SetBattleState(BattleState::Exploration);
+        SDL_Log("Selecao cancelada.");
+    }
+
+    // UNDO MOVE
+    // O jogador já moveu o robo, mas na hora de atacar mudou de ideia. Quero voltar o robô para a posição original.
+    else if (state == BattleState::ActionSelection)
+    {
+        // TODO: Voltar o robo de onde ele saiu
+
+        game->SetSelectedUnit(nullptr);
+        game->SetBattleState(BattleState::Exploration);
+
+        SDL_Log("Acao cancelada (Robo manteve posicao nova).");
+    }
 }

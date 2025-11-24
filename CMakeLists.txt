@@ -31,7 +31,9 @@ add_executable(${PROJECT_NAME} ${SRC_FILES}
         Source/Actors/Tile.cpp
         Source/Actors/Tile.h
         Source/Actors/GridCursor.cpp
-        Source/Actors/GridCursor.h)
+        Source/Actors/GridCursor.h
+        Source/Actors/Robot.cpp
+        Source/Actors/Robot.h)
 
 # includes
 target_include_directories(${PROJECT_NAME} PRIVATE ${SOURCE_DIRS})

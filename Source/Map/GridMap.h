@@ -7,6 +7,13 @@
 #include <vector>
 
 class Tile;
+class Robot;
+
+// Vertices BFS
+struct TileNode {
+    int x, y;
+    int distance;
+};
 
 class GridMap {
 public:
@@ -19,16 +26,24 @@ public:
     int GetCols() const { return mCols; }
     int GetSelectedX() const { return mSelectedX; }
     int GetSelectedY() const { return mSelectedY; }
-
     float GetCellSize() const { return mCellSize; }
+
+    //BFS
+    std::vector<TileNode> GetWalkableTiles(int startX, int startY, int maxRange);
+
+    void SetUnitAt(int x, int y, Robot* robot);
+    Robot* GetUnitAt(int x, int y) const;
+    Tile* GetTileAt(int x, int y);
 
 
     void SetSelectedTile(int x, int y);
+    void ClearTileStates();
 
 
 private:
     class Game* mGame;
     std::vector<Tile*> mTiles;
+    std::vector<Robot*> mUnitsGrid;
 
     int mRows;
     int mCols;
