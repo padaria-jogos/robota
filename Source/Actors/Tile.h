@@ -23,7 +23,6 @@ class Tile : public Actor {
     private:
         void UpdateTexture();
 
-
         TileType mType;
         bool mIsSelected;
         class MeshComponent* mMeshComp;

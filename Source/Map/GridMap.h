@@ -28,8 +28,11 @@ public:
     int GetSelectedY() const { return mSelectedY; }
     float GetCellSize() const { return mCellSize; }
 
-    //BFS
+    //BFS Walk
     std::vector<TileNode> GetWalkableTiles(int startX, int startY, int maxRange);
+
+    //Attack Range
+    std::vector<TileNode> GetAttackableTiles(int startX, int startY, int minRange, int maxRange);
 
     void SetUnitAt(int x, int y, Robot* robot);
     Robot* GetUnitAt(int x, int y) const;

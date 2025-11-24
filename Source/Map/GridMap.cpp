@@ -139,6 +139,31 @@ std::vector<TileNode> GridMap::GetWalkableTiles(int startX, int startY, int maxR
     return results;
 }
 
+std::vector<TileNode> GridMap::GetAttackableTiles(int startX, int startY, int minRange, int maxRange)
+{
+    std::vector<TileNode> results;
+
+    // Arredores do robo
+    int minX = std::max(0, startX - maxRange);
+    int maxX = std::min(mCols - 1, startX + maxRange);
+    int minY = std::max(0, startY - maxRange);
+    int maxY = std::min(mRows - 1, startY + maxRange);
+
+    for (int y = minY; y <= maxY; ++y) {
+        for (int x = minX; x <= maxX; ++x) {
+
+            // Distância de Manhattan (|dx| + |dy|)
+            int dist = std::abs(x - startX) + std::abs(y - startY);
+
+            // Verifica se está dentro da rosqiunha do alcance
+            if (dist >= minRange && dist <= maxRange) {
+                results.push_back({x, y, dist});
+            }
+        }
+    }
+    return results;
+}
+
 void GridMap::ClearTileStates()
 {
     for (auto* tile : mTiles) {

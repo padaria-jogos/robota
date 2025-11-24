@@ -76,6 +76,7 @@ void GridCursor::OnProcessInput(const uint8_t* state)
 
 void GridCursor::OnKeyDown(int key)
 {
+        BattleState state = GetGame()->GetBattleState();
         switch (key)
         {
                 case SDLK_w:
@@ -106,13 +107,49 @@ void GridCursor::OnKeyDown(int key)
 
                 case SDLK_BACKSPACE:
                 case SDLK_ESCAPE:
-                    if (GetGame()->GetBattleState() == BattleState::MoveSelection) {
-                        GetGame()->SetBattleState(BattleState::Exploration);
-                        GetGame()->SetSelectedUnit(nullptr);
-                        SDL_Log("Cancelado.");
+                    HandleCancel();
+                    break;
+
+                case SDLK_1:
+                case SDLK_KP_1:
+                    if (state == BattleState::SkillSelection) {
+                        GetGame()->SetSelectedSlot(PartSlot::RightArm);
+                        SDL_Log(">> Selecionado: Braço Direito");
+                        SDL_Log(">> Enter/Espaço para confirmar");
+                    }
+                    break;
+
+                case SDLK_2:
+                case SDLK_KP_2:
+                    if (state == BattleState::SkillSelection) {
+                        GetGame()->SetSelectedSlot(PartSlot::LeftArm);
+                        SDL_Log(">> Selecionado: Braço Esquerdo");
+                        SDL_Log(">> Enter/Espaço para confirmar");
                     }
                     break;
         }
+}
+
+void GridCursor::SelectSkill(PartSlot slot)
+{
+    Game* game = GetGame();
+    GridMap* grid = game->GetGrid();
+    Robot* unit = game->GetSelectedUnit();
+
+    game->SetSelectedSlot(slot);
+
+    int range = unit->GetPartRange(slot);
+
+    // Range da skill em vermelho
+    auto tiles = grid->GetAttackableTiles(unit->GetGridX(), unit->GetGridY(), 1, range); // TODO: o min pode ser 0 para habildades de raparo
+
+    for (const auto& node : tiles) {
+        Tile* t = grid->GetTileAt(node.x, node.y);
+        if (t) t->SetTileType(TileType::Attack);
+    }
+
+    game->SetBattleState(BattleState::TargetSelection);
+    SDL_Log("Habilidade escolhida, selecione o alvo.");
 }
 
 void GridCursor::HandleAction()
@@ -143,7 +180,7 @@ void GridCursor::HandleAction()
                 if (t) t->SetTileType(TileType::Path);
             }
 
-            SDL_Log("Unidade Selecionada! Escolha o destino.");
+            SDL_Log("Robo selecionado! Escolha o destino.");
 
         }
         else if (unit) {
@@ -171,51 +208,55 @@ void GridCursor::HandleAction()
             selected->MoveTo(mGridX, mGridY);   // Move
             grid->ClearTileStates(); // Apaga o azul do mapa
 
-            game->SetBattleState(BattleState::ActionSelection);
-            SDL_Log("Moveu. Escolha Ataque ou Espere.");
+            game->SetBattleState(BattleState::SkillSelection);
+
+            //Padrao ultimo utilizado
+            game->SetSelectedSlot(GetGame()->GetSelectedSlot());
+
+            SDL_Log("Movimento concluido.");
+            SDL_Log("PRESSIONE '1' PARA BRACO DIREITO");
+            SDL_Log("PRESSIONE '2' PARA BRACO ESQUERDO");
         }
         else {
-            SDL_Log("Movimento Invalido (Fora de alcance).");
+            SDL_Log("Movimento invalido, muito distante.");
         }
     }
 
-    // AÇÃO
-    else if (state == BattleState::ActionSelection)
-    {
-        Robot* attacker = game->GetSelectedUnit();
-        Robot* target = grid->GetUnitAt(mGridX, mGridY);
-        if (target && target->GetTeam() == Team::Enemy)
-        {
-            // Teste de Alcance Melee (mudar dado range das skills)
-            int dist = std::abs(mGridX - attacker->GetGridX()) +
-                       std::abs(mGridY - attacker->GetGridY());
+    // Seleção de habilidade
+    else if (state == BattleState::SkillSelection) {
+        PartSlot chosenSlot = GetGame()->GetSelectedSlot();
+        Robot* unit = game->GetSelectedUnit();
+        SelectSkill(chosenSlot);
 
-            if (dist <= 1) {
-                attacker->Attack(target, PartSlot::RightArm);
-                game->SetBattleState(BattleState::Exploration);
-                game->SetSelectedUnit(nullptr);
-                SDL_Log("Ataque Feito. Turno Encerrado.");
-            }
-            else {
-                SDL_Log("Alvo muito longe!");
-            }
-        }
-        //Clicou em si memso (WAIT)
-        else if (mGridX == attacker->GetGridX() && mGridY == attacker->GetGridY())
-        {
-            // Apenas espera
+    }
+
+    else if (state == BattleState::TargetSelection) {
+        Tile* targetTile = grid->GetTileAt(mGridX, mGridY);
+
+        if (targetTile && targetTile->GetType() == TileType::Attack) {
+            Robot* attacker = game->GetSelectedUnit();
+            PartSlot slotToUse = PartSlot::RightArm;
+
+            attacker->AttackLocation(mGridX, mGridY, slotToUse);
+
+            grid->ClearTileStates();
             game->SetBattleState(BattleState::Exploration);
             game->SetSelectedUnit(nullptr);
-            SDL_Log("Esperou. Turno Encerrado.");
+
+            SDL_Log("Ataque realizado no tile (%d, %d). Fim do turno.", mGridX, mGridY);
+        }else {
+            SDL_Log("Alvo invalido! Selecione um quadrado dentro da range.");
         }
     }
 }
+
 
 void GridCursor::HandleCancel()
 {
     Game* game = GetGame();
     BattleState state = game->GetBattleState();
 
+    // UNDO SELECTION
     if (state == BattleState::MoveSelection)
     {
         game->GetGrid()->ClearTileStates();
@@ -224,15 +265,24 @@ void GridCursor::HandleCancel()
         SDL_Log("Selecao cancelada.");
     }
 
-    // UNDO MOVE
-    // O jogador já moveu o robo, mas na hora de atacar mudou de ideia. Quero voltar o robô para a posição original.
-    else if (state == BattleState::ActionSelection)
+    // UNDO MOVEMENT
+    else if (state == BattleState::SkillSelection)
     {
-        // TODO: Voltar o robo de onde ele saiu
+        Robot* selected = game->GetSelectedUnit();
+        if (selected) {
+            selected->UndoMove(); // O robô volta fisicamente para trás
+        }
 
         game->SetSelectedUnit(nullptr);
         game->SetBattleState(BattleState::Exploration);
 
-        SDL_Log("Acao cancelada (Robo manteve posicao nova).");
+        SDL_Log("Acao cancelada (Robo voltou).");
+    }
+    // UNDO SKILL
+    else if (state == BattleState::TargetSelection)
+    {
+        game->GetGrid()->ClearTileStates();
+        game->SetBattleState(BattleState::SkillSelection);
+        SDL_Log("Mira cancelada. Escolha outra habilidade (1 ou 2).");
     }
 }

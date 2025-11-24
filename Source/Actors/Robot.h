@@ -47,7 +47,7 @@ struct RobotPart {
     int range;
 
     RobotPart()
-        : name("Empty"), maxHP(1), currentHP(1), isBroken(false), skill(SkillType::None), damage(0), range(0) {}
+        : name("Empty"), maxHP(0), currentHP(0), isBroken(true), skill(SkillType::None), damage(0), range(0) {}
 
     RobotPart(std::string name, std::string path, int hp, SkillType sk, int dmg, int rng)
         : name(name), meshPath(path), maxHP(hp), currentHP(hp), isBroken(false), skill(sk), damage(dmg), range(rng) {}
@@ -59,29 +59,41 @@ class Robot : public Actor{
 
         void EquipPart(PartSlot slot, const RobotPart& part);
 
+        void SetName(std::string name)  { mName = name; }
+        std::string GetName() const { return mName; }
         int GetGridX() const { return mGridX; }
         int GetGridY() const { return mGridY; }
 
         int GetCurrentTotalHP() const;
         int GetMaxTotalHP() const;
+
         int GetMovementRange() const { return mMoveRange; }
-        void SetGridPosition(int x, int y);
         void SetMovementRange(int range) { mMoveRange = range; }
 
+        void SetGridPosition(int x, int y);
+
         Team GetTeam() const {return mTeam; }
+        int GetPartRange(PartSlot chosenSlot) {return mParts[chosenSlot].range; }
 
         // Move
         void MoveTo(int newX, int newY);
+        void UndoMove();
 
         // Attack
         void TakeDamage(int damage, PartSlot slotHit);
         bool CanUseSkill(PartSlot slot) const;
-        void Attack(Robot* target, PartSlot slotUsed);
+        void AttackLocation(int targetX, int targetY, PartSlot slotUsed);
+
+        // Death
+        void CheckDeath();
+        void Kill();
 
 
     private:
-        int mGridX;
-        int mGridY;
+        std::string mName;
+        int mGridX, mGridY;
+        int mPrevGridX, mPrevGridY;
+
         int mMoveRange;
 
         Team mTeam;

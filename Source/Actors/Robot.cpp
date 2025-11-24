@@ -11,6 +11,7 @@
 
 Robot::Robot(class Game *game, Team team)
     : Actor(game)
+    , mName("Robo")
     , mTeam(team)
     , mMoveRange(2)
 {
@@ -58,6 +59,11 @@ void Robot::MoveTo(int newX, int newY) {
     GridMap* grid = GetGame()->GetGrid();
     if (!grid) return;
     grid->SetUnitAt(mGridX, mGridY, nullptr);
+
+    // Armazena de onde veio caso queira voltar
+    mPrevGridX = mGridX;
+    mPrevGridY = mGridY;
+
     mGridX = newX;
     mGridY = newY;
     grid->SetUnitAt(mGridX, mGridY, this);
@@ -68,6 +74,10 @@ void Robot::MoveTo(int newX, int newY) {
     SDL_Log("Robo moveu para %d, %d", mGridX, mGridY);
 }
 
+void Robot::UndoMove()
+{
+    MoveTo(mPrevGridX, mPrevGridY);
+}
 
 void Robot::TakeDamage(int damage, PartSlot slotHit) {
     int index = (int)slotHit;
@@ -84,11 +94,11 @@ void Robot::TakeDamage(int damage, PartSlot slotHit) {
         mParts[index].isBroken = true;
 
         SDL_Log("PARTE DESTRUIDA: %s", mParts[index].name.c_str());
-
         // Apaga a mesh ou mudo para textura queimada
-        // mPartMeshes[index]->SetVisible(false);
+        // // mPartMeshes[index]->SetVisible(false);
     }
 
+    CheckDeath();
 }
 
 bool Robot::CanUseSkill(PartSlot slot) const
@@ -104,23 +114,29 @@ bool Robot::CanUseSkill(PartSlot slot) const
     return true;
 }
 
-void Robot::Attack(Robot* target, PartSlot slotUsed)
+void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
 {
     if (!CanUseSkill(slotUsed)) return;
     int damageDealt = mParts[(int)slotUsed].damage;
+    std::string partName = mParts[(int)slotUsed].name;
 
-    // Onde vai acertar no inimigo (test torso)
-    PartSlot targetSlot = PartSlot::Torso;
+    SDL_Log("ATACANDO TILE (%d, %d) com %s!", targetX, targetY, partName.c_str());
 
-    // Chance de acertar cabeça sla(TODO: colocar na opção do ataque onde mirar)
-    if (Random::GetFloat() > 0.8f) targetSlot = PartSlot::Head;
+    // Verificar o que tem na grid
+    GridMap* grid = GetGame()->GetGrid();
+    Robot* victim = grid->GetUnitAt(targetX, targetY);
 
-    SDL_Log("Atacando %s com %s causando %d de dano!",
-            target->GetTeam() == Team::Enemy ? "Inimigo" : "Aliado",
-            mParts[(int)slotUsed].name.c_str(),
-            damageDealt);
+    if (victim)
+    {
+        SDL_Log("ACERTOU %s!", victim->GetName().c_str());
 
-    target->TakeDamage(damageDealt, targetSlot);
+        // Sempre acerta o Torso se não mirar especificamente
+        victim->TakeDamage(damageDealt, PartSlot::Torso);
+    }
+    else
+    {
+        SDL_Log("Miss");
+    }
 }
 
 void Robot::EquipPart(PartSlot slot, const RobotPart& part)
@@ -139,4 +155,33 @@ void Robot::EquipPart(PartSlot slot, const RobotPart& part)
         }
     }
 }
+
+void Robot::CheckDeath()
+{
+    bool isAlive = false;
+
+    for (int i = 0; i < (int)PartSlot::Count; i++)
+    {
+        if (!mParts[i].isBroken) {
+            isAlive = true;
+            break;
+        }
+    }
+
+    if (!isAlive)
+    {
+        SDL_Log("%s MORREU! (Todas as partes quebradas)", mName.c_str());
+        Kill();
+    }
+}
+
+void Robot::Kill() {
+    GridMap* grid = GetGame()->GetGrid();
+    if (grid) {
+        grid->SetUnitAt(mGridX, mGridY, nullptr);
+    }
+
+    SetState(ActorState::Destroy);
+}
+
 

@@ -13,6 +13,7 @@
 #include <vector>
 #include "Renderer/Renderer.h"
 #include "AudioSystem.h"
+#include "Actors/Robot.h"
 #include "Map/GridMap.h"
 
 struct BlockObstacleItem
@@ -30,7 +31,8 @@ enum class GameScene
 enum class BattleState {
     Exploration,    // Navegando livremente
     MoveSelection,  // Robô selecionado, escolhendo destino
-    ActionSelection // Robô moveu, escolhendo ataque (Wait/Attack)
+    SkillSelection, // Robô moveu, escolhendo habilidade
+    TargetSelection // Selecionando a grid alvo da habilidade
 };
 
 class Game
@@ -65,7 +67,6 @@ public:
 
     // Getters
     class Renderer* GetRenderer() { return mRenderer; }
-    class Ship* GetPlayer() { return mShip; }
     class HUD* GetHUD() { return mHUD; }
 
     // Mechanics
@@ -74,6 +75,9 @@ public:
     void SetBattleState(BattleState state) { mBattleState = state; }
     class Robot* GetSelectedUnit() { return mSelectedUnit; }
     void SetSelectedUnit(class Robot* robot) { mSelectedUnit = robot; }
+    // Getter e Setter para a habilidade escolhida
+    PartSlot GetSelectedSlot() const { return mSelectedSlot; }
+    void SetSelectedSlot(PartSlot slot) { mSelectedSlot = slot; }
 
 
     const std::vector<class BlockObstacle*>& GetObstacles() const { return mObstacles; }
@@ -124,7 +128,6 @@ private:
     bool mUpdatingActors;
 
     // Game-specific
-    class Ship *mShip;
     class GridCursor* mCursor;
     class Camera *mCamera;
     class HUD *mHUD;
@@ -140,4 +143,5 @@ private:
     // Battle
     BattleState mBattleState;
     class Robot* mSelectedUnit;
+    PartSlot mSelectedSlot = PartSlot::RightArm;
 };

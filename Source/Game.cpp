@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------
 // From Game Programming in C++ by Sanjay Madhav
 // Copyright (C) 2017 Sanjay Madhav. All rights reserved.
-// 
+//
 // Released under the BSD License
 // See LICENSE in root directory for full details.
 // ----------------------------------------------------------------
@@ -26,7 +26,7 @@ Game::Game()
         ,mIsRunning(true)
         ,mIsDebugging(false)
         ,mUpdatingActors(false)
-        ,mShip(nullptr)
+        ,mCursor(nullptr)
         ,mCamera(nullptr)
         ,mAudio(nullptr)
         ,mHUD(nullptr)
@@ -151,12 +151,19 @@ void Game::SetScene(GameScene nextScene)
 
             // teste robos
             Robot* playerUnit = new Robot(this, Team::Player);
+            playerUnit->SetName("CryingBee");
             playerUnit->EquipPart(PartSlot::RightArm,
                                     RobotPart("Iron Fist", "../Assets/Cube.gpmesh",
                                         50, SkillType::Punch, 30, 1));
+
+            playerUnit->EquipPart(PartSlot::LeftArm,
+                                    RobotPart("Thunder Beam", "../Assets/Cube.gpmesh",
+                                        50, SkillType::Missile, 40, 3));
+
             playerUnit->SetGridPosition(1, 1);
 
             Robot* enemyUnit = new Robot(this, Team::Enemy);
+            enemyUnit->SetName("EvilBee");
             enemyUnit->EquipPart(PartSlot::Torso,
                                     RobotPart("Heavy Armor", "../Assets/Cube.gpmesh",
                                         100, SkillType::None, 0, 0));

@@ -10,6 +10,7 @@
 Tile::Tile(Game* game)
     : Actor(game)
     , mIsSelected(false)
+    , mType(TileType::Default)
 {
     mMeshComp = new MeshComponent(this);
     Mesh* mesh = game->GetRenderer()->GetMesh("../Assets/Tile.gpmesh");

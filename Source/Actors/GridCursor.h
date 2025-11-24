@@ -4,6 +4,7 @@
 
 #pragma once
 #include "Actor.h"
+#include "Robot.h"
 
 class GridCursor : public Actor{
     public:
@@ -20,6 +21,7 @@ class GridCursor : public Actor{
 
     private:
         void Move(int xOffset, int yOffset);
+        void SelectSkill(PartSlot slot);
         void HandleAction();
         void HandleCancel();
 
