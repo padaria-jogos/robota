@@ -8,7 +8,6 @@
 #include "../Drawing/MeshComponent.h"
 #include "../Physics/AABBColliderComponent.h"
 #include "../Physics/RigidBodyComponent.h"
-#include "../../Actors/BlockObstacle.h"
 
 
 Bullet::Bullet(class Game* game)
@@ -68,19 +67,4 @@ void Bullet::OnUpdate(float deltaTime)
     Particle::OnUpdate(deltaTime);
 
     if (IsDead()) return;
-
-    for (auto* obstacle : mGame->GetObstacles())
-    {
-        if (!obstacle) continue;
-        if (obstacle->GetState() == ActorState::Destroy) continue;
-
-        if (mCollisionComponent->Intersect(obstacle->GetCollider()))
-        {
-            if (obstacle->IsExploding())
-                obstacle->Explode();
-
-            Kill();
-            return;
-        }
-    }
 }

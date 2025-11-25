@@ -14,12 +14,6 @@
 #include "Renderer/Renderer.h"
 #include "AudioSystem.h"
 
-struct BlockObstacleItem
-{
-    int textureIndex;
-    int i, j;
-};
-
 enum class GameScene
 {
     MainMenu,
@@ -52,16 +46,13 @@ public:
     void SetScene(GameScene scene);
     void UnloadScene();
 
-    // Add/Remove Obstacles
-    void AddObstacle(class BlockObstacle* obstacle);
-    void RemoveObstacle(class BlockObstacle* obstacle);
-
     // Getters
     class Renderer* GetRenderer() { return mRenderer; }
-    class Ship* GetPlayer() { return mShip; }
     class HUD* GetHUD() { return mHUD; }
+    class Camera* GetCamera() { return mCamera; }
 
-    const std::vector<class BlockObstacle*>& GetObstacles() const { return mObstacles; }
+    // Setters
+    void SetCamera(class Camera* camera) { mCamera = camera; }
 
     // Constants
     static const int WINDOW_WIDTH   = 1024;
@@ -78,13 +69,6 @@ private:
     void ProcessInput();
     void UpdateGame(float deltaTime);
     void GenerateOutput();
-
-    // BlockObstacle loading
-    void LoadObstaclePatterns(const std::string& dirName, const int nBlockPatterns);
-
-    // Wall management
-    void SpawnWalls();
-    void SpawnObstacles();
 
     // All the actors in the game
     std::vector<class Actor*> mActors;
@@ -109,18 +93,6 @@ private:
     bool mUpdatingActors;
 
     // Game-specific
-    class Ship *mShip;
     class Camera *mCamera;
     class HUD *mHUD;
-
-    int mNextBlock;
-    int mNextObstacle;
-
-    // List of obstacle patterns
-    std::vector<class BlockObstacle*> mObstacles;
-    std::vector<std::vector<BlockObstacleItem *>> mObstaclePatterns;
-
-    // points
-    int mScore;
-    int mNextScoreObstacle;
 };

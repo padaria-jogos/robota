@@ -27,14 +27,22 @@ Camera::Camera(class Game* game, const Vector3 &eye, const Vector3 &target, cons
     mGame->GetRenderer()->SetViewMatrix(mViewMatrix);
 }
 
-void Camera::Update(float deltaTime, Actor *targetActor)
+void Camera::SetTargetActor(class Actor* actor)
 {
-    if (!targetActor)
+    mTargetActor = actor;
+}
+
+void Camera::Update(float deltaTime)
+{
+    if (!mTargetActor)
+    {
+        SDL_Log("No target actor found");
         return;
+    }
 
     // calculate target posision and forward vector
-    Vector3 targetPos = targetActor->GetPosition();
-    Vector3 forward = targetActor->GetForward();
+    Vector3 targetPos = mTargetActor->GetPosition();
+    Vector3 forward = mTargetActor->GetForward();
     forward.Normalize();
 
     // new camera position, keep z at 0 for an interesting effect

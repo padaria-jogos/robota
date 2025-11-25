@@ -11,7 +11,7 @@ class Camera
 public:
     Camera(class Game* game, const Vector3 &eye, const Vector3 &target, const Vector3 &up,
            float foy, float near, float far);
-    void Update(float deltaTime, class Actor *targetActor);
+    void Update(float deltaTime);
 
     // Get/set position
     Vector3 GetPosition() const { return mEye; }
@@ -20,6 +20,8 @@ public:
     void SetHDistance(const float hDist) { mHDistance = hDist; }
     void SetVDistance(const float hDist) { mVDistance = hDist; }
     void SetTDistance(const float hDist) { mTDistance = hDist; }
+
+    void SetTargetActor(class Actor* actor);
 
 private:
     // Game
@@ -32,6 +34,8 @@ private:
     float mFovY;
     float mNear;
     float mFar;
+
+    Actor* mTargetActor;
 
     Vector3 mEye;
     Vector3 mTarget;

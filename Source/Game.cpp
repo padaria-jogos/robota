@@ -13,10 +13,11 @@
 #include "Random.h"
 #include "Actors/Actor.h"
 #include "Actors/Ship.h"
-#include "Actors/BlockObstacle.h"
+#include "Actors/Block.h"
 #include "Camera.h"
 #include "UI/Screens/HUD.h"
 #include "UI/Screens/MainMenu.h"
+#include "Levels/Level1.h"
 
 Game::Game()
         :mWindow(nullptr)
@@ -25,14 +26,9 @@ Game::Game()
         ,mIsRunning(true)
         ,mIsDebugging(false)
         ,mUpdatingActors(false)
-        ,mShip(nullptr)
         ,mCamera(nullptr)
         ,mAudio(nullptr)
         ,mHUD(nullptr)
-        ,mNextBlock(0)
-        ,mNextObstacle(0)
-        , mScore(0)
-        , mNextScoreObstacle(0)
 {
 
 }
@@ -127,24 +123,7 @@ void Game::SetScene(GameScene nextScene)
 
         case GameScene::Level1:
         {
-            // log controls
-            SDL_Log("E/Q: forward/backward; W/S: up/down; A/D: right/left; SPACE: shoot");
-
-            // hud
-            mHUD = new HUD(this, "../Assets/Fonts/Arial.ttf");
-            mHUD->SetScore(0);
-
-            // create player
-            mShip = new Ship(this);
-
-            // create camera
-            Vector3 eye(-300.0f, 0.0f, 0.0f);
-            Vector3 target(20.0f, 0.0f, 0.0f);
-            Vector3 up(0.0f, 0.0f, 1.0f);
-            mCamera = new Camera(this, eye, target, up, 70.0f, 10.0f, 10000.0f);
-
-            // spawn floor
-            SpawnWalls();
+            new Level1(this, mHUD);
         }
     }
 }
@@ -175,11 +154,6 @@ void Game::RunLoop()
     }
 }
 
-void Game::LoadObstaclePatterns(const std::string& dirName, const int nBlockPatterns)
-{
-
-}
-
 void Game::ProcessInput()
 {
     SDL_Event event;
@@ -208,49 +182,14 @@ void Game::ProcessInput()
     }
 }
 
-void Game::SpawnObstacles()
-{
-
-}
-
-void Game::SpawnWalls()
-{
-    // spawn the floor using multiple cubes
-    const float spacing = 500.0f;
-    const Vector3 center(mNextBlock * spacing, 0.0f, -500.0f);
-    int n = 2; // size scale
-
-    // construct a grid of n x n blocks centered at 'center'
-    float offset = (n - 1) * 0.5f;
-
-    for (int y = 0; y < n; y++)
-    {
-        for (int x = 0; x < n; x++)
-        {
-            Block* wall = new Block(this);
-            wall->SetScale(Vector3(500.0f, 500.0f, 500.0f));
-
-            Vector3 pos;
-            pos.x = center.x + (x - offset) * spacing;
-            pos.y = center.y + (y - offset) * spacing;
-            pos.z = center.z;
-
-            wall->SetPosition(pos);
-            wall->SetTexture(0);
-        }
-    }
-
-}
-
 void Game::UpdateGame(float deltaTime)
 {
     // Update all actors and pending actors
     UpdateActors(deltaTime);
 
     // update camera
-    if (mCamera && mShip)
-        mCamera->Update(deltaTime, mShip);
-
+    if (mCamera)
+        mCamera->Update(deltaTime);
 
     // Update UI screens
     for (auto ui : mUIStack) {
@@ -331,16 +270,6 @@ void Game::RemoveActor(Actor* actor)
     }
 }
 
-void Game::AddObstacle(BlockObstacle* obstacle)
-{
-
-}
-
-void Game::RemoveObstacle(BlockObstacle* obstacle)
-{
-
-}
-
 void Game::GenerateOutput()
 {
     // Clear back buffer
@@ -365,14 +294,6 @@ void Game::Shutdown()
         delete ui;
     }
     mUIStack.clear();
-
-    // Delete obstacle patterns
-    for (auto pattern : mObstaclePatterns) {
-        for (auto obstacle : pattern) {
-            delete obstacle;
-        }
-    }
-    mObstaclePatterns.clear();
 
     // Delete renderer
     mRenderer->Shutdown();

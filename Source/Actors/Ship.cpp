@@ -3,7 +3,6 @@
 //
 
 #include "Ship.h"
-#include "../Actors/BlockObstacle.h"
 #include "../Game.h"
 #include "../Components/Drawing/MeshComponent.h"
 #include "../Components/Physics/AABBColliderComponent.h"
