@@ -25,15 +25,7 @@ file(GLOB_RECURSE SRC_FILES
 )
 
 # executable
-add_executable(${PROJECT_NAME} ${SRC_FILES}
-        Source/Map/GridMap.cpp
-        Source/Map/GridMap.h
-        Source/Actors/Tile.cpp
-        Source/Actors/Tile.h
-        Source/Actors/GridCursor.cpp
-        Source/Actors/GridCursor.h
-        Source/Actors/Robot.cpp
-        Source/Actors/Robot.h)
+add_executable(${PROJECT_NAME} ${SRC_FILES})
 
 # includes
 target_include_directories(${PROJECT_NAME} PRIVATE ${SOURCE_DIRS})

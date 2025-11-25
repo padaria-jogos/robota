@@ -7,32 +7,18 @@
 // ----------------------------------------------------------------
 
 #pragma once
+
 #include <SDL.h>
-#include <SDL_image.h>
-#include <SDL_mixer.h>
 #include <vector>
 #include "Renderer/Renderer.h"
 #include "AudioSystem.h"
-#include "Actors/Robot.h"
-#include "Map/GridMap.h"
 
-struct BlockObstacleItem
-{
-    int textureIndex;
-    int i, j;
-};
+#include "Levels/Level.h"
 
 enum class GameScene
 {
     MainMenu,
     Level1
-};
-
-enum class BattleState {
-    Exploration,    // Navegando livremente
-    MoveSelection,  // Robô selecionado, escolhendo destino
-    SkillSelection, // Robô moveu, escolhendo habilidade
-    TargetSelection // Selecionando a grid alvo da habilidade
 };
 
 class Game
@@ -61,26 +47,15 @@ public:
     void SetScene(GameScene scene);
     void UnloadScene();
 
-    // Add/Remove Obstacles
-    void AddObstacle(class BlockObstacle* obstacle);
-    void RemoveObstacle(class BlockObstacle* obstacle);
-
     // Getters
     class Renderer* GetRenderer() { return mRenderer; }
     class HUD* GetHUD() { return mHUD; }
+    class Camera* GetCamera() { return mCamera; }
+    class Level* GetLevel() { return mLevel; }
 
-    // Mechanics
-    class GridMap* GetGrid() { return mGrid; }
-    BattleState GetBattleState() const { return mBattleState; }
-    void SetBattleState(BattleState state) { mBattleState = state; }
-    class Robot* GetSelectedUnit() { return mSelectedUnit; }
-    void SetSelectedUnit(class Robot* robot) { mSelectedUnit = robot; }
-    // Getter e Setter para a habilidade escolhida
-    PartSlot GetSelectedSlot() const { return mSelectedSlot; }
-    void SetSelectedSlot(PartSlot slot) { mSelectedSlot = slot; }
-
-
-    const std::vector<class BlockObstacle*>& GetObstacles() const { return mObstacles; }
+    // Setters
+    void SetCamera(class Camera* camera) { mCamera = camera; }
+    void SetLevel(class Level* level) { mLevel = level; }
 
     // Constants
     static const int WINDOW_WIDTH   = 1024;
@@ -97,13 +72,6 @@ private:
     void ProcessInput();
     void UpdateGame(float deltaTime);
     void GenerateOutput();
-
-    // BlockObstacle loading
-    void LoadObstaclePatterns(const std::string& dirName, const int nBlockPatterns);
-
-    // Wall management
-    void SpawnWalls(int rows, int cols);
-    void SpawnObstacles();
 
     // All the actors in the game
     std::vector<class Actor*> mActors;
@@ -128,20 +96,13 @@ private:
     bool mUpdatingActors;
 
     // Game-specific
-    class GridCursor* mCursor;
     class Camera *mCamera;
     class HUD *mHUD;
 
+    Level* mLevel;
 
     // List of obstacle patterns
-    std::vector<class BlockObstacle*> mObstacles;
-    std::vector<std::vector<BlockObstacleItem *>> mObstaclePatterns;
+    // std::vector<class BlockObstacle*> mObstacles;
 
-    // GridMap
-    GridMap* mGrid;
 
-    // Battle
-    BattleState mBattleState;
-    class Robot* mSelectedUnit;
-    PartSlot mSelectedSlot = PartSlot::RightArm;
 };

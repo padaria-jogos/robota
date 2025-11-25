@@ -2,10 +2,17 @@
 // Created by Heitor S. on 11/23/2025.
 //
 
-#pragma once
-#include <string>
+/*
+ * Robot
+ * Lida com representações básicas dos gráficos
+ * dos robôs em batalha.
+ */
 
+#pragma once
+
+#include <string>
 #include "Actor.h"
+#include "Components/Drawing/MeshComponent.h"
 
 // TODO: Murilo olha aqui dps os tipos mecanicas etc
 enum class SkillType {
@@ -17,7 +24,6 @@ enum class SkillType {
     Repair
 };
 
-
 enum class Team {
     Player,
     Enemy,
@@ -25,6 +31,7 @@ enum class Team {
 };
 
 enum PartSlot {
+    Null,
     Head,
     Torso,
     RightArm,
@@ -61,6 +68,7 @@ class Robot : public Actor{
 
         void SetName(std::string name)  { mName = name; }
         std::string GetName() const { return mName; }
+
         int GetGridX() const { return mGridX; }
         int GetGridY() const { return mGridY; }
 
@@ -99,6 +107,5 @@ class Robot : public Actor{
         Team mTeam;
         RobotPart mParts[(int)PartSlot::Count];
         class MeshComponent* mPartMeshes[(int)PartSlot::Count] = { nullptr };
-
 };
 

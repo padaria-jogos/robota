@@ -2,12 +2,16 @@
 // Created by Usuario on 11/20/2025.
 //
 
-#pragma once
-#include "Math.h"
-#include <vector>
+/*
+ * GridMap
+ * Define a estrutura e de gerenciamento de grid
+ */
 
-class Tile;
-class Robot;
+#pragma once
+
+#include <vector>
+#include "Math.h"
+#include "Actors/Tile.h"
 
 // Vertices BFS
 struct TileNode {
@@ -21,6 +25,7 @@ public:
     ~GridMap();
 
     Vector3 GetWorldPosition(int gridX, int gridY) const;
+    Vector3 GetTilePosition(int worldX, int worldY) const;
 
     int GetRows() const { return mRows; }
     int GetCols() const { return mCols; }
@@ -34,11 +39,11 @@ public:
     //Attack Range
     std::vector<TileNode> GetAttackableTiles(int startX, int startY, int minRange, int maxRange);
 
-    void SetUnitAt(int x, int y, Robot* robot);
-    Robot* GetUnitAt(int x, int y) const;
+    // void SetUnitAt(int x, int y, Robot* robot);
+    Actor* GetUnitAt(int x, int y);
     Tile* GetTileAt(int x, int y);
 
-
+    void SetUnitAt(Actor* actor, int x, int y);
     void SetSelectedTile(int x, int y);
     void ClearTileStates();
 
@@ -46,7 +51,7 @@ public:
 private:
     class Game* mGame;
     std::vector<Tile*> mTiles;
-    std::vector<Robot*> mUnitsGrid;
+    std::vector<Actor*> mUnitsGrid;
 
     int mRows;
     int mCols;

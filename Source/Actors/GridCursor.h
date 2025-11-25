@@ -2,11 +2,18 @@
 // Created by Heitor S. on 11/22/2025.
 //
 
-#pragma once
-#include "Actor.h"
-#include "Robot.h"
+/*
+ * GridCursor
+ * Define um objeto 3D em formato de cursor
+ */
 
-class GridCursor : public Actor{
+#pragma once
+
+// #include "Game.h"
+#include "Actors/Actor.h"
+#include "Components/Drawing/MeshComponent.h"
+
+class GridCursor : public Actor {
     public:
         GridCursor(class Game* game);
 
@@ -15,21 +22,22 @@ class GridCursor : public Actor{
         void OnUpdate(float deltaTime) override;
         void OnKeyDown(int key);
 
-
         int GetGridX() const { return mGridX; }
         int GetGridY() const { return mGridY; }
 
-    private:
         void Move(int xOffset, int yOffset);
-        void SelectSkill(PartSlot slot);
+
+    private:
+
+        // void SelectSkill(PartSlot slot);
         void HandleAction();
         void HandleCancel();
 
         int mGridX;
         int mGridY;
 
+        MeshComponent* mMesh;
+
         float mBaseHeight;
         float mAnimTimer;
-
-
 };

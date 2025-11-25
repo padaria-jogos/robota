@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------
 // From Game Programming in C++ by Sanjay Madhav
 // Copyright (C) 2017 Sanjay Madhav. All rights reserved.
-//
+// 
 // Released under the BSD License
 // See LICENSE in root directory for full details.
 // ----------------------------------------------------------------
@@ -10,14 +10,15 @@
 #include <vector>
 #include <fstream>
 #include "Game.h"
+
+#include <SDL_mixer.h>
+
 #include "Random.h"
 #include "Actors/Actor.h"
-#include "Actors/BlockObstacle.h"
 #include "Camera.h"
-#include "Actors/GridCursor.h"
-#include "Actors/Robot.h"
-#include "UI/Screens/HUD.h"
+
 #include "UI/Screens/MainMenu.h"
+#include "Levels/Level1.h"
 
 Game::Game()
         :mWindow(nullptr)
@@ -26,10 +27,10 @@ Game::Game()
         ,mIsRunning(true)
         ,mIsDebugging(false)
         ,mUpdatingActors(false)
-        ,mCursor(nullptr)
         ,mCamera(nullptr)
         ,mAudio(nullptr)
         ,mHUD(nullptr)
+        ,mLevel(nullptr)
 {
 
 }
@@ -67,14 +68,6 @@ bool Game::Initialize()
         return false;
     }
 
-    // audio debug
-    // int n = SDL_GetNumAudioDrivers();
-    // SDL_Log("Audio drivers available:");
-    // for (int i = 0; i < n; i++) {
-    //     SDL_Log("  %s", SDL_GetAudioDriver(i));
-    // }
-    // SDL_Log("Current audio driver: %s", SDL_GetCurrentAudioDriver());
-
     // window configuration
     mWindow = SDL_CreateWindow("ROBOTA", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL);
     if (!mWindow)
@@ -85,8 +78,6 @@ bool Game::Initialize()
     mRenderer = new Renderer(mWindow);
     mRenderer->Initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
-
-    mGrid = nullptr;
     // start at main menu
     SetScene(GameScene::MainMenu);
     mTicksCount = SDL_GetTicks();
@@ -126,56 +117,8 @@ void Game::SetScene(GameScene nextScene)
 
         case GameScene::Level1:
         {
-            mBattleState = BattleState::Exploration;
-            mSelectedUnit = nullptr;
-
-            // const
-            const int ROWS = 4;
-            const int COLS = 4;
-            const float SIZE = 500.0f;
-
-            // log controls
-            SDL_Log("E/Q: forward/backward; W/S: up/down; A/D: right/left; SPACE: shoot");
-
-            // hud
-            // mHUD = new HUD(this, "../Assets/Fonts/Arial.ttf");
-            // mHUD->SetScore(0);
-
-
-            // spawn floor
-            SpawnWalls(ROWS, COLS);
-
-
-            // Teste grid
-            mGrid = new GridMap(this, ROWS, COLS, SIZE);
-
-            // teste robos
-            Robot* playerUnit = new Robot(this, Team::Player);
-            playerUnit->SetName("CryingBee");
-            playerUnit->EquipPart(PartSlot::RightArm,
-                                    RobotPart("Iron Fist", "../Assets/Cube.gpmesh",
-                                        50, SkillType::Punch, 30, 1));
-
-            playerUnit->EquipPart(PartSlot::LeftArm,
-                                    RobotPart("Thunder Beam", "../Assets/Cube.gpmesh",
-                                        50, SkillType::Missile, 40, 3));
-
-            playerUnit->SetGridPosition(1, 1);
-
-            Robot* enemyUnit = new Robot(this, Team::Enemy);
-            enemyUnit->SetName("EvilBee");
-            enemyUnit->EquipPart(PartSlot::Torso,
-                                    RobotPart("Heavy Armor", "../Assets/Cube.gpmesh",
-                                        100, SkillType::None, 0, 0));
-            enemyUnit->SetGridPosition(3, 3);
-
-            mCursor = new GridCursor(this);
-
-            // create camera
-            Vector3 eye(0.0f, -2500.0f, 1000.0f);
-            Vector3 target(0.0f, 0.0f, 0.0f);
-            Vector3 up(0.0f, 0.0f, 1.0f);
-            mCamera = new Camera(this, eye, target, up, 70.0f, 10.0f, 10000.0f);
+            delete mLevel;
+            mLevel = new Level1(this, mHUD); // se der problema definir destrutor level sem virtual e remover o do level1
         }
     }
 }
@@ -206,11 +149,6 @@ void Game::RunLoop()
     }
 }
 
-void Game::LoadObstaclePatterns(const std::string& dirName, const int nBlockPatterns)
-{
-
-}
-
 void Game::ProcessInput()
 {
     SDL_Event event;
@@ -227,8 +165,10 @@ void Game::ProcessInput()
                     mUIStack.back()->HandleKeyPress(event.key.keysym.sym);
                 }
 
-                if (mCursor) {
-                    mCursor->OnKeyDown(event.key.keysym.sym);
+                // Handle key press for level
+                if (mLevel)
+                {
+                    mLevel->ProcessInput(event);
                 }
 
                 break;
@@ -243,48 +183,10 @@ void Game::ProcessInput()
     }
 }
 
-void Game::SpawnObstacles()
-{
-
-}
-
-void Game::SpawnWalls(int rows, int cols)
-{
-    //SDL_Log("SPAWNWALLS -> Rows: %d, Cols: %d", rows, cols);
-    const float spacing = 500.0f;
-
-    float totalWidth = cols * spacing;
-    float totalHeight = rows * spacing;
-
-    float startX = -totalWidth / 2.0f;
-    float startY = -totalHeight / 2.0f;
-
-    float zPos = -500.0f; // Centro do cubo
-
-    for (int y = 0; y < rows; y++)
-    {
-        for (int x = 0; x < cols; x++)
-        {
-            Block* wall = new Block(this);
-            wall->SetScale(Vector3(spacing, spacing, spacing)); // cubo tamanho 1x1 -> vira 500x500
-
-            Vector3 pos;
-            // Move o ponto da "borda" para o "centro" do bloco
-            pos.x = startX + (x * spacing) + (spacing * 0.5f);
-            pos.y = startY + (y * spacing) + (spacing * 0.5f);
-            pos.z = zPos;
-
-            wall->SetPosition(pos);
-            wall->SetTexture(0);
-        }
-    }
-}
-
 void Game::UpdateGame(float deltaTime)
 {
     // Update all actors and pending actors
     UpdateActors(deltaTime);
-
 
     // Update UI screens
     for (auto ui : mUIStack) {
@@ -301,6 +203,12 @@ void Game::UpdateGame(float deltaTime)
         } else {
             ++iter;
         }
+    }
+
+    // Update level
+    if (mLevel)
+    {
+        mLevel->OnUpdate(deltaTime);
     }
 }
 
@@ -365,16 +273,6 @@ void Game::RemoveActor(Actor* actor)
     }
 }
 
-void Game::AddObstacle(BlockObstacle* obstacle)
-{
-
-}
-
-void Game::RemoveObstacle(BlockObstacle* obstacle)
-{
-
-}
-
 void Game::GenerateOutput()
 {
     // Clear back buffer
@@ -399,14 +297,6 @@ void Game::Shutdown()
         delete ui;
     }
     mUIStack.clear();
-
-    // Delete obstacle patterns
-    for (auto pattern : mObstaclePatterns) {
-        for (auto obstacle : pattern) {
-            delete obstacle;
-        }
-    }
-    mObstaclePatterns.clear();
 
     // Delete renderer
     mRenderer->Shutdown();

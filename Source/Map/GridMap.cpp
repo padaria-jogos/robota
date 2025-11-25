@@ -3,12 +3,8 @@
 //
 
 #include "GridMap.h"
-
 #include <queue>
-
-#include "../Actors/Tile.h"
-#include "../Actors/Robot.h"
-
+#include <iostream>
 
 GridMap::GridMap(Game* game, int rows, int cols, float cellSize)
     : mGame(game), mRows(rows), mCols(cols), mCellSize(cellSize)
@@ -22,6 +18,7 @@ GridMap::GridMap(Game* game, int rows, int cols, float cellSize)
     // Nenhum robô no começo
     mUnitsGrid.resize(mRows * mCols, nullptr);
 
+    // definir os tiles em cada bloco
     for (int i = 0; i < mRows; i++) {
         for (int j = 0; j < mCols; j++) {
             Tile* tile = new Tile(mGame);
@@ -38,8 +35,24 @@ GridMap::GridMap(Game* game, int rows, int cols, float cellSize)
             mTiles.push_back(tile);
         }
     }
-}
 
+    // teste
+    SetSelectedTile(1, 1);
+
+    // verificar quais tiles devem ser pintados
+    for (auto &p : GetWalkableTiles(1, 1, 1))
+    {
+        std::cout << p.x << "," << p.y << " ";
+    }
+    std::cout << std::endl;
+
+    // ataque
+    for (auto &p : GetAttackableTiles(1, 1, 1, 1))
+    {
+        std::cout << p.x << "," << p.y << " ";
+    }
+    std::cout << std::endl;
+}
 
 Vector3 GridMap::GetWorldPosition(int gridX, int gridY) const
 {
@@ -48,6 +61,17 @@ Vector3 GridMap::GetWorldPosition(int gridX, int gridY) const
         mStartPosition.y + (gridY * mCellSize) + (mCellSize * 0.5f),
         mStartPosition.z
     );
+}
+
+Vector3 GridMap::GetTilePosition(int worldX, int worldY) const
+{
+    float worldXF = static_cast<float>(worldX);
+    float worldYF = static_cast<float>(worldY);
+
+    int gridX = static_cast<int>((worldXF - mStartPosition.x - (mCellSize * 0.5f)) / mCellSize);
+    int gridY = static_cast<int>((worldYF - mStartPosition.y - (mCellSize * 0.5f)) / mCellSize);
+
+    return Vector3(static_cast<float>(gridX), static_cast<float>(gridY), 0.0f);
 }
 
 void GridMap::SetSelectedTile(int x, int y)
@@ -68,25 +92,6 @@ void GridMap::SetSelectedTile(int x, int y)
     if (index < mTiles.size()) {
         mTiles[index]->SetSelected(true);
     }
-}
-
-void GridMap::SetUnitAt(int x, int y, Robot* robot)
-{
-    if (x >= 0 && x < mCols && y >= 0 && y < mRows)
-    {
-        int index = y * mCols + x;
-        mUnitsGrid[index] = robot;
-    }
-}
-
-Robot* GridMap::GetUnitAt(int x, int y) const
-{
-    if (x >= 0 && x < mCols && y >= 0 && y < mRows)
-    {
-        int index = y * mCols + x;
-        return mUnitsGrid[index];
-    }
-    return nullptr;
 }
 
 std::vector<TileNode> GridMap::GetWalkableTiles(int startX, int startY, int maxRange)
@@ -126,6 +131,7 @@ std::vector<TileNode> GridMap::GetWalkableTiles(int startX, int startY, int maxR
 
                 if (!visited[idx])
                 {
+                    // TODO: reimplementar no futuro
                     // É caminhável? (Não tem obstáculo/inimigo)
                     if (GetUnitAt(nx, ny) == nullptr)
                     {
@@ -172,6 +178,7 @@ void GridMap::ClearTileStates()
 }
 
 
+// TODO: testar depois
 Tile* GridMap::GetTileAt(int x, int y)
 {
     if (x >= 0 && x < mCols && y >= 0 && y < mRows) {
@@ -180,7 +187,34 @@ Tile* GridMap::GetTileAt(int x, int y)
     return nullptr;
 }
 
-GridMap::~GridMap() {
+Actor* GridMap::GetUnitAt(int x, int y)
+{
+    if (x >= 0 && x < mCols && y >= 0 && y < mRows)
+    {
+        int index = y * mCols + x;
+        return mUnitsGrid[index];
+    }
+    return nullptr;
+}
+
+void GridMap::SetUnitAt(Actor* actor, int x, int y)
+{
+    for (auto &unit : mUnitsGrid) {
+        if (unit == actor) {
+            unit = nullptr;
+            break;
+        }
+    }
+
+    // substituo pelo novo
+    if (x >= 0 && x < mCols && y >= 0 && y < mRows)
+    {
+        int index = y * mCols + x;
+        mUnitsGrid[index] = actor;
+    }
+}
+
+GridMap::~GridMap()
+{
     mTiles.clear();
-    mUnitsGrid.clear();
 }
