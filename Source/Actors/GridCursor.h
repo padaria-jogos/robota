@@ -20,19 +20,13 @@ class GridCursor : public Actor {
 
         void OnProcessInput(const Uint8* keyState) override;
         void OnUpdate(float deltaTime) override;
-        void OnKeyDown(int key);
 
         int GetGridX() const { return mGridX; }
         int GetGridY() const { return mGridY; }
+        void UpdateGridCoords(int x, int y);
 
-        void Move(int xOffset, int yOffset);
 
     private:
-
-        // void SelectSkill(PartSlot slot);
-        void HandleAction();
-        void HandleCancel();
-
         int mGridX;
         int mGridY;
 

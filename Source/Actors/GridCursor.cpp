@@ -23,11 +23,6 @@ GridCursor::GridCursor(Game* game) : Actor(game)
     SetRotation(Vector3(Math::ToRadians(180.0f), 0.0f, 0.0f));
 }
 
-// Passar a posição correta é coisa do level
-void GridCursor::Move(int xOffset, int yOffset)
-{
-
-}
 
 void GridCursor::OnUpdate(float deltaTime)
 {
@@ -44,17 +39,7 @@ void GridCursor::OnProcessInput(const uint8_t* state)
 
 }
 
-void GridCursor::OnKeyDown(int key)
-{
-
-}
-
-void GridCursor::HandleAction()
-{
-
-}
-
-void GridCursor::HandleCancel()
-{
-
+void GridCursor::UpdateGridCoords(int x, int y) {
+    mGridX = x;
+    mGridY = y;
 }

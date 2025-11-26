@@ -18,7 +18,7 @@ class Tile : public Actor {
         Tile(class Game* game);
         void SetTileType(TileType type);
         void SetSelected(bool selected);
-        TileType GetType() { return mType; };
+        TileType GetType() const{ return mType; };
 
     private:
         void UpdateTexture();

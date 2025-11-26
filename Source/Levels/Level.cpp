@@ -6,7 +6,7 @@
 #include "Game.h"
 
 #include "Actors/Block.h"
-
+//TODO Lidar com a morte dos robos e entender como ficou os movimentos
 Level::Level(class Game *game, HUD *hud) :
     mGame(game),
     mCamera(mGame->GetCamera()),
@@ -14,9 +14,8 @@ Level::Level(class Game *game, HUD *hud) :
     mCursor(nullptr),
     mGrid(nullptr),
     mBattleState(BattleState::Null),
-    mSelectedUnit(nullptr),
     mSelectedSlot(PartSlot::Null),
-    playerUnit(nullptr),
+    mPlayer(nullptr),
     enemyUnit(nullptr)
 {
     mBattleState = BattleState::Exploration;
@@ -43,28 +42,24 @@ Level::Level(class Game *game, HUD *hud) :
     // mCursor->Move(0, 0);
 
     // PLAYER
-    playerUnit = new Robot(game, Team::Player);
-    playerUnit->SetName("CryingBee");
+    mPlayer = new Robot(game, Team::Player);
+    mPlayer->SetName("CryingBee");
 
-    playerUnit->EquipPart(PartSlot::RightArm,
+    mPlayer->EquipPart(PartSlot::RightArm,
                           RobotPart("Iron Fist", "../Assets/Cube.gpmesh",
                                     50, SkillType::Punch, 30, 1));
 
-    playerUnit->EquipPart(PartSlot::LeftArm,
+    mPlayer->EquipPart(PartSlot::LeftArm,
                           RobotPart("Thunder Beam", "../Assets/Cube.gpmesh",
                                     50, SkillType::Missile, 40, 3));
 
-    playerUnit->SetGridPosition(1, 1);
-    mGrid->SetUnitAt(playerUnit, 1, 1);
+    mPlayer->UpdateGridCoords(1, 1);
+    mGrid->SetUnitAt(mPlayer, 1, 1);
 
-    mLastTileActorPositionX = mGrid->GetTilePosition(playerUnit->GetPosition().x, playerUnit->GetPosition().y).x;
-    mLastTileActorPositionY = mGrid->GetTilePosition(playerUnit->GetPosition().x, playerUnit->GetPosition().y).y;
-    MoveInGrid(playerUnit, 1, 1);
+    MoveInGrid(mPlayer, 1, 1);
 
     // cursor no seu personagem
     MoveInGrid(mCursor, 1, 1);
-    mTileCursorPositionX = 1;
-    mTileCursorPositionY = 1;
 
     // ENEMY
     enemyUnit = new Robot(game, Team::Enemy);
@@ -74,7 +69,7 @@ Level::Level(class Game *game, HUD *hud) :
                          RobotPart("Heavy Armor", "../Assets/Cube.gpmesh",
                                    100, SkillType::None, 0, 0));
 
-    enemyUnit->SetGridPosition(2, 2);
+    enemyUnit->UpdateGridCoords(2, 2);
     mGrid->SetUnitAt(enemyUnit, 2, 2);
     MoveInGrid(enemyUnit, 2, 2);
 }
@@ -88,23 +83,22 @@ Level::~Level()
 void Level::MoveCursor(int xOffset, int yOffset)
 {
     // define a nova posição absoluta de acordo com offset
-    if (!mGrid) return;
-    Vector3 gridPos = mGrid->GetTilePosition(mCursor->GetPosition().x, mCursor->GetPosition().y);
+    if (!mGrid || !mCursor) return;
 
-    int newX = gridPos.x + xOffset;
-    int newY = gridPos.y + yOffset;
+    int currentX = mCursor->GetGridX();
+    int currentY = mCursor->GetGridY();
+
+    int newX = currentX + xOffset;
+    int newY = currentY + yOffset;
 
     // Verificar se saiu do mapa (Clamp)
     if (newX < 0) newX = 0;
-    if (newX >= mGrid->GetCols()) newX = mGrid->GetCols() - 1;
+    else if (newX >= mGrid->GetCols()) newX = mGrid->GetCols() - 1;
+
     if (newY < 0) newY = 0;
-    if (newY >= mGrid->GetRows()) newY = mGrid->GetRows() - 1;
+    else if (newY >= mGrid->GetRows()) newY = mGrid->GetRows() - 1;
 
-    mTileCursorPositionX = newX;
-    mTileCursorPositionY = newY;
-
-    mCursor->SetPosition(mGrid->GetWorldPosition(newX, newY));
-    mGrid->SetSelectedTile(newX, newY);
+    MoveInGrid(mCursor, newX, newY);
 }
 
 void Level::ProcessInput(SDL_Event &event)
@@ -135,7 +129,7 @@ void Level::ProcessInput(SDL_Event &event)
 
         case SDLK_SPACE:
         // case SDLK_RETURN:
-            SDL_Log("Selecionou Tile: %d, %d", mTileCursorPositionX, mTileCursorPositionY);
+            SDL_Log("Selecionou Tile: %d, %d", mCursor->GetGridX(), mCursor->GetGridY());
             HandleAction();
             break;
 
@@ -198,106 +192,110 @@ void Level::SpawnFloor(int rows, int cols)
 
 void Level::HandleAction()
 {
-    if (!mGrid) return;
-    if (!playerUnit) return;
+    if (!mGrid || !mPlayer) return;
 
-    // EXPLORAÇÃO
-    if (mBattleState == BattleState::Exploration)
-    {
-        if (playerUnit->GetGridX() == mTileCursorPositionX &&
-            playerUnit->GetGridY() == mTileCursorPositionY)
-        {
-            SetSelectedUnit(playerUnit);
-            SetBattleState(BattleState::MoveSelection);
-
-            // BFS azul
-            int range = playerUnit->GetMovementRange();
-            auto tiles = mGrid->GetWalkableTiles(mTileCursorPositionX, mTileCursorPositionY, range);
-
-            for (const auto& node : tiles) {
-                Tile* t = mGrid->GetTileAt(node.x, node.y);
-                if (t) t->SetTileType(TileType::Path);
+    switch (mBattleState) {
+        case BattleState::Exploration:
+            {
+                HandleExplorationPhase();
+                break;
             }
 
-            SDL_Log("Robo selecionado! Escolha o destino.");
-        }
-        else
-        {
-            SDL_Log("Essa unidade nao e sua.");
-        }
-    }
-
-    // MOVIMENTO
-    else if (mBattleState == BattleState::MoveSelection)
-    {
-        if (!mSelectedUnit) return;
-
-        Tile* targetVisual = mGrid->GetTileAt(mTileCursorPositionX, mTileCursorPositionY);
-        if (targetVisual && targetVisual->GetType() == TileType::Path)
-        {
-            // Verifica se não tem ninguém no destino (exceto eu mesmo)
-            Actor* obstacle = mGrid->GetUnitAt(mTileCursorPositionX, mTileCursorPositionY);
-            if (obstacle && obstacle != mSelectedUnit) {
-                SDL_Log("Tile ocupado!");
-                return;
+        case BattleState::MoveSelection:
+            {
+                HandleMovementPhase();
+                break;
             }
 
-            // Move
-            // TODO: algo melhor que isso
-            mLastTileActorPositionX = mGrid->GetTilePosition(playerUnit->GetPosition().x, playerUnit->GetPosition().y).x;
-            mLastTileActorPositionY = mGrid->GetTilePosition(playerUnit->GetPosition().x, playerUnit->GetPosition().y).y;
-            MoveInGrid(mSelectedUnit, mTileCursorPositionX, mTileCursorPositionY);
-            mGrid->ClearTileStates(); // Apaga o azul do mapa
-            SetBattleState(BattleState::SkillSelection);
+        case BattleState::SkillSelection:
+            {
+                HandleSkillSelectionPhase(GetSelectedSlot());
+                break;
+            }
 
-            // Padrao ultimo utilizado
-            SetSelectedSlot(GetSelectedSlot());
-
-            SDL_Log("Movimento concluido.");
-            SDL_Log("PRESSIONE '1' PARA BRACO DIREITO");
-            SDL_Log("PRESSIONE '2' PARA BRACO ESQUERDO");
-        }
-        else {
-            SDL_Log("Movimento invalido, muito distante.");
-        }
-    }
-
-    // Seleção de habilidade
-    else if (mBattleState == BattleState::SkillSelection) {
-        SelectSkill(GetSelectedSlot());
-    }
-
-    else if (mBattleState == BattleState::TargetSelection) {
-        Tile* targetTile = mGrid->GetTileAt(mTileCursorPositionX, mTileCursorPositionY);
-
-        if (targetTile && targetTile->GetType() == TileType::Attack) {
-            Robot* attacker = GetSelectedUnit();
-            PartSlot slotToUse = PartSlot::RightArm;
-
-            attacker->AttackLocation(mTileCursorPositionX, mTileCursorPositionY, slotToUse);
-
-            mGrid->ClearTileStates();
-            SetBattleState(BattleState::Exploration);
-            SetSelectedUnit(nullptr);
-
-            SDL_Log("Ataque realizado no tile (%d, %d). Fim do turno.", mTileCursorPositionX, mTileCursorPositionY);
-        }else {
-            SDL_Log("Alvo invalido! Selecione um quadrado dentro da range.");
-        }
+        case BattleState::TargetSelection:
+            {
+                HandleTargetingPhase();
+                break;
+            }
     }
 }
 
-void Level::SelectSkill(PartSlot slot)
+void Level::HandleExplorationPhase()
+{
+    if (mPlayer->GetGridX() == mCursor->GetGridX() &&
+                mPlayer->GetGridY() == mCursor->GetGridY())
+    {
+        SetBattleState(BattleState::MoveSelection);
+
+        // BFS azul
+        int range = mPlayer->GetMovementRange();
+        auto tiles = mGrid->GetWalkableTiles(mPlayer->GetGridX(), mPlayer->GetGridY(), range);
+
+        for (const auto& node : tiles) {
+            Tile* t = mGrid->GetTileAt(node.x, node.y);
+            if (t) t->SetTileType(TileType::Path);
+        }
+
+        SDL_Log("Robo selecionado! Escolha o destino.");
+    }
+    else
+    {
+        SDL_Log("Essa unidade nao e sua.");
+    }
+}
+
+void Level::HandleMovementPhase()
+{
+    Tile* targetVisual = mGrid->GetTileAt(mCursor->GetGridX(), mCursor->GetGridY());
+    if (targetVisual && targetVisual->GetType() == TileType::Path)
+    {
+        // Verifica se não tem ninguém no destino (exceto eu mesmo)
+        Actor* obstacle = mGrid->GetUnitAt(mCursor->GetGridX(), mCursor->GetGridY());
+        if (obstacle && obstacle != mPlayer) {
+            SDL_Log("Tile ocupado!");
+            return;
+        }
+
+        // Move
+        // Salva a posição para UNDO
+        mPlayer->SaveGridPosition();
+
+        // Move o player
+        MoveInGrid(mPlayer, mCursor->GetGridX(), mCursor->GetGridY());
+
+        // Limpa o azul do chão e troca o estado
+        mGrid->ClearTileStates();
+        SetBattleState(BattleState::SkillSelection);
+
+        // Setup padrão de parte selecionada
+        SetSelectedSlot(GetSelectedSlot());
+
+        SDL_Log("Movimento concluido.");
+        SDL_Log("PRESSIONE '1' PARA BRACO DIREITO");
+        SDL_Log("PRESSIONE '2' PARA BRACO ESQUERDO");
+    }
+    else {
+        SDL_Log("Movimento invalido, muito distante.");
+    }
+}
+
+
+void Level::HandleSkillSelectionPhase(PartSlot slot)
 {
     SetSelectedSlot(slot);
+    mGrid->ClearTileStates();
 
-    int range = playerUnit->GetPartRange(slot);
+    int range = mPlayer->GetPartRange(slot);
 
     // Range da skill em vermelho
-    auto tiles = mGrid->GetAttackableTiles(mTileCursorPositionX, mTileCursorPositionY, 1, range); // TODO: o min pode ser 0 para habildades de raparo
+    auto tiles = mGrid->GetAttackableTiles(
+        mPlayer->GetGridX(), // Origem X é o Robô
+        mPlayer->GetGridY(), // Origem Y é o Robô
+        1,
+        range
+    );
 
-    SDL_Log("%d", mTileCursorPositionX);
-    SDL_Log("%d", mTileCursorPositionY);
     for (const auto& node : tiles) {
         Tile* t = mGrid->GetTileAt(node.x, node.y);
         if (t) t->SetTileType(TileType::Attack);
@@ -307,63 +305,113 @@ void Level::SelectSkill(PartSlot slot)
     SDL_Log("Habilidade escolhida, selecione o alvo.");
 }
 
+void Level::HandleTargetingPhase()
+{
+    Tile* targetTile = mGrid->GetTileAt(mCursor->GetGridX(), mCursor->GetGridY());
+
+    if (targetTile && targetTile->GetType() == TileType::Attack) {
+        mPlayer->AttackLocation(mCursor->GetGridX(), mCursor->GetGridY(), GetSelectedSlot());
+
+        // Checagem de morte (TODO: mover para a fase de resolucao quando existir)
+        HandleUnitDeath(enemyUnit);
+        HandleUnitDeath(mPlayer);
+
+        // Limpa o vermelho e troca de estado
+        mGrid->ClearTileStates();
+        SetBattleState(BattleState::Exploration);
+
+        SDL_Log("Ataque realizado no tile (%d, %d). Fim do turno.", mCursor->GetGridX(), mCursor->GetGridY());
+    }else {
+        SDL_Log("Alvo invalido! Selecione um quadrado dentro da range.");
+    }
+}
+
+void Level::HandleUnitDeath(Robot*& robot)
+{
+    if (robot && robot->IsDead())
+    {
+        mGrid->SetUnitAt(nullptr, robot->GetGridX(), robot->GetGridY());
+        robot->SetState(ActorState::Destroy);
+        robot = nullptr;
+        SDL_Log("Level removeu o robo do jogo.");
+    }
+}
+
 void Level::HandleCancel()
 {
     // UNDO SELECTION
-    if (mBattleState == BattleState::MoveSelection)
-    {
-        mGrid->ClearTileStates();
-        SetSelectedUnit(nullptr);
-        SetBattleState(BattleState::Exploration);
-        SDL_Log("Selecao cancelada.");
-    }
-
-    // UNDO MOVEMENT
-    else if (mBattleState == BattleState::SkillSelection)
-    {
-        Robot* selected = GetSelectedUnit();
-        if (selected) {
-            int lastX = mLastTileActorPositionX;
-            int lastY = mLastTileActorPositionY;
-
-            mLastTileActorPositionX = mGrid->GetTilePosition(playerUnit->GetPosition().x, playerUnit->GetPosition().y).x;
-            mLastTileActorPositionY = mGrid->GetTilePosition(playerUnit->GetPosition().x, playerUnit->GetPosition().y).y;
-
-            MoveInGrid(mSelectedUnit, lastX, lastY);
-            MoveInGrid(mCursor, lastX, lastY);
-            mGrid->SetSelectedTile(lastX, lastY);
-
-            mTileCursorPositionX = lastX;
-            mTileCursorPositionY = lastY;
+    switch (mBattleState) {
+        case BattleState::MoveSelection:
+        {
+            mGrid->ClearTileStates();
+            MoveInGrid(mCursor, mPlayer->GetGridX(), mPlayer->GetGridY());
+            SetBattleState(BattleState::Exploration);
+            SDL_Log("Selecao cancelada.");
+            break;
         }
 
-        mSelectedUnit = selected;
-        // SetSelectedUnit(nullptr);
-        SetBattleState(BattleState::Exploration);
+        case BattleState::SkillSelection:
+        {
+            // Recupera o Player
+            int restoreX = mPlayer->GetSavedX();
+            int restoreY = mPlayer->GetSavedY();
 
-        SDL_Log("Acao cancelada (Robo voltou).");
-    }
-    // UNDO SKILL
-    else if (mBattleState == BattleState::TargetSelection)
-    {
-        mGrid->ClearTileStates();
+            // Move o Player de volta
+            MoveInGrid(mPlayer, restoreX, restoreY);
 
-        // mover o cursos para a posiçao atual do jogador
-        Vector3 pos = mGrid->GetTilePosition(playerUnit->GetPosition().x, playerUnit->GetPosition().y);
-        MoveInGrid(mCursor, pos.x, pos.y);
-        mGrid->SetSelectedTile(pos.x, pos.y);
+            // Sincroniza o cursor
+            MoveInGrid(mCursor, restoreX, restoreY);
+            mGrid->SetSelectedTile(restoreX, restoreY);
 
-        SetBattleState(BattleState::SkillSelection);
-        SDL_Log("Mira cancelada. Escolha outra habilidade (1 ou 2).");
+            SetBattleState(BattleState::Exploration);
+
+            SDL_Log("Movimento desfeito (Robo voltou para %d, %d).", mPlayer->GetSavedX(), mPlayer->GetSavedY());
+            break;
+        }
+
+        case BattleState::TargetSelection:
+        {
+            mGrid->ClearTileStates();
+            mGrid->ClearTileStates();
+
+            int px = mPlayer->GetGridX();
+            int py = mPlayer->GetGridY();
+
+            MoveInGrid(mCursor, px, py);
+            mGrid->SetSelectedTile(px, py);
+
+            SetBattleState(BattleState::SkillSelection);
+            SDL_Log("Mira cancelada. Escolha outra habilidade (1 ou 2).");
+            break;
+        }
     }
 }
 
-// TODO: BUG: quando dou esc duas vezez provavalmente a antiga posição se perdeu
 
-// TODO: faltando lidar com obstaculos (chegar se nao tem um actor ou algum obstaculo)
 void Level::MoveInGrid(Actor *actor, int x, int y)
 {
-    actor->SetPosition(mGrid->GetWorldPosition(x, y) + OFFSET_Z);
-    mGrid->SetUnitAt(actor, x, y);
+    if (!actor) return;
+
+    // Atualiza o Visual (mundo 3D)
+    Vector3 worldPos = mGrid->GetWorldPosition(x, y);
+
+    // Ajuste do offset de altura
+    worldPos.z = OFFSET_Z;
+    actor->SetPosition(worldPos);
+
+    // Atualiza o Grid Lógico
+    Robot* robot = dynamic_cast<Robot*>(actor);
+    if (robot)
+    {
+        mGrid->SetUnitAt(robot, x, y);  // atualizar a informacao do robo no vector da grid
+        robot->UpdateGridCoords(x, y);
+    }
+    else if (actor == mCursor)
+    {
+        mCursor->UpdateGridCoords(x, y);
+        mGrid->SetSelectedTile(mCursor->GetGridX(), mCursor->GetGridY());   // visual
+    }
 }
+
+
 

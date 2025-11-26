@@ -199,10 +199,12 @@ Actor* GridMap::GetUnitAt(int x, int y)
 
 void GridMap::SetUnitAt(Actor* actor, int x, int y)
 {
-    for (auto &unit : mUnitsGrid) {
-        if (unit == actor) {
-            unit = nullptr;
-            break;
+    if (actor != nullptr) {
+        for (auto &unit : mUnitsGrid) {
+            if (unit == actor) {
+                unit = nullptr;
+                break;
+            }
         }
     }
 

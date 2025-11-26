@@ -69,23 +69,29 @@ class Robot : public Actor{
         void SetName(std::string name)  { mName = name; }
         std::string GetName() const { return mName; }
 
+        // Position
         int GetGridX() const { return mGridX; }
         int GetGridY() const { return mGridY; }
 
-        int GetCurrentTotalHP() const;
-        int GetMaxTotalHP() const;
+        void SaveGridPosition() {
+                mSavedX = GetGridX();
+                mSavedY = GetGridY();
+            }
+
+        int GetSavedX() const { return mSavedX; }
+        int GetSavedY() const { return mSavedY; }
+
+        // int GetCurrentTotalHP() const;
+        // int GetMaxTotalHP() const;
 
         int GetMovementRange() const { return mMoveRange; }
         void SetMovementRange(int range) { mMoveRange = range; }
 
-        void SetGridPosition(int x, int y);
+        void UpdateGridCoords(int x, int y);
 
         Team GetTeam() const {return mTeam; }
-        int GetPartRange(PartSlot chosenSlot) {return mParts[chosenSlot].range; }
+        int GetPartRange(PartSlot chosenSlot) const {return mParts[chosenSlot].range; }
 
-        // Move
-        void MoveTo(int newX, int newY);
-        void UndoMove();
 
         // Attack
         void TakeDamage(int damage, PartSlot slotHit);
@@ -93,19 +99,21 @@ class Robot : public Actor{
         void AttackLocation(int targetX, int targetY, PartSlot slotUsed);
 
         // Death
-        void CheckDeath();
-        void Kill();
+        bool IsDead() const { return mIsDead; }
 
 
     private:
         std::string mName;
         int mGridX, mGridY;
-        int mPrevGridX, mPrevGridY;
-
+        int mSavedX, mSavedY;
         int mMoveRange;
+
+        bool mIsDead;
+        void CheckDeath();
 
         Team mTeam;
         RobotPart mParts[(int)PartSlot::Count];
         class MeshComponent* mPartMeshes[(int)PartSlot::Count] = { nullptr };
+
 };
 
