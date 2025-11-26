@@ -4,7 +4,6 @@
 
 #include "Block.h"
 #include "../Game.h"
-#include "../Actors/Ship.h"
 
 Block::Block(class Game* game)
         :Actor(game)

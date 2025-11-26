@@ -12,6 +12,7 @@ MeshComponent::MeshComponent(Actor* owner)
         , mMesh(nullptr)
         , mTextureIndex(0)
         , mIsVisible(true)
+        , mTextureOverride(nullptr)
 {
     mOwner->GetGame()->GetRenderer()->AddMeshComp(this);
 }
@@ -29,7 +30,11 @@ void MeshComponent::Draw(Shader* shader)
         shader->SetMatrixUniform("uWorldTransform", mOwner->GetWorldTransform());
 
         // Set the active texture
-        Texture* t = mMesh->GetTexture(mTextureIndex);
+        Texture* t = mTextureOverride;
+        if (!t) {
+            t = mMesh->GetTexture(mTextureIndex);
+        }
+
         if (t) {
             t->SetActive();
         }

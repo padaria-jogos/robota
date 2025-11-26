@@ -7,12 +7,13 @@
 // ----------------------------------------------------------------
 
 #pragma once
+
 #include <SDL.h>
-#include <SDL_image.h>
-#include <SDL_mixer.h>
 #include <vector>
 #include "Renderer/Renderer.h"
 #include "AudioSystem.h"
+
+#include "Levels/Level.h"
 
 enum class GameScene
 {
@@ -50,9 +51,11 @@ public:
     class Renderer* GetRenderer() { return mRenderer; }
     class HUD* GetHUD() { return mHUD; }
     class Camera* GetCamera() { return mCamera; }
+    class Level* GetLevel() { return mLevel; }
 
     // Setters
     void SetCamera(class Camera* camera) { mCamera = camera; }
+    void SetLevel(class Level* level) { mLevel = level; }
 
     // Constants
     static const int WINDOW_WIDTH   = 1024;
@@ -95,4 +98,11 @@ private:
     // Game-specific
     class Camera *mCamera;
     class HUD *mHUD;
+
+    Level* mLevel;
+
+    // List of obstacle patterns
+    // std::vector<class BlockObstacle*> mObstacles;
+
+
 };

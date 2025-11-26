@@ -6,6 +6,7 @@
 //  Copyright © 2017 Sanjay Madhav. All rights reserved.
 //
 
+#define SDL_MAIN_HANDLED
 #include "Game.h"
 
 int main(int argc, char** argv)

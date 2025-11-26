@@ -2,29 +2,22 @@
 // Created by mateus on 20/11/2025.
 //
 
-#ifndef ROBOTA_LEVEL1_H
-#define ROBOTA_LEVEL1_H
+/*
+ * Level1
+ * Define as especificidades de cada level básico definido
+ * por Level
+ */
 
-#include "../Game.h"
-#include "../UI/Screens/HUD.h"
-#include "../Actors/Ship.h"
-#include "../Camera.h"
-#include "../Actors/Block.h"
+#pragma once
 
-class Level1
+#include "Level.h"
+
+class Level1 : public Level
 {
 public:
-    Level1(class Game* game, HUD *hud);
+    Level1(Game* game, HUD *hud);
+    // ~Level1();
 
-    Ship* mShip;
-    Camera* mCamera;
-
-    void Update(float deltaTime);
-
-private:
-    Game* mGame;
-    void SpawnFloor();
+    void OnUpdate(float deltaTime) override;
+    void ProcessInput(SDL_Event &event);
 };
-
-
-#endif //ROBOTA_LEVEL1_H

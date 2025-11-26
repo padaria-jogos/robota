@@ -5,7 +5,6 @@
 #pragma once
 
 #include <string>
-
 #include "UIScreen.h"
 
 class HUD : public UIScreen

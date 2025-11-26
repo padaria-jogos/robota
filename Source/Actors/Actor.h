@@ -74,7 +74,7 @@ public:
     }
 
 protected:
-    class Game* mGame;
+    Game* mGame;
 
     // Any actor-specific update code (overridable)
     virtual void OnUpdate(float deltaTime);

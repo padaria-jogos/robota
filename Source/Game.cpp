@@ -10,12 +10,13 @@
 #include <vector>
 #include <fstream>
 #include "Game.h"
+
+#include <SDL_mixer.h>
+
 #include "Random.h"
 #include "Actors/Actor.h"
-#include "Actors/Ship.h"
-#include "Actors/Block.h"
 #include "Camera.h"
-#include "UI/Screens/HUD.h"
+
 #include "UI/Screens/MainMenu.h"
 #include "Levels/Level1.h"
 
@@ -29,6 +30,7 @@ Game::Game()
         ,mCamera(nullptr)
         ,mAudio(nullptr)
         ,mHUD(nullptr)
+        ,mLevel(nullptr)
 {
 
 }
@@ -65,14 +67,6 @@ bool Game::Initialize()
         SDL_Log("Failed to initialize SDL_mixer: %s", Mix_GetError());
         return false;
     }
-
-    // audio debug
-    // int n = SDL_GetNumAudioDrivers();
-    // SDL_Log("Audio drivers available:");
-    // for (int i = 0; i < n; i++) {
-    //     SDL_Log("  %s", SDL_GetAudioDriver(i));
-    // }
-    // SDL_Log("Current audio driver: %s", SDL_GetCurrentAudioDriver());
 
     // window configuration
     mWindow = SDL_CreateWindow("ROBOTA", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL);
@@ -123,7 +117,8 @@ void Game::SetScene(GameScene nextScene)
 
         case GameScene::Level1:
         {
-            new Level1(this, mHUD);
+            delete mLevel;
+            mLevel = new Level1(this, mHUD); // se der problema definir destrutor level sem virtual e remover o do level1
         }
     }
 }
@@ -170,6 +165,12 @@ void Game::ProcessInput()
                     mUIStack.back()->HandleKeyPress(event.key.keysym.sym);
                 }
 
+                // Handle key press for level
+                if (mLevel)
+                {
+                    mLevel->ProcessInput(event);
+                }
+
                 break;
         }
     }
@@ -187,10 +188,6 @@ void Game::UpdateGame(float deltaTime)
     // Update all actors and pending actors
     UpdateActors(deltaTime);
 
-    // update camera
-    if (mCamera)
-        mCamera->Update(deltaTime);
-
     // Update UI screens
     for (auto ui : mUIStack) {
         if (ui->GetState() == UIScreen::UIState::Active) {
@@ -206,6 +203,12 @@ void Game::UpdateGame(float deltaTime)
         } else {
             ++iter;
         }
+    }
+
+    // Update level
+    if (mLevel)
+    {
+        mLevel->OnUpdate(deltaTime);
     }
 }
 
