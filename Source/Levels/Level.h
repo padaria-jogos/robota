@@ -16,6 +16,18 @@
 #include "Map/GridMap.h"
 #include "UI/Screens/HUD.h"
 
+struct TurnAction {
+    // Move
+    int moveX, moveY;
+
+    // Skill
+    bool intendsToAttack;
+    PartSlot skillSlot;
+    int targetX, targetY;
+
+    TurnAction() : moveX(-1), moveY(-1), intendsToAttack(false), targetX(-1), targetY(-1) {}
+};
+
 enum class BattleState {
     Null,           // Estado inválido
     Exploration,    // Navegando livremente
@@ -57,12 +69,19 @@ class Level
         PartSlot mSelectedSlot;
 
         Robot *mPlayer;
-        Robot *enemyUnit;
+        Robot *mEnemy;
 
         void SpawnFloor(int rows, int cols);
         void MoveCursor(int tile_x, int tile_y);
 
     private:
+        // Pre Action
+        Robot* mGhostPlayer;
+
+        // Action
+        TurnAction mPlayerTurn;
+        TurnAction mEnemyAction;    // IA define isso dps
+
         // Lógica do gameplay
         void HandleAction();
         void HandleCancel();
@@ -73,6 +92,9 @@ class Level
         void HandleSkillSelectionPhase(PartSlot slot);
         void HandleTargetingPhase();
         void HandleUnitDeath(Robot*& robot);
+
+        void SpawnGhost();
+        void RemoveGhost();
 
         static const int ROWS = 4;
         static const int COLS = 4;

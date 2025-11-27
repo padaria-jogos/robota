@@ -11,10 +11,11 @@ Robot::Robot(class Game *game, Team team) : Actor(game)
     , mName("Robo")
     , mTeam(team)
     , mMoveRange(2)
+    , mBaseMesh(nullptr)
 {
-    MeshComponent* mc = new MeshComponent(this);
+    mBaseMesh = new MeshComponent(this);
     Mesh* mesh = mGame->GetRenderer()->GetMesh("../Assets/Roboto.gpmesh");
-    mc->SetMesh(mesh);
+    mBaseMesh->SetMesh(mesh);
 
     for (int i = 0; i < (int)PartSlot::Count; i++)
     {
@@ -27,7 +28,7 @@ Robot::Robot(class Game *game, Team team) : Actor(game)
     if (mTeam == Team::Enemy)
     {
         Texture* selectTex = mGame->GetRenderer()->GetTexture("../Assets/RobotoEvil.png");
-        mc->SetTextureOverride(selectTex);
+        mBaseMesh->SetTextureOverride(selectTex);
     }
 }
 
@@ -130,6 +131,54 @@ void Robot::CheckDeath()
     {
         SDL_Log("%s MORREU! (Todas as partes quebradas)", mName.c_str());
         mIsDead = true;
+    }
+}
+
+void Robot::CopyDataFrom(const Robot *other) {
+    for (int i = 0; i < (int)PartSlot::Count; i++)
+    {
+        PartSlot slot = (PartSlot)i;
+
+        // Pega a peça do original
+        const RobotPart& originalPart = other->GetPart(slot);
+
+        // Equipa neste robô (Isso já carrega a Mesh correta!)
+        this->EquipPart(slot, originalPart);
+    }
+}
+
+void Robot::SetGhostMode(bool enable)
+{
+    // Percorre todos os MeshComponents e troca a textura
+    Texture* ghostTex = nullptr;
+
+    if (enable) {
+        ghostTex = GetGame()->GetRenderer()->GetTexture("../Assets/Hologram.png");
+    }
+
+    for (int i = 0; i < (int)PartSlot::Count; i++) {
+        if (mPartMeshes[i]) {
+            mPartMeshes[i]->SetTextureOverride(ghostTex);
+        }
+    }
+
+    // Se tiver a mesh base (o corpo do cubo), muda tbm
+    GetComponent<MeshComponent>()->SetTextureOverride(ghostTex);
+}
+
+void Robot::SetVisible(bool visible)
+{
+    // Esconde o corpo principal
+    if (mBaseMesh) {
+        mBaseMesh->SetVisible(visible);
+    }
+
+    // Esconde todas as partes equipadas
+    for (int i = 0; i < (int)PartSlot::Count; i++)
+    {
+        if (mPartMeshes[i]) {
+            mPartMeshes[i]->SetVisible(visible);
+        }
     }
 }
 

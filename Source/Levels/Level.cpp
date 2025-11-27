@@ -16,7 +16,8 @@ Level::Level(class Game *game, HUD *hud) :
     mBattleState(BattleState::Null),
     mSelectedSlot(PartSlot::Null),
     mPlayer(nullptr),
-    enemyUnit(nullptr)
+    mGhostPlayer(nullptr),
+    mEnemy(nullptr)
 {
     mBattleState = BattleState::Exploration;
 
@@ -62,16 +63,16 @@ Level::Level(class Game *game, HUD *hud) :
     MoveInGrid(mCursor, 1, 1);
 
     // ENEMY
-    enemyUnit = new Robot(game, Team::Enemy);
-    enemyUnit->SetName("EvilBee");
+    mEnemy = new Robot(game, Team::Enemy);
+    mEnemy->SetName("EvilBee");
 
-    enemyUnit->EquipPart(PartSlot::Torso,
+    mEnemy->EquipPart(PartSlot::Torso,
                          RobotPart("Heavy Armor", "../Assets/Cube.gpmesh",
                                    100, SkillType::None, 0, 0));
 
-    enemyUnit->UpdateGridCoords(2, 2);
-    mGrid->SetUnitAt(enemyUnit, 2, 2);
-    MoveInGrid(enemyUnit, 2, 2);
+    mEnemy->UpdateGridCoords(2, 2);
+    mGrid->SetUnitAt(mEnemy, 2, 2);
+    MoveInGrid(mEnemy, 2, 2);
 }
 
 Level::~Level()
@@ -227,6 +228,8 @@ void Level::HandleExplorationPhase()
                 mPlayer->GetGridY() == mCursor->GetGridY())
     {
         SetBattleState(BattleState::MoveSelection);
+        // Ghost
+        SpawnGhost();
 
         // BFS azul
         int range = mPlayer->GetMovementRange();
@@ -247,6 +250,8 @@ void Level::HandleExplorationPhase()
 
 void Level::HandleMovementPhase()
 {
+    int cx = mCursor->GetGridX();
+    int cy = mCursor->GetGridY();
     Tile* targetVisual = mGrid->GetTileAt(mCursor->GetGridX(), mCursor->GetGridY());
     if (targetVisual && targetVisual->GetType() == TileType::Path)
     {
@@ -257,12 +262,10 @@ void Level::HandleMovementPhase()
             return;
         }
 
-        // Move
-        // Salva a posição para UNDO
-        mPlayer->SaveGridPosition();
-
-        // Move o player
-        MoveInGrid(mPlayer, mCursor->GetGridX(), mCursor->GetGridY());
+        // Move o ghost
+        MoveInGrid(mGhostPlayer, cx, cy);
+        mPlayerTurn.moveX = cx;
+        mPlayerTurn.moveY = cy;
 
         // Limpa o azul do chão e troca o estado
         mGrid->ClearTileStates();
@@ -290,8 +293,8 @@ void Level::HandleSkillSelectionPhase(PartSlot slot)
 
     // Range da skill em vermelho
     auto tiles = mGrid->GetAttackableTiles(
-        mPlayer->GetGridX(), // Origem X é o Robô
-        mPlayer->GetGridY(), // Origem Y é o Robô
+        mGhostPlayer->GetGridX(),
+        mGhostPlayer->GetGridY(), // Origem Y é o Robô
         1,
         range
     );
@@ -310,17 +313,20 @@ void Level::HandleTargetingPhase()
     Tile* targetTile = mGrid->GetTileAt(mCursor->GetGridX(), mCursor->GetGridY());
 
     if (targetTile && targetTile->GetType() == TileType::Attack) {
-        mPlayer->AttackLocation(mCursor->GetGridX(), mCursor->GetGridY(), GetSelectedSlot());
 
-        // Checagem de morte (TODO: mover para a fase de resolucao quando existir)
-        HandleUnitDeath(enemyUnit);
-        HandleUnitDeath(mPlayer);
+        mPlayerTurn.intendsToAttack = true;
+        mPlayerTurn.skillSlot = GetSelectedSlot();
+        mPlayerTurn.targetX = mCursor->GetGridX();
+        mPlayerTurn.targetY = mCursor->GetGridY();
+
 
         // Limpa o vermelho e troca de estado
         mGrid->ClearTileStates();
+        RemoveGhost();
         SetBattleState(BattleState::Exploration);
 
-        SDL_Log("Ataque realizado no tile (%d, %d). Fim do turno.", mCursor->GetGridX(), mCursor->GetGridY());
+        SDL_Log("Turno Planejado! Iniciando Resolucao...");
+        // RunResolutionPhase();
     }else {
         SDL_Log("Alvo invalido! Selecione um quadrado dentro da range.");
     }
@@ -344,7 +350,7 @@ void Level::HandleCancel()
         case BattleState::MoveSelection:
         {
             mGrid->ClearTileStates();
-            MoveInGrid(mCursor, mPlayer->GetGridX(), mPlayer->GetGridY());
+            RemoveGhost();
             SetBattleState(BattleState::Exploration);
             SDL_Log("Selecao cancelada.");
             break;
@@ -352,33 +358,39 @@ void Level::HandleCancel()
 
         case BattleState::SkillSelection:
         {
-            // Recupera o Player
-            int restoreX = mPlayer->GetSavedX();
-            int restoreY = mPlayer->GetSavedY();
+            int px = mPlayer->GetGridX();
+            int py = mPlayer->GetGridY();
 
-            // Move o Player de volta
-            MoveInGrid(mPlayer, restoreX, restoreY);
+            // Move o Ghost de volta
+            MoveInGrid(mGhostPlayer, px, py);
 
             // Sincroniza o cursor
-            MoveInGrid(mCursor, restoreX, restoreY);
-            mGrid->SetSelectedTile(restoreX, restoreY);
+            MoveInGrid(mCursor, px, py);
+            mGrid->SetSelectedTile(px, py);
 
-            SetBattleState(BattleState::Exploration);
+            // Volta estado e repinta o azul
+            SetBattleState(BattleState::MoveSelection);
 
-            SDL_Log("Movimento desfeito (Robo voltou para %d, %d).", mPlayer->GetSavedX(), mPlayer->GetSavedY());
+            int range = mPlayer->GetMovementRange();
+            auto tiles = mGrid->GetWalkableTiles(px, py, range);
+            for (const auto& node : tiles) {
+                Tile* t = mGrid->GetTileAt(node.x, node.y);
+                if (t) t->SetTileType(TileType::Path);
+            }
+
+            SDL_Log("Movimento do fantasma desfeito.");
             break;
         }
 
         case BattleState::TargetSelection:
         {
             mGrid->ClearTileStates();
-            mGrid->ClearTileStates();
 
-            int px = mPlayer->GetGridX();
-            int py = mPlayer->GetGridY();
+            int gx = mGhostPlayer->GetGridX();
+            int gy = mGhostPlayer->GetGridY();
 
-            MoveInGrid(mCursor, px, py);
-            mGrid->SetSelectedTile(px, py);
+            MoveInGrid(mCursor, gx, gy);
+            mGrid->SetSelectedTile(gx, gy);
 
             SetBattleState(BattleState::SkillSelection);
             SDL_Log("Mira cancelada. Escolha outra habilidade (1 ou 2).");
@@ -394,8 +406,6 @@ void Level::MoveInGrid(Actor *actor, int x, int y)
 
     // Atualiza o Visual (mundo 3D)
     Vector3 worldPos = mGrid->GetWorldPosition(x, y);
-
-    // Ajuste do offset de altura
     worldPos.z = OFFSET_Z;
     actor->SetPosition(worldPos);
 
@@ -403,7 +413,8 @@ void Level::MoveInGrid(Actor *actor, int x, int y)
     Robot* robot = dynamic_cast<Robot*>(actor);
     if (robot)
     {
-        mGrid->SetUnitAt(robot, x, y);  // atualizar a informacao do robo no vector da grid
+        if (actor != mGhostPlayer)
+            mGrid->SetUnitAt(robot, x, y);  // atualizar a informacao do robo no vector da grid
         robot->UpdateGridCoords(x, y);
     }
     else if (actor == mCursor)
@@ -412,6 +423,32 @@ void Level::MoveInGrid(Actor *actor, int x, int y)
         mGrid->SetSelectedTile(mCursor->GetGridX(), mCursor->GetGridY());   // visual
     }
 }
+
+void Level::SpawnGhost() {
+    if (!mGhostPlayer) {
+        mGhostPlayer = new Robot(mGame, mPlayer->GetTeam());
+        mGhostPlayer->SetName("Ghost");
+        mGhostPlayer->SetGhostMode(true);
+    }
+
+    mGhostPlayer->SetVisible(true);
+    mGhostPlayer->CopyDataFrom(mPlayer);
+    mGhostPlayer->SetState(ActorState::Active);
+
+    int px = mPlayer->GetGridX();
+    int py = mPlayer->GetGridY();
+    MoveInGrid(mGhostPlayer, px, py);
+}
+
+void Level::RemoveGhost() {
+    if (mGhostPlayer) {
+        mGhostPlayer->SetState(ActorState::Paused);
+        mGhostPlayer->SetVisible(false);
+        mGhostPlayer->SetPosition(Vector3(0.0f, 0.0f, -10000.0f));
+    }
+}
+
+
 
 
 

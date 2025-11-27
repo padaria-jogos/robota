@@ -64,22 +64,18 @@ class Robot : public Actor{
     public:
         Robot(class Game* game, Team team);
 
+        //Equip
         void EquipPart(PartSlot slot, const RobotPart& part);
 
         void SetName(std::string name)  { mName = name; }
         std::string GetName() const { return mName; }
 
+        //Copy
+        void CopyDataFrom(const Robot* other);
+
         // Position
         int GetGridX() const { return mGridX; }
         int GetGridY() const { return mGridY; }
-
-        void SaveGridPosition() {
-                mSavedX = GetGridX();
-                mSavedY = GetGridY();
-            }
-
-        int GetSavedX() const { return mSavedX; }
-        int GetSavedY() const { return mSavedY; }
 
         // int GetCurrentTotalHP() const;
         // int GetMaxTotalHP() const;
@@ -87,10 +83,14 @@ class Robot : public Actor{
         int GetMovementRange() const { return mMoveRange; }
         void SetMovementRange(int range) { mMoveRange = range; }
 
+        void SetVisible(bool visible);
+
         void UpdateGridCoords(int x, int y);
 
         Team GetTeam() const {return mTeam; }
+        const RobotPart& GetPart(PartSlot slot) const { return mParts[(int)slot]; }
         int GetPartRange(PartSlot chosenSlot) const {return mParts[chosenSlot].range; }
+        void SetGhostMode(bool enable);
 
 
         // Attack
@@ -105,14 +105,15 @@ class Robot : public Actor{
     private:
         std::string mName;
         int mGridX, mGridY;
-        int mSavedX, mSavedY;
         int mMoveRange;
+
 
         bool mIsDead;
         void CheckDeath();
 
         Team mTeam;
         RobotPart mParts[(int)PartSlot::Count];
+        class MeshComponent* mBaseMesh;
         class MeshComponent* mPartMeshes[(int)PartSlot::Count] = { nullptr };
 
 };
