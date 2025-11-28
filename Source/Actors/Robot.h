@@ -58,6 +58,7 @@ struct RobotPart {
 
     RobotPart(std::string name, std::string path, int hp, SkillType sk, int dmg, int rng)
         : name(name), meshPath(path), maxHP(hp), currentHP(hp), isBroken(false), skill(sk), damage(dmg), range(rng) {}
+
 };
 
 class Robot : public Actor{
@@ -69,6 +70,7 @@ class Robot : public Actor{
 
         void SetName(std::string name)  { mName = name; }
         std::string GetName() const { return mName; }
+        std::string GetSlotName(PartSlot slot);
 
         //Copy
         void CopyDataFrom(const Robot* other);

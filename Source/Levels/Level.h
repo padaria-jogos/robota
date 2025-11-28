@@ -11,6 +11,7 @@
 #pragma once
 
 #include "Camera.h"
+#include "Game.h"
 #include "Actors/Robot.h"
 #include "Actors/GridCursor.h"
 #include "Map/GridMap.h"
@@ -21,11 +22,11 @@ struct TurnAction {
     int moveX, moveY;
 
     // Skill
-    bool intendsToAttack;
+    bool hasAction;
     PartSlot skillSlot;
     int targetX, targetY;
 
-    TurnAction() : moveX(-1), moveY(-1), intendsToAttack(false), targetX(-1), targetY(-1) {}
+    TurnAction() : moveX(-1), moveY(-1), hasAction(false), targetX(-1), targetY(-1) {}
 };
 
 enum class BattleState {
@@ -43,7 +44,7 @@ class Level
         virtual ~Level();
 
         void ProcessInput(SDL_Event &event);
-        virtual void OnUpdate(float deltaTime) {};
+        virtual void OnUpdate(float deltaTime);
 
         void MoveInGrid(Actor *actor, int x, int y);
 
@@ -75,16 +76,22 @@ class Level
         void MoveCursor(int tile_x, int tile_y);
 
     private:
+        static const int ROWS = 4;
+        static const int COLS = 4;
+        const float SIZE = 500.0f;
+        const float OFFSET_Z = -100;
+
         // Pre Action
         Robot* mGhostPlayer;
 
         // Action
         TurnAction mPlayerTurn;
-        TurnAction mEnemyAction;    // IA define isso dps
+        TurnAction mEnemyTurn;    // IA define isso dps
 
         // Lógica do gameplay
         void HandleAction();
         void HandleCancel();
+        void HandleWait();
 
         // Handle Phase
         void HandleExplorationPhase();
@@ -96,8 +103,7 @@ class Level
         void SpawnGhost();
         void RemoveGhost();
 
-        static const int ROWS = 4;
-        static const int COLS = 4;
-        const float SIZE = 500.0f;
-        const float OFFSET_Z = -100;
+        // IA simples para testar o fluxo do jogo
+        void CalculateEnemyAction();
+        void ResolveTurn();
 };

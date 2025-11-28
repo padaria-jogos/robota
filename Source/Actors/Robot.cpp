@@ -6,12 +6,13 @@
 // #include "Game.h"
 
 #include "Game.h"
+#include "Random.h"
 
 Robot::Robot(class Game *game, Team team) : Actor(game)
-    , mName("Robo")
-    , mTeam(team)
-    , mMoveRange(2)
-    , mBaseMesh(nullptr)
+                                            , mName("Robo")
+                                            , mTeam(team)
+                                            , mMoveRange(2)
+                                            , mBaseMesh(nullptr)
 {
     mBaseMesh = new MeshComponent(this);
     Mesh* mesh = mGame->GetRenderer()->GetMesh("../Assets/Roboto.gpmesh");
@@ -87,12 +88,29 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
 
     if (victim)
     {
-        SDL_Log("ACERTOU %s!", victim->GetName().c_str());
+        std::vector<PartSlot> validParts;
+        for (int i = 0; i < (int)PartSlot::Count; i++)
+        {
+            // Acessamos partes que ainda nao quebraram
+            if (!victim->mParts[i].isBroken) {
+                validParts.push_back((PartSlot)i);
+            }
+        }
 
-        // Sempre acerta o Torso se não mirar especificamente
-        victim->TakeDamage(damageDealt, PartSlot::Torso);
-    }
-    else
+        if (!validParts.empty())
+        {
+            // Sorteia uma parte válida não quebrada
+            int randomIndex = Random::GetIntRange(0, validParts.size() - 1);
+            PartSlot targetSlot = validParts[randomIndex];
+            SDL_Log("%s ACERTOU %s no %s!", GetName().c_str(), victim->GetName().c_str(), GetSlotName(targetSlot).c_str());
+            victim->TakeDamage(damageDealt, targetSlot);
+        }else
+        {
+            // Se chegou aqui, o robô já deveria estar morto
+            SDL_Log("Já deveria estare morto");
+            victim->TakeDamage(damageDealt, PartSlot::Torso);
+        }
+    }else
     {
         SDL_Log("Miss");
     }
@@ -179,6 +197,17 @@ void Robot::SetVisible(bool visible)
         if (mPartMeshes[i]) {
             mPartMeshes[i]->SetVisible(visible);
         }
+    }
+}
+
+std::string Robot::GetSlotName(PartSlot slot) {
+    switch(slot) {
+        case PartSlot::Head: return "Head";
+        case PartSlot::Torso: return "Torso";
+        case PartSlot::RightArm: return "RightArm";
+        case PartSlot::LeftArm: return "LeftArm";
+        case PartSlot::Legs: return "Legs";
+        default: return "Desconhecido";
     }
 }
 
