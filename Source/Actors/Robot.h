@@ -111,12 +111,15 @@ class Robot : public Actor{
 
 
         bool mIsDead;
-        void CheckDeath();
 
         Team mTeam;
         RobotPart mParts[(int)PartSlot::Count];
-        class MeshComponent* mBaseMesh;
+
         class MeshComponent* mPartMeshes[(int)PartSlot::Count] = { nullptr };
+        MeshComponent* mRightLegAuxMesh = nullptr;
+
+        void CheckDeath();
+        Vector3 GetPartMountPosition(PartSlot slot);
 
 };
 

@@ -13,6 +13,7 @@ MeshComponent::MeshComponent(Actor* owner)
         , mTextureIndex(0)
         , mIsVisible(true)
         , mTextureOverride(nullptr)
+        , mOffset(Vector3::Zero)
 {
     mOwner->GetGame()->GetRenderer()->AddMeshComp(this);
 }
@@ -26,8 +27,12 @@ void MeshComponent::Draw(Shader* shader)
 {
     if (mMesh && mIsVisible)
     {
+        Matrix4 world = mOwner->GetWorldTransform();
+        Matrix4 offsetMat = Matrix4::CreateTranslation(mOffset);
+        Matrix4 finalWorld = offsetMat * world;
+
         // Set the world transform
-        shader->SetMatrixUniform("uWorldTransform", mOwner->GetWorldTransform());
+        shader->SetMatrixUniform("uWorldTransform", finalWorld);
 
         // Set the active texture
         Texture* t = mTextureOverride;

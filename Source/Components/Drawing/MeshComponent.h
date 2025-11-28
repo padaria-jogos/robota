@@ -24,10 +24,12 @@ public:
     virtual void SetMesh(class Mesh* mesh) { mMesh = mesh; }
     void SetTextureOverride(class Texture* texture) { mTextureOverride = texture; }
     void SetTextureIndex(size_t index) { mTextureIndex = index; }
+    void SetPositionOffset(const Vector3& offset) { mOffset = offset; }
 
 protected:
     class Mesh* mMesh;
     size_t mTextureIndex;
     bool mIsVisible;
     class Texture* mTextureOverride;
+    Vector3 mOffset;
 };

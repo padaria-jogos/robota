@@ -12,25 +12,23 @@ Robot::Robot(class Game *game, Team team) : Actor(game)
                                             , mName("Robo")
                                             , mTeam(team)
                                             , mMoveRange(2)
-                                            , mBaseMesh(nullptr)
 {
-    mBaseMesh = new MeshComponent(this);
-    Mesh* mesh = mGame->GetRenderer()->GetMesh("../Assets/Roboto.gpmesh");
-    mBaseMesh->SetMesh(mesh);
 
     for (int i = 0; i < (int)PartSlot::Count; i++)
     {
         mPartMeshes[i] = new MeshComponent(this);
-    }
 
-    SetScale(Vector3(200.0f, 200.0f, 200.0f));
-    SetRotation(Vector3(0.0f, 0.0f, Math::ToRadians(180.0f)));
-
-    if (mTeam == Team::Enemy)
-    {
-        Texture* selectTex = mGame->GetRenderer()->GetTexture("../Assets/RobotoEvil.png");
-        mBaseMesh->SetTextureOverride(selectTex);
+        // Define onde essa peça vai ficar quando for equipada
+        Vector3 offset = GetPartMountPosition((PartSlot)i);
+        mPartMeshes[i]->SetPositionOffset(offset);
     }
+    mRightLegAuxMesh = new MeshComponent(this);
+    Vector3 rightLegOffset = Vector3(0.0f, 0.6f, 2.5f);
+
+    mRightLegAuxMesh->SetPositionOffset(rightLegOffset);
+
+    SetScale(Vector3(65.0f, 65.0f, 65.0f)); //200.0f
+    SetRotation(Vector3(0.0f, 0.0f, Math::ToRadians(270.0f)));
 }
 
 void Robot::UpdateGridCoords(int x, int y) {
@@ -129,7 +127,39 @@ void Robot::EquipPart(PartSlot slot, const RobotPart& part)
 
         if (mPartMeshes[index]) {
             mPartMeshes[index]->SetMesh(mesh);
+            if (mTeam == Team::Enemy) {
+                Texture* enemyText = mGame->GetRenderer()->GetTexture("../Assets/Robots/BeaBee/BeaBeeTextureEvil.png");
+                mPartMeshes[index]->SetTextureOverride(enemyText);
+            }
         }
+
+        if (slot == PartSlot::Legs && mRightLegAuxMesh) {
+            std::string rightPath = part.meshPath;
+            std::string search = "LeftLeg";
+            size_t found = rightPath.find(search);
+
+            if (found != std::string::npos)
+            {
+                // Troca "LeftLeg" por "RightLeg"
+                rightPath.replace(found, search.length(), "RightLeg");
+                auto* meshRight = renderer->GetMesh(rightPath);
+
+                mRightLegAuxMesh->SetMesh(meshRight);
+                mRightLegAuxMesh->SetVisible(true);
+
+                // TODO: Inimigo trocar a cor?
+                if (mTeam == Team::Enemy) {
+                    Texture* enemyText = mGame->GetRenderer()->GetTexture("../Assets/Robots/BeaBee/BeaBeeTextureEvil.png");
+                    mRightLegAuxMesh->SetTextureOverride(enemyText);
+                }
+            }
+            else {
+                // Se não achou "LeftLeg", perna de tank
+                mRightLegAuxMesh->SetVisible(false);
+            }
+        }
+
+
     }
 }
 
@@ -180,16 +210,13 @@ void Robot::SetGhostMode(bool enable)
         }
     }
 
-    // Se tiver a mesh base (o corpo do cubo), muda tbm
-    GetComponent<MeshComponent>()->SetTextureOverride(ghostTex);
+    if (mRightLegAuxMesh) {
+        mRightLegAuxMesh->SetTextureOverride(ghostTex);
+    }
 }
 
 void Robot::SetVisible(bool visible)
 {
-    // Esconde o corpo principal
-    if (mBaseMesh) {
-        mBaseMesh->SetVisible(visible);
-    }
 
     // Esconde todas as partes equipadas
     for (int i = 0; i < (int)PartSlot::Count; i++)
@@ -197,6 +224,10 @@ void Robot::SetVisible(bool visible)
         if (mPartMeshes[i]) {
             mPartMeshes[i]->SetVisible(visible);
         }
+    }
+
+    if (mRightLegAuxMesh) {
+        mRightLegAuxMesh->SetVisible(visible);
     }
 }
 
@@ -208,6 +239,19 @@ std::string Robot::GetSlotName(PartSlot slot) {
         case PartSlot::LeftArm: return "LeftArm";
         case PartSlot::Legs: return "Legs";
         default: return "Desconhecido";
+    }
+}
+
+Vector3 Robot::GetPartMountPosition(PartSlot slot)
+{
+
+    switch (slot) {
+        case PartSlot::Torso:    return Vector3(0.0f, 0.0f, 3.5f);
+        case PartSlot::Head:     return Vector3(0.0f, 0.0f, 4.5f);
+        case PartSlot::Legs:     return Vector3(-0.0f, -0.6f, 2.5f);
+        case PartSlot::RightArm: return Vector3(0.0f, 1.2f, 4.5f);
+        case PartSlot::LeftArm:  return Vector3(0.0f, -1.2f, 4.5f);
+        default:                 return Vector3::Zero;
     }
 }
 

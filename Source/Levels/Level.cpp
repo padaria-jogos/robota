@@ -9,7 +9,9 @@
 #include "Game.h"
 
 #include "Actors/Block.h"
-//TODO Lidar com a morte dos robos e entender como ficou os movimentos
+
+//TODO: Movimento, uma grid por tempo
+
 Level::Level(class Game *game, HUD *hud) :
     mGame(game),
     mCamera(mGame->GetCamera()),
@@ -47,18 +49,26 @@ Level::Level(class Game *game, HUD *hud) :
 
     // PLAYER
     mPlayer = new Robot(game, Team::Player);
-    mPlayer->SetName("CryingBee");
+    mPlayer->SetName("BeaBee");
 
     mPlayer->EquipPart(PartSlot::Torso,
-                         RobotPart("Heavy Armor", "../Assets/Cube.gpmesh",
+                         RobotPart("Honey Chest", "../Assets/Robots/BeaBee/BeaBeeTorso.gpmesh",
                                    100, SkillType::None, 0, 0));
     mPlayer->EquipPart(PartSlot::RightArm,
-                          RobotPart("Iron Fist", "../Assets/Cube.gpmesh",
-                                    50, SkillType::Punch, 30, 1));
+                          RobotPart("Honey Blast", "../Assets/Robots/BeaBee/BeaBeeRightArm.gpmesh",
+                                    10, SkillType::Missile, 20, 3));
 
     mPlayer->EquipPart(PartSlot::LeftArm,
-                          RobotPart("Thunder Beam", "../Assets/Cube.gpmesh",
-                                    50, SkillType::Missile, 40, 3));
+                          RobotPart("Queen's Sting", "../Assets/Robots/BeaBee/BeaBeeLeftArm.gpmesh",
+                                    10, SkillType::Punch, 50, 1));
+
+    mPlayer->EquipPart(PartSlot::Legs,
+                          RobotPart("Honey Boots", "../Assets/Robots/BeaBee/BeaBeeLeftLeg.gpmesh",
+                                    30, SkillType::None, 0, 2));
+
+    mPlayer->EquipPart(PartSlot::Head,
+                          RobotPart("Queen's Crown", "../Assets/Robots/BeaBee/BeaBeeHead.gpmesh",
+                                    30, SkillType::Repair, 0, 0));
 
     // Comeca com o brado direito escolhido
     SetSelectedSlot(PartSlot::RightArm);
@@ -75,12 +85,19 @@ Level::Level(class Game *game, HUD *hud) :
     mEnemy->SetName("EvilBee");
 
     mEnemy->EquipPart(PartSlot::Torso,
-                         RobotPart("Heavy Armor", "../Assets/Cube.gpmesh",
-                                   100, SkillType::None, 0, 0));
-
+                     RobotPart("Honey Chest", "../Assets/Robots/BeaBee/BeaBeeTorso.gpmesh",
+                               100, SkillType::None, 0, 0));
     mEnemy->EquipPart(PartSlot::RightArm,
-                          RobotPart("Iron Fist", "../Assets/Cube.gpmesh",
-                                    50, SkillType::Punch, 30, 1));
+                          RobotPart("Honey Blast", "../Assets/Robots/BeaBee/BeaBeeRightArm.gpmesh",
+                                    10, SkillType::Missile, 20, 3));
+
+    mEnemy->EquipPart(PartSlot::Legs,
+                          RobotPart("Honey Boots", "../Assets/Robots/BeaBee/BeaBeeLeftLeg.gpmesh",
+                                    30, SkillType::None, 0, 2));
+
+    mEnemy->EquipPart(PartSlot::Head,
+                          RobotPart("Queen's Crown", "../Assets/Robots/BeaBee/BeaBeeHead.gpmesh",
+                                    30, SkillType::Repair, 0, 0));
 
     mEnemy->UpdateGridCoords(2, 2);
     mGrid->SetUnitAt(mEnemy, 2, 2);
