@@ -65,6 +65,8 @@ class Robot : public Actor{
     public:
         Robot(class Game* game, Team team);
 
+        void OnUpdate(float deltaTime) override;
+
         //Equip
         void EquipPart(PartSlot slot, const RobotPart& part);
 

@@ -14,6 +14,7 @@ MeshComponent::MeshComponent(Actor* owner)
         , mIsVisible(true)
         , mTextureOverride(nullptr)
         , mOffset(Vector3::Zero)
+        , mRotationOffset(Quaternion::Identity)
 {
     mOwner->GetGame()->GetRenderer()->AddMeshComp(this);
 }
@@ -27,9 +28,17 @@ void MeshComponent::Draw(Shader* shader)
 {
     if (mMesh && mIsVisible)
     {
+        //Rotation
+        Matrix4 rotMat = Matrix4::CreateFromQuaternion(mRotationOffset);
+
+        // Translation
+        Matrix4 transMat = Matrix4::CreateTranslation(mOffset);
+
+        Matrix4 localTransform = rotMat * transMat;
         Matrix4 world = mOwner->GetWorldTransform();
-        Matrix4 offsetMat = Matrix4::CreateTranslation(mOffset);
-        Matrix4 finalWorld = offsetMat * world;
+
+
+        Matrix4 finalWorld = localTransform * world;
 
         // Set the world transform
         shader->SetMatrixUniform("uWorldTransform", finalWorld);

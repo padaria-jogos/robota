@@ -24,7 +24,14 @@ public:
     virtual void SetMesh(class Mesh* mesh) { mMesh = mesh; }
     void SetTextureOverride(class Texture* texture) { mTextureOverride = texture; }
     void SetTextureIndex(size_t index) { mTextureIndex = index; }
+
+    // Pos
     void SetPositionOffset(const Vector3& offset) { mOffset = offset; }
+
+    void SetRotationOffset(const Quaternion& rot) { mRotationOffset = rot; }
+    void SetRotationOffset(float angle, const Vector3& axis) {
+        mRotationOffset = Quaternion(axis, angle);
+    }
 
 protected:
     class Mesh* mMesh;
@@ -32,4 +39,5 @@ protected:
     bool mIsVisible;
     class Texture* mTextureOverride;
     Vector3 mOffset;
+    Quaternion mRotationOffset;
 };

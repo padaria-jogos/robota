@@ -255,4 +255,22 @@ Vector3 Robot::GetPartMountPosition(PartSlot slot)
     }
 }
 
+void Robot::OnUpdate(float deltaTime) {
+    float time = SDL_GetTicks() / 1000.0f;
+    float angle = Math::Sin(time * 5.0f) * Math::ToRadians(20.0f);
+
+    if (mPartMeshes[(int)PartSlot::RightArm])
+    {
+        Quaternion rot = Quaternion(Vector3::UnitX, angle);
+        mPartMeshes[(int)PartSlot::RightArm]->SetRotationOffset(rot);
+    }
+
+    if (mPartMeshes[(int)PartSlot::LeftArm])
+    {
+        Quaternion rot = Quaternion(Vector3::UnitX, -angle);
+        mPartMeshes[(int)PartSlot::LeftArm]->SetRotationOffset(rot);
+    }
+}
+
+
 
