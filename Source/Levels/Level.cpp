@@ -60,6 +60,8 @@ Level::Level(class Game *game, HUD *hud) :
                           RobotPart("Thunder Beam", "../Assets/Cube.gpmesh",
                                     50, SkillType::Missile, 40, 3));
 
+    // Comeca com o brado direito escolhido
+    SetSelectedSlot(PartSlot::RightArm);
     mPlayer->UpdateGridCoords(1, 1);
     mGrid->SetUnitAt(mPlayer, 1, 1);
 
@@ -291,7 +293,7 @@ void Level::HandleMovementPhase()
         SDL_Log("Movimento concluido.");
         SDL_Log("PRESSIONE '1' PARA BRACO DIREITO");
         SDL_Log("PRESSIONE '2' PARA BRACO ESQUERDO");
-        SDL_Log("Ou PRESSIONE 'ESPAÇO' para ESPERAR (Sem atacar).");
+        SDL_Log("Ou PRESSIONE 'Q' para ESPERAR.");
     }
     else {
         SDL_Log("Movimento invalido, muito distante.");
@@ -363,6 +365,10 @@ void Level::HandleUnitDeath(Robot*& robot)
     {
         mGrid->SetUnitAt(nullptr, robot->GetGridX(), robot->GetGridY());
         robot->SetState(ActorState::Destroy);
+        robot->SetState(ActorState::Destroy);
+        if (robot == mPlayer) mPlayer = nullptr;
+        if (robot == mEnemy)  mEnemy = nullptr;
+
         robot = nullptr;
         SDL_Log("Level removeu o robo do jogo.");
     }
@@ -370,6 +376,7 @@ void Level::HandleUnitDeath(Robot*& robot)
 
 void Level::HandleCancel()
 {
+    if (!mPlayer) return;
     // UNDO SELECTION
     switch (mBattleState) {
         case BattleState::MoveSelection:
@@ -425,6 +432,7 @@ void Level::HandleCancel()
 }
 
 void Level::HandleWait() {
+    if (!mPlayer) return;
     mPlayerTurn.moveX = mGhostPlayer->GetGridX();
     mPlayerTurn.moveY = mGhostPlayer->GetGridY();
 
@@ -492,6 +500,8 @@ void Level::RemoveGhost() {
 }
 
 void Level::CalculateEnemyAction() {
+    if  (!mEnemy) return;
+
     // Reset
     mEnemyTurn = TurnAction();
 
@@ -551,33 +561,53 @@ void Level::ResolveTurn() {
         SDL_Log("Choque! Acoes canceladas. Turno perdido.");
         // Tocar som de Bonk
     }else {
-        MoveInGrid(mPlayer, mPlayerTurn.moveX, mPlayerTurn.moveY);
-        MoveInGrid(mEnemy, mEnemyTurn.moveX, mEnemyTurn.moveY);
+        if (mPlayer) MoveInGrid(mPlayer, mPlayerTurn.moveX, mPlayerTurn.moveY);
+        if (mEnemy)  MoveInGrid(mEnemy, mEnemyTurn.moveX, mEnemyTurn.moveY);
 
         int pSpeed = 10;
         int eSpeed = 8;
 
-        Robot* first = (pSpeed >= eSpeed) ? mPlayer : mEnemy;
-        Robot* second = (first == mPlayer) ? mEnemy : mPlayer;
+        Robot* first = nullptr;
+        Robot* second = nullptr;
+        TurnAction* act1 = nullptr;
+        TurnAction* act2 = nullptr;
 
-        TurnAction& act1 = (first == mPlayer) ? mPlayerTurn : mEnemyTurn;
-        TurnAction& act2 = (second == mPlayer) ? mPlayerTurn : mEnemyTurn;
+        if (mEnemy)
+        {
+            // TODO: Agilidade dos robos
+            int pSpeed = 10;
+            int eSpeed = 8;
+
+            if (pSpeed >= eSpeed) {
+                first = mPlayer; second = mEnemy;
+                act1 = &mPlayerTurn; act2 = &mEnemyTurn;
+            } else {
+                first = mEnemy; second = mPlayer;
+                act1 = &mEnemyTurn; act2 = &mPlayerTurn;
+            }
+        }
+        else
+        {
+            // Modo Solo (Inimigo morto)
+            first = mPlayer;
+            act1 = &mPlayerTurn;
+            // second continua nullptr
+        }
 
         // Primeiro Ataca
-        if (act1.hasAction && !first->IsDead()) {
-            first->AttackLocation(act1.targetX, act1.targetY, act1.skillSlot);
-            HandleUnitDeath(mPlayer);
-            HandleUnitDeath(mEnemy);
+        if (first && act1->hasAction && !first->IsDead()) {
+            first->AttackLocation(act1->targetX, act1->targetY, act1->skillSlot);
+
+            // Check de mortes
+            if (mPlayer) HandleUnitDeath(mPlayer);
+            if (mEnemy)  HandleUnitDeath(mEnemy);
         }
 
         // Segundo Ataca
-        bool secondStillExists = (second == mPlayer && mPlayer != nullptr) ||
-                         (second == mEnemy && mEnemy != nullptr);
-
-        if (act2.hasAction && secondStillExists && !second->IsDead()) {
-            second->AttackLocation(act2.targetX, act2.targetY, act2.skillSlot);
-            HandleUnitDeath(mPlayer);
-            HandleUnitDeath(mEnemy);
+        if (second && act2->hasAction && !second->IsDead()) {
+            second->AttackLocation(act2->targetX, act2->targetY, act2->skillSlot);
+            if (mPlayer) HandleUnitDeath(mPlayer);
+            if (mEnemy)  HandleUnitDeath(mEnemy);
         }
 
         // Limpa o turno
