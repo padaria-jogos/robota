@@ -3,6 +3,7 @@
 //
 
 #include "Robot.h"
+#include "RobotVFXManager.h"
 // #include "Game.h"
 
 #include "Game.h"
@@ -11,6 +12,7 @@ Robot::Robot(class Game *game, Team team) : Actor(game)
     , mName("Robo")
     , mTeam(team)
     , mMoveRange(2)
+    , mIsDead(false)
 {
     MeshComponent* mc = new MeshComponent(this);
     Mesh* mesh = mGame->GetRenderer()->GetMesh("../Assets/Roboto.gpmesh");
@@ -29,6 +31,8 @@ Robot::Robot(class Game *game, Team team) : Actor(game)
         Texture* selectTex = mGame->GetRenderer()->GetTexture("../Assets/RobotoEvil.png");
         mc->SetTextureOverride(selectTex);
     }
+
+    mVFXManager = std::make_unique<RobotVFXManager>(this);
 }
 
 void Robot::UpdateGridCoords(int x, int y) {
@@ -75,6 +79,7 @@ bool Robot::CanUseSkill(PartSlot slot) const
 void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
 {
     if (!CanUseSkill(slotUsed)) return;
+
     int damageDealt = mParts[(int)slotUsed].damage;
     std::string partName = mParts[(int)slotUsed].name;
 
@@ -82,11 +87,24 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
 
     // Verificar o que tem na grid
     GridMap* grid = mGame->GetLevel()->GetGrid();
+    Vector3 targetWorldPos = grid->GetWorldPosition(targetX, targetY);
+
+    // Usa o VFX Manager pra jogar um ataque (projetil)
+    if (mVFXManager)
+    {
+        mVFXManager->PlayAttackEffect(targetWorldPos);
+    }
+
     Robot* victim = dynamic_cast<Robot*>(grid->GetUnitAt(targetX, targetY));
 
     if (victim)
     {
         SDL_Log("ACERTOU %s!", victim->GetName().c_str());
+
+        if (mVFXManager)
+        {
+            mVFXManager->PlayHitEffect(victim->GetPosition());
+        }
 
         // Sempre acerta o Torso se não mirar especificamente
         victim->TakeDamage(damageDealt, PartSlot::Torso);
@@ -94,6 +112,12 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
     else
     {
         SDL_Log("Miss");
+
+        // Play miss VFX
+        if (mVFXManager)
+        {
+            mVFXManager->PlayMissEffect(targetWorldPos);
+        }
     }
 }
 

@@ -10,7 +10,7 @@
 class MeshComponent : public Component
 {
 public:
-    MeshComponent(class Actor* owner);
+    MeshComponent(class Actor* owner, bool useCustomShader = false);
     ~MeshComponent();
 
     // Draw this mesh component
@@ -25,9 +25,23 @@ public:
     void SetTextureOverride(class Texture* texture) { mTextureOverride = texture; }
     void SetTextureIndex(size_t index) { mTextureIndex = index; }
 
+    // Controle de cor/alpha para partículas
+    void SetColor(const Vector3& color) { mColor = color; }
+    void SetAlpha(float alpha) { mAlpha = alpha; }
+    const Vector3& GetColor() const { return mColor; }
+    float GetAlpha() const { return mAlpha; }
+    void SetCustomShader(class Shader* shader) { mCustomShader = shader; }
+    void SetUseCustomShader(bool use) { mUseCustomShader = use; }
+
 protected:
     class Mesh* mMesh;
     size_t mTextureIndex;
     bool mIsVisible;
     class Texture* mTextureOverride;
+
+    class Shader* mCustomShader;
+    bool mUseCustomShader;
+
+    Vector3 mColor;
+    float mAlpha;
 };

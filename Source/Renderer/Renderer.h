@@ -39,6 +39,7 @@ public:
     class Texture* GetTexture(const std::string& fileName);
     class Font* GetFont(const std::string& fileName);
     class Mesh* GetMesh(const std::string& fileName);
+	class Shader* GetShader(const std::string& shaderName);
 
     void SetViewMatrix(const Matrix4& view) { mView = view; }
     void SetProjectionMatrix(const Matrix4& proj) { mProjection = proj; }
@@ -54,6 +55,8 @@ private:
 	class Shader* mSpriteShader;
     // Mesh shader
     class Shader* mMeshShader;
+	// Particle shader
+	class Shader* mParticleShader;
 
     // Sprite vertex array
     class VertexArray *mSpriteVerts;
@@ -74,6 +77,8 @@ private:
     std::unordered_map<std::string, class Font*> mFonts;
     // Map of meshes loaded
     std::unordered_map<std::string, Mesh*> mMeshes;
+	// Map of shaders
+	std::unordered_map<std::string, Shader*> mShaders;
 
     // All mesh components drawn
     std::vector<class MeshComponent*> mMeshComps;

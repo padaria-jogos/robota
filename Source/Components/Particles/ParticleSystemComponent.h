@@ -1,8 +1,5 @@
-//
-// Created by Lucas N. Ferreira on 18/09/25.
-//
-
-#pragma once
+#ifndef PARTICLESYSTEMCOMPONENT_TPP
+#define PARTICLESYSTEMCOMPONENT_TPP
 
 #include "../Component.h"
 #include "Particle.h"
@@ -17,10 +14,13 @@ public:
     ~ParticleSystemComponent();
 
     void EmitParticle(float lifetime, float speed, const Vector3& offsetPosition = Vector3::Zero);
+    // Emite partícula em posição absoluta (world position)
+    void EmitParticleAt(float lifetime, const Vector3& worldPosition);
 
 private:
-
     std::vector<T*> mParticles;
 };
 
 #include "ParticleSystemComponent.tpp"   // <-- required
+
+#endif

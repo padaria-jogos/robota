@@ -1,13 +1,10 @@
-//
-// Created by andre on 29/11/2025.
-//
+#pragma once
 
-#ifndef ROBOTA_IMPACTPARTICLE_H
-#define ROBOTA_IMPACTPARTICLE_H
+#include "Particle.h"
 
-
-class ImpactParticle {
+class ImpactParticle : public Particle
+{
+public:
+    ImpactParticle(class Game* game);
+    ~ImpactParticle();
 };
-
-
-#endif //ROBOTA_IMPACTPARTICLE_H

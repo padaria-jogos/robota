@@ -43,3 +43,21 @@ void ParticleSystemComponent<T>::EmitParticle(float lifetime, float speed, const
         }
     }
 }
+
+template <typename T>
+void ParticleSystemComponent<T>::EmitParticleAt(float lifetime, const Vector3& worldPosition)
+{
+    for (auto p : mParticles)
+    {
+        if (p->IsDead())
+        {
+            // Spawn na posição world absoluta (SEM offset do owner)
+            p->Awake(worldPosition, Vector3::Zero, lifetime);
+
+            // Sem velocidade (partícula estática)
+            p->Emit(Vector3::Zero, 0.0f);
+
+            break;
+        }
+    }
+}

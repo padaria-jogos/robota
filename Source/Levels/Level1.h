@@ -19,5 +19,5 @@ public:
     // ~Level1();
 
     void OnUpdate(float deltaTime) override;
-    void ProcessInput(SDL_Event &event);
+    void ProcessInput(SDL_Event &event) override;
 };

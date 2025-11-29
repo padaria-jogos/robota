@@ -55,4 +55,3 @@ bool AABBColliderComponent::Intersect(const AABBColliderComponent *b) const
 
     return !noIntersection;
 }
-
