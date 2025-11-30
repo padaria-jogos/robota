@@ -36,6 +36,9 @@ public:
     //BFS Walk
     std::vector<TileNode> GetWalkableTiles(int startX, int startY, int maxRange);
 
+    // Path
+    std::vector<Vector2> CalculatePath(int startX, int startY, int endX, int endY);
+
     //Attack Range
     std::vector<TileNode> GetAttackableTiles(int startX, int startY, int minRange, int maxRange);
 

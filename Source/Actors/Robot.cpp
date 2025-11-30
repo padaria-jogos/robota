@@ -13,6 +13,7 @@ Robot::Robot(class Game *game, Team team) : Actor(game)
                                             , mTeam(team)
                                             , mMoveRange(2)
                                             , mIsDead(false)
+                                            , mIsMoving(false)
 {
 
     for (int i = 0; i < (int)PartSlot::Count; i++)
@@ -257,6 +258,19 @@ Vector3 Robot::GetPartMountPosition(PartSlot slot)
 }
 
 void Robot::OnUpdate(float deltaTime) {
+
+    if (mIsMoving) {
+        mMoveTimer += deltaTime;
+        float t = Math::Clamp(mMoveTimer / mMoveDuration, 0.0f, 1.0f);
+        Vector3 currentPos = Vector3::Lerp(mStartPos, mTargetPos, t);
+        SetPosition(currentPos);
+
+        if (t >= 1.0f) {
+            mIsMoving = false;
+        }
+    }
+
+    // Animação inicial
     float time = SDL_GetTicks() / 1000.0f;
     float angle = Math::Sin(time * 5.0f) * Math::ToRadians(20.0f);
 
@@ -272,6 +286,17 @@ void Robot::OnUpdate(float deltaTime) {
         mPartMeshes[(int)PartSlot::LeftArm]->SetRotationOffset(rot);
     }
 }
+
+void Robot::StartSmoothMovement(const Vector3& targetWorldPos, float duration) {
+    mStartPos = GetPosition();
+    mTargetPos = targetWorldPos;
+    mTargetPos.z = mStartPos.z;
+
+    mMoveDuration = duration;
+    mMoveTimer = 0.0f;
+    mIsMoving = true;
+}
+
 
 
 

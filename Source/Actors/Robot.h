@@ -67,6 +67,9 @@ class Robot : public Actor{
 
         void OnUpdate(float deltaTime) override;
 
+        // Interpolar entre as grids
+        void StartSmoothMovement(const Vector3& targetWorldPos, float duration = 0.3f);
+
         //Equip
         void EquipPart(PartSlot slot, const RobotPart& part);
 
@@ -103,6 +106,7 @@ class Robot : public Actor{
         void AttackLocation(int targetX, int targetY, PartSlot slotUsed);
 
         // Death
+        bool IsMoving() const { return mIsMoving; }
         bool IsDead() const { return mIsDead; }
 
 
@@ -111,7 +115,12 @@ class Robot : public Actor{
         int mGridX, mGridY;
         int mMoveRange;
 
+        Vector3 mStartPos;
+        Vector3 mTargetPos;
+        float mMoveTimer;
+        float mMoveDuration;
 
+        bool mIsMoving;
         bool mIsDead;
 
         Team mTeam;

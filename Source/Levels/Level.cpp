@@ -21,8 +21,10 @@ Level::Level(class Game *game, HUD *hud) :
     mBattleState(BattleState::Null),
     mSelectedSlot(PartSlot::Null),
     mPlayer(nullptr),
+    mEnemy(nullptr),
     mGhostPlayer(nullptr),
-    mEnemy(nullptr)
+    mIsResolving(false),
+    mStepIndex(0)
 {
     mBattleState = BattleState::Exploration;
 
@@ -56,7 +58,7 @@ Level::Level(class Game *game, HUD *hud) :
                                    100, SkillType::None, 0, 0));
     mPlayer->EquipPart(PartSlot::RightArm,
                           RobotPart("Robota Dustpan", "../Assets/Robots/Robota/RobotaRightArm.gpmesh",
-                                    10, SkillType::Missile, 20, 3));
+                                    1000, SkillType::Missile, 1000, 3));
 
     mPlayer->EquipPart(PartSlot::LeftArm,
                           RobotPart("Robota Broom", "../Assets/Robots/Robota/RobotaLeftArm.gpmesh",
@@ -108,10 +110,6 @@ Level::Level(class Game *game, HUD *hud) :
     MoveInGrid(mEnemy, 2, 2);
 }
 
-Level::~Level()
-{
-
-}
 
 // TODO: ajustar a posição inicial do cursor para a do robo
 void Level::MoveCursor(int xOffset, int yOffset)
@@ -135,11 +133,10 @@ void Level::MoveCursor(int xOffset, int yOffset)
     MoveInGrid(mCursor, newX, newY);
 }
 
-void Level::ProcessInput(SDL_Event &event)
+void Level::ProcessInput(const SDL_Event &event)
 {
-    int key = event.key.keysym.sym;
 
-    switch (key)
+    switch (event.key.keysym.sym)
     {
         case SDLK_w:
         case SDLK_UP:
@@ -193,33 +190,34 @@ void Level::ProcessInput(SDL_Event &event)
                 SDL_Log(">> Enter/Espaço para confirmar");
             }
             break;
+
+        default:
+            break;
     }
 }
 
-void Level::SpawnFloor(int rows, int cols)
-{
+void Level::SpawnFloor(int rows, int cols) const {
     //SDL_Log("SPAWNWALLS -> Rows: %d, Cols: %d", rows, cols);
-    const float spacing = 500.0f;
+    constexpr float spacing = 500.0f;
 
-    float totalWidth = cols * spacing;
-    float totalHeight = rows * spacing;
+    float totalWidth = (float)cols * spacing;
+    float totalHeight = (float)rows * spacing;
 
     float startX = -totalWidth / 2.0f;
     float startY = -totalHeight / 2.0f;
-
-    float zPos = -500.0f; // Centro do cubo
 
     for (int y = 0; y < rows; y++)
     {
         for (int x = 0; x < cols; x++)
         {
-            Block* wall = new Block(mGame);
+            float zPos = -500.0f;
+            auto wall = new Block(mGame);
             wall->SetScale(Vector3(spacing, spacing, spacing)); // cubo tamanho 1x1 -> vira 500x500
 
             Vector3 pos;
             // Move o ponto da "borda" para o "centro" do bloco
-            pos.x = startX + (x * spacing) + (spacing * 0.5f);
-            pos.y = startY + (y * spacing) + (spacing * 0.5f);
+            pos.x = startX + ((float)x * spacing) + (spacing * 0.5f);
+            pos.y = startY + ((float)y * spacing) + (spacing * 0.5f);
             pos.z = zPos;
 
             wall->SetPosition(pos);
@@ -256,6 +254,9 @@ void Level::HandleAction()
                 HandleTargetingPhase();
                 break;
             }
+
+        default:
+            break;
     }
 }
 
@@ -357,9 +358,6 @@ void Level::HandleTargetingPhase()
     Tile* targetTile = mGrid->GetTileAt(mCursor->GetGridX(), mCursor->GetGridY());
 
     if (targetTile && targetTile->GetType() == TileType::Attack) {
-
-        mPlayerTurn.moveX = mGhostPlayer->GetGridX();
-        mPlayerTurn.moveY = mGhostPlayer->GetGridY();
         mPlayerTurn.hasAction = true;
         mPlayerTurn.skillSlot = GetSelectedSlot();
         mPlayerTurn.targetX = mCursor->GetGridX();
@@ -371,10 +369,8 @@ void Level::HandleTargetingPhase()
         RemoveGhost();
         SetBattleState(BattleState::Exploration);
 
-        SDL_Log("=== INICIANDO RESOLUCAO ===");
-        CalculateEnemyAction();
-        ResolveTurn();
-        SDL_Log("=== FIM DO TURNO ===");
+        SDL_Log("=== PLANEJAMENTO CONCLUIDO. INICIANDO RESOLUCAO ===");
+        StartResolution();
     }else {
         SDL_Log("Alvo invalido! Selecione um quadrado dentro da range.");
     }
@@ -449,6 +445,9 @@ void Level::HandleCancel()
             SDL_Log("Mira cancelada. Escolha outra habilidade (1 ou 2).");
             break;
         }
+
+        default:
+            break;
     }
 }
 
@@ -472,8 +471,7 @@ void Level::HandleWait() {
     SDL_Log("=== FIM DO TURNO ===");
 }
 
-void Level::MoveInGrid(Actor *actor, int x, int y)
-{
+void Level::MoveInGrid(Actor *actor, int x, int y) const {
     if (!actor) return;
 
     // Atualiza o Visual (mundo 3D)
@@ -482,7 +480,7 @@ void Level::MoveInGrid(Actor *actor, int x, int y)
     actor->SetPosition(worldPos);
 
     // Atualiza o Grid Lógico
-    Robot* robot = dynamic_cast<Robot*>(actor);
+    auto robot = dynamic_cast<Robot*>(actor);
     if (robot)
     {
         if (actor != mGhostPlayer)
@@ -512,7 +510,7 @@ void Level::SpawnGhost() {
     MoveInGrid(mGhostPlayer, px, py);
 }
 
-void Level::RemoveGhost() {
+void Level::RemoveGhost() const {
     if (mGhostPlayer) {
         mGhostPlayer->SetState(ActorState::Paused);
         mGhostPlayer->SetVisible(false);
@@ -569,79 +567,209 @@ void Level::CalculateEnemyAction() {
 }
 
 void Level::ResolveTurn() {
-    bool collision = false;
-    if (mPlayerTurn.moveX == mEnemyTurn.moveX &&
-        mPlayerTurn.moveY == mEnemyTurn.moveY)
-    {
-        collision = true;
-        SDL_Log("COLISAO! Ambos disputaram o tile (%d, %d).", mPlayerTurn.moveX, mPlayerTurn.moveY);
+    CalculateEnemyAction();
+    if (mPlayerTurn.moveX != -1) {
+        mPlayerTurn.path = mGrid->CalculatePath(
+            mPlayer->GetGridX(), mPlayer->GetGridY(),
+            mPlayerTurn.moveX, mPlayerTurn.moveY
+        );
     }
 
-    if (collision)
-    {
-        SDL_Log("Choque! Acoes canceladas. Turno perdido.");
-        // Tocar som de Bonk
-    }else {
-        if (mPlayer) MoveInGrid(mPlayer, mPlayerTurn.moveX, mPlayerTurn.moveY);
-        if (mEnemy)  MoveInGrid(mEnemy, mEnemyTurn.moveX, mEnemyTurn.moveY);
-
-        int pSpeed = 10;
-        int eSpeed = 8;
-
-        Robot* first = nullptr;
-        Robot* second = nullptr;
-        TurnAction* act1 = nullptr;
-        TurnAction* act2 = nullptr;
-
-        if (mEnemy)
-        {
-            // TODO: Agilidade dos robos
-            int pSpeed = 10;
-            int eSpeed = 8;
-
-            if (pSpeed >= eSpeed) {
-                first = mPlayer; second = mEnemy;
-                act1 = &mPlayerTurn; act2 = &mEnemyTurn;
-            } else {
-                first = mEnemy; second = mPlayer;
-                act1 = &mEnemyTurn; act2 = &mPlayerTurn;
-            }
-        }
-        else
-        {
-            // Modo Solo (Inimigo morto)
-            first = mPlayer;
-            act1 = &mPlayerTurn;
-            // second continua nullptr
-        }
-
-        // Primeiro Ataca
-        if (first && act1->hasAction && !first->IsDead()) {
-            first->AttackLocation(act1->targetX, act1->targetY, act1->skillSlot);
-
-            // Check de mortes
-            if (mPlayer) HandleUnitDeath(mPlayer);
-            if (mEnemy)  HandleUnitDeath(mEnemy);
-        }
-
-        // Segundo Ataca
-        if (second && act2->hasAction && !second->IsDead()) {
-            second->AttackLocation(act2->targetX, act2->targetY, act2->skillSlot);
-            if (mPlayer) HandleUnitDeath(mPlayer);
-            if (mEnemy)  HandleUnitDeath(mEnemy);
-        }
-
-        // Limpa o turno
-        mPlayerTurn = TurnAction();
-        mEnemyTurn = TurnAction();
+    if (mEnemy && mEnemyTurn.moveX != -1) {
+        mEnemyTurn.path = mGrid->CalculatePath(
+            mEnemy->GetGridX(), mEnemy->GetGridY(),
+            mEnemyTurn.moveX, mEnemyTurn.moveY
+        );
     }
+
+    mStepIndex = 0;
+    mIsResolving = true;
+    ExecuteNextStep();
 }
 
 void Level::OnUpdate(float deltaTime)
 {
-    if (mPlayer == nullptr) {
+    if (!mPlayer) {
         mGame->Quit();
     }
+
+    if (mIsResolving)
+    {
+        bool playerStopped = (!mPlayer) || !mPlayer->IsMoving();
+        bool enemyStopped = (!mEnemy) || (!mEnemy->IsMoving());
+
+        if (playerStopped && enemyStopped)
+        {
+            ExecuteNextStep();
+        }
+    }
+}
+
+void Level::ExecuteNextStep() {
+    bool pHasSteps = mStepIndex < mPlayerTurn.path.size();
+    bool eHasSteps = mStepIndex < mEnemyTurn.path.size();
+
+    if (!pHasSteps && !eHasSteps) {
+        FinishResolution();
+        return;
+    }
+
+    Vector2 pNext = Vector2(-100.0f, -100.0f);
+    Vector2 pCurr = Vector2(-100.0f, -100.0f);
+    Vector2 eNext = Vector2(-200.0f, -200.0f);
+    Vector2 eCurr = Vector2(-200.0f, -200.0f);
+
+    if (mPlayer)
+    {
+        // Onde ele está agora
+        pCurr = Vector2((float)mPlayer->GetGridX(), (float)mPlayer->GetGridY());
+
+        // Para onde ele vai (ou fica parado se acabou os passos)
+        if (pHasSteps) {
+            pNext = mPlayerTurn.path[mStepIndex];
+        } else {
+            pNext = pCurr;
+        }
+    }
+
+    if (mEnemy)
+    {
+        // Onde ele está agora
+        eCurr = Vector2((float)mEnemy->GetGridX(), (float)mEnemy->GetGridY());
+
+        // Para onde ele vai
+        if (eHasSteps) {
+            eNext = mEnemyTurn.path[mStepIndex];
+        } else {
+            eNext = eCurr;
+        }
+    }
+
+    bool collision = false;
+
+    if (mPlayer && mEnemy)
+    {
+        if (pNext.x == eNext.x && pNext.y == eNext.y) {
+            collision = true;
+        }
+        // Colisao com outro parado
+        if (pNext.x == eCurr.x && pNext.y == eCurr.y &&
+            eNext.x == pCurr.x && eNext.y == pCurr.y)
+        {
+            collision = true;
+        }
+    }
+
+    if (collision) {
+        SDL_Log("BONK no passo %d!", mStepIndex);
+        mPlayerTurn.path.clear();
+        mEnemyTurn.path.clear();
+        FinishResolution();
+        return;
+    }
+
+
+    float stepTime = 0.3f;
+
+    if (pHasSteps && mPlayer) {
+        Vector3 targetPos = mGrid->GetWorldPosition((int)pNext.x, (int)pNext.y);
+        mPlayer->StartSmoothMovement(targetPos, stepTime);
+
+        mGrid->SetUnitAt(nullptr, mPlayer->GetGridX(), mPlayer->GetGridY()); // Sai do atual
+        mGrid->SetUnitAt(mPlayer, (int)pNext.x, (int)pNext.y);
+
+        mPlayer->UpdateGridCoords((int)pNext.x, (int)pNext.y);
+
+    }
+
+    if (eHasSteps && mEnemy) {
+        Vector3 targetPos = mGrid->GetWorldPosition((int)eNext.x, (int)eNext.y);
+        mEnemy->StartSmoothMovement(targetPos, stepTime);
+
+        mGrid->SetUnitAt(nullptr, mEnemy->GetGridX(), mEnemy->GetGridY());
+        mGrid->SetUnitAt(mEnemy, (int)eNext.x, (int)eNext.y);
+
+        mEnemy->UpdateGridCoords((int)eNext.x, (int)eNext.y);
+    }
+
+    mStepIndex++;
+}
+
+void Level::StartResolution() {
+    CalculateEnemyAction();
+
+    if (mPlayerTurn.moveX != -1) {
+        mPlayerTurn.path = mGrid->CalculatePath(
+            mPlayer->GetGridX(), mPlayer->GetGridY(),
+            mPlayerTurn.moveX, mPlayerTurn.moveY
+        );
+    }
+
+    if (mEnemy && mEnemyTurn.moveX != -1) {
+        mEnemyTurn.path = mGrid->CalculatePath(
+            mEnemy->GetGridX(), mEnemy->GetGridY(),
+            mEnemyTurn.moveX, mEnemyTurn.moveY
+        );
+    }
+
+    mStepIndex = 0;
+    mIsResolving = true;
+
+    ExecuteNextStep();
+}
+
+
+void Level::FinishResolution() {
+    SDL_Log("Movimento finalizado. Resolvendo Habilidades...");
+    mIsResolving = false;
+
+    Robot* first = nullptr;
+    Robot* second = nullptr;
+    TurnAction* act1 = nullptr;
+    TurnAction* act2 = nullptr;
+
+    if (mEnemy) {
+        int pSpeed = 10; // mPlayer->GetSpeed();
+        int eSpeed = 8;  // mEnemy->GetSpeed();
+
+        if (pSpeed >= eSpeed) {
+            first = mPlayer; second = mEnemy;
+            act1 = &mPlayerTurn; act2 = &mEnemyTurn;
+        } else {
+            first = mEnemy; second = mPlayer;
+            act1 = &mEnemyTurn; act2 = &mPlayerTurn;
+        }
+    } else {
+        first = mPlayer;
+        act1 = &mPlayerTurn;
+    }
+
+    // Primeiro Ataca
+    if (first && act1->hasAction && !first->IsDead()) {
+        first->AttackLocation(act1->targetX, act1->targetY, act1->skillSlot);
+
+        // Checa mortes
+        if (mPlayer) HandleUnitDeath(mPlayer);
+        if (mEnemy)  HandleUnitDeath(mEnemy);
+    }
+
+    // Segundo Ataca (Se ainda existir e estiver vivo)
+    bool secondAlive = false;
+    if (second == mPlayer) secondAlive = (mPlayer != nullptr);
+    else if (second == mEnemy) secondAlive = (mEnemy != nullptr);
+
+    if (secondAlive && second && act2 && act2->hasAction && !second->IsDead()) {
+        second->AttackLocation(act2->targetX, act2->targetY, act2->skillSlot);
+
+        if (mPlayer) HandleUnitDeath(mPlayer);
+        if (mEnemy)  HandleUnitDeath(mEnemy);
+    }
+
+    // Limpeza
+    mPlayerTurn = TurnAction();
+    mEnemyTurn = TurnAction();
+
+    SDL_Log("TURNO ENCERRADO.");
 }
 
 

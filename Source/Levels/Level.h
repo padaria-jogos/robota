@@ -20,6 +20,7 @@
 struct TurnAction {
     // Move
     int moveX, moveY;
+    std::vector<Vector2> path;
 
     // Skill
     bool hasAction;
@@ -41,12 +42,12 @@ class Level
 {
     public:
         Level(Game* game, HUD *hud);
-        virtual ~Level();
+        virtual ~Level(){}
 
-        void ProcessInput(SDL_Event &event);
+        void ProcessInput(const SDL_Event &event);
         virtual void OnUpdate(float deltaTime);
 
-        void MoveInGrid(Actor *actor, int x, int y);
+        void MoveInGrid(Actor *actor, int x, int y) const;
 
         GridMap* GetGrid() const { return mGrid; }
         GridCursor* GetCursor() { return mCursor; }
@@ -72,7 +73,7 @@ class Level
         Robot *mPlayer;
         Robot *mEnemy;
 
-        void SpawnFloor(int rows, int cols);
+        void SpawnFloor(int rows, int cols) const;
         void MoveCursor(int tile_x, int tile_y);
 
     private:
@@ -87,6 +88,8 @@ class Level
         // Action
         TurnAction mPlayerTurn;
         TurnAction mEnemyTurn;    // IA define isso dps
+        bool mIsResolving;
+        int mStepIndex;
 
         // Lógica do gameplay
         void HandleAction();
@@ -101,7 +104,11 @@ class Level
         void HandleUnitDeath(Robot*& robot);
 
         void SpawnGhost();
-        void RemoveGhost();
+        void RemoveGhost() const;
+
+        void StartResolution();
+        void ExecuteNextStep();
+        void FinishResolution();
 
         // IA simples para testar o fluxo do jogo
         void CalculateEnemyAction();
