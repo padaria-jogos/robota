@@ -75,6 +75,3 @@ void Tile::UpdateTexture()
         mMeshComp->SetTextureOverride(nullptr);
     }
 }
-
-
-

@@ -14,6 +14,7 @@ public:
     ~ParticleSystemComponent();
 
     void EmitParticle(float lifetime, float speed, const Vector3& offsetPosition = Vector3::Zero);
+    void EmitProjectile(const Vector3& position, const Vector3& direction, float speed, float lifetime);
     // Emite partícula em posição absoluta (world position)
     void EmitParticleAt(float lifetime, const Vector3& worldPosition);
 

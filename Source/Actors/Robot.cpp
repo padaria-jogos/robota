@@ -156,5 +156,3 @@ void Robot::CheckDeath()
         mIsDead = true;
     }
 }
-
-

@@ -40,7 +40,7 @@ public:
 
     // Rotation getter/setter
     const Vector3& GetRotation() const { return mRotation; }
-    void SetRotation(const Vector3& rotation) { mRotation = rotation; }
+    void SetRotation(const Vector3& rotation) { mRotation = rotation; mIsTransformDirty = true; }
 
     Vector3 GetForward() { return GetWorldTransform().GetXAxis() ;}
 

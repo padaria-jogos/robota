@@ -16,12 +16,17 @@ RobotVFXManager::~RobotVFXManager() = default;
 void RobotVFXManager::PlayAttackEffect(const Vector3& targetPosition)
 {
     Vector3 robotPos = mOwnerRobot->GetPosition();
+
+    // 1. Calculate Direction
     Vector3 direction = targetPosition - robotPos;
     direction.Normalize();
 
-    Vector3 spawnOffset = direction * 50.0f;
+    // 2. Calculate Spawn Position (Robot Center + Offset in direction of target)
+    // Using 60.0f to push it slightly outside the robot mesh
+    Vector3 spawnPos = robotPos + (direction * 60.0f);
 
-    mBulletSystem->EmitParticle(2.0f, 300.0f, spawnOffset);
+    // 3. Fire using the new function
+    mBulletSystem->EmitProjectile(spawnPos, direction, 300.0f, 2.0f);
 }
 
 void RobotVFXManager::PlayHitEffect(const Vector3& hitPosition)

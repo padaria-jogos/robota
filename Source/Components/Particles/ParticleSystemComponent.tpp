@@ -61,3 +61,21 @@ void ParticleSystemComponent<T>::EmitParticleAt(float lifetime, const Vector3& w
         }
     }
 }
+
+template <typename T>
+void ParticleSystemComponent<T>::EmitProjectile(const Vector3& position, const Vector3& direction, float speed, float lifetime)
+{
+    for (auto p : mParticles)
+    {
+        if (p->IsDead())
+        {
+            // 1. Set Start Position (Absolute)
+            p->Awake(position, Vector3::Zero, lifetime);
+
+            // 2. Set Velocity (Direction * Speed)
+            p->Emit(direction, speed);
+
+            break;
+        }
+    }
+}
