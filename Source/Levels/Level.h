@@ -15,6 +15,7 @@
 #include "Actors/Robot.h"
 #include "Actors/GridCursor.h"
 #include "Map/GridMap.h"
+#include "AI.h"
 #include "UI/Screens/HUD.h"
 
 struct TurnAction {
@@ -71,6 +72,7 @@ class Level
 
         Robot *mPlayer;
         Robot *mEnemy;
+        AI *mAI;
 
         void SpawnFloor(int rows, int cols);
         void MoveCursor(int tile_x, int tile_y);

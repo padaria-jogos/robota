@@ -83,6 +83,7 @@ Level::Level(class Game *game, HUD *hud) :
     // ENEMY
     mEnemy = new Robot(game, Team::Enemy);
     mEnemy->SetName("EvilBee");
+    mAI = new AI();
 
     mEnemy->EquipPart(PartSlot::Torso,
                      RobotPart("Honey Chest", "../Assets/Robots/BeaBee/BeaBeeTorso.gpmesh",
@@ -316,7 +317,6 @@ void Level::HandleMovementPhase()
         SDL_Log("Movimento invalido, muito distante.");
     }
 }
-
 
 void Level::HandleSkillSelectionPhase(PartSlot slot)
 {
