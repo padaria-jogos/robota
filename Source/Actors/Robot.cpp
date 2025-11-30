@@ -12,6 +12,7 @@ Robot::Robot(class Game *game, Team team) : Actor(game)
                                             , mName("Robo")
                                             , mTeam(team)
                                             , mMoveRange(2)
+                                            , mIsDead(false)
 {
 
     for (int i = 0; i < (int)PartSlot::Count; i++)

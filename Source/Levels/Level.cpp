@@ -52,22 +52,22 @@ Level::Level(class Game *game, HUD *hud) :
     mPlayer->SetName("BeaBee");
 
     mPlayer->EquipPart(PartSlot::Torso,
-                         RobotPart("Honey Chest", "../Assets/Robots/BeaBee/BeaBeeTorso.gpmesh",
+                         RobotPart("Honey Chest", "../Assets/Robots/Robota/RobotaTorso.gpmesh",
                                    100, SkillType::None, 0, 0));
     mPlayer->EquipPart(PartSlot::RightArm,
-                          RobotPart("Honey Blast", "../Assets/Robots/BeaBee/BeaBeeRightArm.gpmesh",
+                          RobotPart("Robota Dustpan", "../Assets/Robots/Robota/RobotaRightArm.gpmesh",
                                     10, SkillType::Missile, 20, 3));
 
     mPlayer->EquipPart(PartSlot::LeftArm,
-                          RobotPart("Queen's Sting", "../Assets/Robots/BeaBee/BeaBeeLeftArm.gpmesh",
+                          RobotPart("Robota Broom", "../Assets/Robots/Robota/RobotaLeftArm.gpmesh",
                                     10, SkillType::Punch, 50, 1));
 
     mPlayer->EquipPart(PartSlot::Legs,
-                          RobotPart("Honey Boots", "../Assets/Robots/BeaBee/BeaBeeLeftLeg.gpmesh",
+                          RobotPart("Robota Legs", "../Assets/Robots/Robota/RobotaLeg.gpmesh",
                                     30, SkillType::None, 0, 2));
 
     mPlayer->EquipPart(PartSlot::Head,
-                          RobotPart("Queen's Crown", "../Assets/Robots/BeaBee/BeaBeeHead.gpmesh",
+                          RobotPart("Robota Head", "../Assets/Robots/Robota/RobotaHead.gpmesh",
                                     30, SkillType::Repair, 0, 0));
 
     // Comeca com o brado direito escolhido
@@ -90,6 +90,10 @@ Level::Level(class Game *game, HUD *hud) :
     mEnemy->EquipPart(PartSlot::RightArm,
                           RobotPart("Honey Blast", "../Assets/Robots/BeaBee/BeaBeeRightArm.gpmesh",
                                     10, SkillType::Missile, 20, 3));
+
+    mEnemy->EquipPart(PartSlot::LeftArm,
+                          RobotPart("Queen's Drill", "../Assets/Robots/BeaBee/BeaBeeLeftArm.gpmesh",
+                                    10, SkillType::Punch, 50, 1));
 
     mEnemy->EquipPart(PartSlot::Legs,
                           RobotPart("Honey Boots", "../Assets/Robots/BeaBee/BeaBeeLeftLeg.gpmesh",
