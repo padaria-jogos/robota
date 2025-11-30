@@ -16,6 +16,7 @@
 #include "Actors/GridCursor.h"
 #include "Map/GridMap.h"
 #include "UI/Screens/HUD.h"
+#include "UI/Screens/ActionSelection.h"
 
 struct TurnAction {
     // Move
@@ -65,6 +66,8 @@ class Level
         HUD* mHud;
         GridCursor* mCursor;
         GridMap* mGrid;
+        UIScreen* mActionSelection;
+        UIScreen* mTileSelection;
 
         // battle
         BattleState mBattleState;

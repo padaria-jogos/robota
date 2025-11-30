@@ -3,12 +3,11 @@
 //
 
 #include "Level.h"
-
 #include <algorithm>
-
 #include "Game.h"
-
 #include "Actors/Block.h"
+#include "UI/Screens/ActionSelection.h"
+#include "UI/Screens/TileSelection.h"
 
 //TODO: Movimento, uma grid por tempo
 
@@ -24,7 +23,9 @@ Level::Level(class Game *game, HUD *hud) :
     mEnemy(nullptr),
     mGhostPlayer(nullptr),
     mIsResolving(false),
-    mStepIndex(0)
+    mStepIndex(0),
+    mActionSelection(nullptr),
+    mTileSelection(nullptr)
 {
     mBattleState = BattleState::Exploration;
 
@@ -114,6 +115,10 @@ Level::Level(class Game *game, HUD *hud) :
 // TODO: ajustar a posição inicial do cursor para a do robo
 void Level::MoveCursor(int xOffset, int yOffset)
 {
+    // não move quando a tela de seleção de habilidade está mostrando
+    if (mBattleState == BattleState::SkillSelection)
+        return;
+
     // define a nova posição absoluta de acordo com offset
     if (!mGrid || !mCursor) return;
 
@@ -135,7 +140,6 @@ void Level::MoveCursor(int xOffset, int yOffset)
 
 void Level::ProcessInput(const SDL_Event &event)
 {
-
     switch (event.key.keysym.sym)
     {
         case SDLK_w:
@@ -179,6 +183,11 @@ void Level::ProcessInput(const SDL_Event &event)
                 SetSelectedSlot(PartSlot::RightArm);
                 SDL_Log(">> Selecionado: Braço Direito");
                 SDL_Log(">> Enter/Espaço para confirmar");
+                // close selection screen
+                mActionSelection->Close();
+                delete mActionSelection;
+                mActionSelection = nullptr;
+                HandleAction();
             }
             break;
 
@@ -188,6 +197,11 @@ void Level::ProcessInput(const SDL_Event &event)
                 SetSelectedSlot(PartSlot::LeftArm);
                 SDL_Log(">> Selecionado: Braço Esquerdo");
                 SDL_Log(">> Enter/Espaço para confirmar");
+                // close selection screen
+                mActionSelection->Close();
+                delete mActionSelection;
+                mActionSelection = nullptr;
+                HandleAction();
             }
             break;
 
@@ -316,6 +330,10 @@ void Level::HandleMovementPhase()
         SDL_Log("PRESSIONE '1' PARA BRACO DIREITO");
         SDL_Log("PRESSIONE '2' PARA BRACO ESQUERDO");
         SDL_Log("Ou PRESSIONE 'Q' para ESPERAR.");
+
+        // desenhar a interface
+        mActionSelection = new ActionSelection(mGame);
+
     }
     else {
         SDL_Log("Movimento invalido, muito distante.");
@@ -351,6 +369,14 @@ void Level::HandleSkillSelectionPhase(PartSlot slot)
 
     SetBattleState(BattleState::TargetSelection);
     SDL_Log("Habilidade escolhida, selecione o alvo.");
+
+    if (mActionSelection != nullptr)
+    {
+        mActionSelection->Close();
+        delete mActionSelection;
+        mActionSelection = nullptr;
+    }
+
 }
 
 void Level::HandleTargetingPhase()
@@ -427,6 +453,11 @@ void Level::HandleCancel()
                 if (t) t->SetTileType(TileType::Path);
             }
 
+            // fecha a tela de seleção
+            mActionSelection->Close();
+            delete mActionSelection;
+            mActionSelection = nullptr;
+
             SDL_Log("Movimento do fantasma desfeito.");
             break;
         }
@@ -442,6 +473,10 @@ void Level::HandleCancel()
             mGrid->SetSelectedTile(gx, gy);
 
             SetBattleState(BattleState::SkillSelection);
+
+            // desenhar a interface
+            mActionSelection = new ActionSelection(mGame);
+
             SDL_Log("Mira cancelada. Escolha outra habilidade (1 ou 2).");
             break;
         }
@@ -601,6 +636,21 @@ void Level::OnUpdate(float deltaTime)
         if (playerStopped && enemyStopped)
         {
             ExecuteNextStep();
+        }
+    }
+
+    if (mBattleState == BattleState::Exploration || mBattleState == BattleState::MoveSelection || mBattleState == BattleState::TargetSelection)
+    {
+        if (mTileSelection == nullptr)
+            mTileSelection = new TileSelection(mGame);
+    }
+    else
+    {
+        if (mTileSelection != nullptr)
+        {
+            mTileSelection->Close();
+            delete mTileSelection;
+            mTileSelection = nullptr;
         }
     }
 }
