@@ -3,6 +3,8 @@
 //
 
 #include "GridMap.h"
+
+#include <algorithm>
 #include <queue>
 #include <iostream>
 
@@ -38,20 +40,6 @@ GridMap::GridMap(Game* game, int rows, int cols, float cellSize)
 
     // teste
     SetSelectedTile(1, 1);
-
-    // verificar quais tiles devem ser pintados
-    for (auto &p : GetWalkableTiles(1, 1, 1))
-    {
-        std::cout << p.x << "," << p.y << " ";
-    }
-    std::cout << std::endl;
-
-    // ataque
-    for (auto &p : GetAttackableTiles(1, 1, 1, 1))
-    {
-        std::cout << p.x << "," << p.y << " ";
-    }
-    std::cout << std::endl;
 }
 
 Vector3 GridMap::GetWorldPosition(int gridX, int gridY) const
@@ -144,6 +132,72 @@ std::vector<TileNode> GridMap::GetWalkableTiles(int startX, int startY, int maxR
     }
     return results;
 }
+
+std::vector<Vector2> GridMap::CalculatePath(int startX, int startY, int endX, int endY) {
+    std::unordered_map<int, int> cameFrom; // Guardar o caminho
+    std::queue<int> frontier;
+
+    int startIdx = startY * mCols + startX;
+    int endIdx = endY * mCols + endX;
+
+    frontier.push(startIdx);
+    cameFrom[startIdx] = startIdx;
+
+    bool found = false;
+
+    while (!frontier.empty()) {
+        int currentIdx = frontier.front();
+        frontier.pop();
+
+        if (currentIdx == endIdx) {
+            found = true;
+            break;
+        }
+
+        int curX = currentIdx % mCols;
+        int curY = currentIdx / mCols;
+
+        const int dirs[4][2] = { {0, 1}, {0, -1}, {-1, 0}, {1, 0} };
+
+        for (auto& d : dirs) {
+            int nx = curX + d[0];
+            int ny = curY + d[1];
+
+            if (nx >= 0 && nx < mCols && ny >= 0 && ny < mRows) {
+                int idx = ny * mCols + nx;
+                if (cameFrom.find(idx) == cameFrom.end()) {
+                    bool isWalkable = (GetUnitAt(nx, ny) == nullptr);
+                    bool isDestination = (idx == endIdx);
+
+                    if (isWalkable || isDestination)
+                    {
+                        frontier.push(idx);
+                        cameFrom[idx] = currentIdx; // "Cheguei no idx vindo do current"
+                    }
+                }
+            }
+        }
+
+    }
+
+    std::vector<Vector2> path;
+    if (!found) {
+        return path;
+    }
+
+    int curr = endIdx;
+    while (curr != startIdx)
+    {
+        float px = static_cast<float>(curr % mCols);
+        float py = static_cast<float>(curr / mCols);
+        path.push_back(Vector2(px, py));
+        curr = cameFrom[curr];
+    }
+    std::reverse(path.begin(), path.end());
+    return path;
+}
+
+
 
 std::vector<TileNode> GridMap::GetAttackableTiles(int startX, int startY, int minRange, int maxRange)
 {

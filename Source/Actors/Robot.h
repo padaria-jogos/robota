@@ -58,28 +58,32 @@ struct RobotPart {
 
     RobotPart(std::string name, std::string path, int hp, SkillType sk, int dmg, int rng)
         : name(name), meshPath(path), maxHP(hp), currentHP(hp), isBroken(false), skill(sk), damage(dmg), range(rng) {}
+
 };
 
 class Robot : public Actor{
     public:
         Robot(class Game* game, Team team);
 
+        void OnUpdate(float deltaTime) override;
+
+        // Interpolar entre as grids
+        void StartSmoothMovement(const Vector3& targetWorldPos, float duration = 0.3f);
+
+        //Equip
         void EquipPart(PartSlot slot, const RobotPart& part);
 
         void SetName(std::string name)  { mName = name; }
         std::string GetName() const { return mName; }
+        std::string GetSlotName(PartSlot slot);
+
+        //Copy
+        void CopyDataFrom(const Robot* other);
+        void SyncAnimationState(const Robot* other);
 
         // Position
         int GetGridX() const { return mGridX; }
         int GetGridY() const { return mGridY; }
-
-        void SaveGridPosition() {
-                mSavedX = GetGridX();
-                mSavedY = GetGridY();
-            }
-
-        int GetSavedX() const { return mSavedX; }
-        int GetSavedY() const { return mSavedY; }
 
         // int GetCurrentTotalHP() const;
         // int GetMaxTotalHP() const;
@@ -87,10 +91,14 @@ class Robot : public Actor{
         int GetMovementRange() const { return mMoveRange; }
         void SetMovementRange(int range) { mMoveRange = range; }
 
+        void SetVisible(bool visible);
+
         void UpdateGridCoords(int x, int y);
 
         Team GetTeam() const {return mTeam; }
+        const RobotPart& GetPart(PartSlot slot) const { return mParts[(int)slot]; }
         int GetPartRange(PartSlot chosenSlot) const {return mParts[chosenSlot].range; }
+        void SetGhostMode(bool enable);
 
 
         // Attack
@@ -99,21 +107,37 @@ class Robot : public Actor{
         void AttackLocation(int targetX, int targetY, PartSlot slotUsed);
 
         // Death
+        bool IsMoving() const { return mIsMoving; }
         bool IsDead() const { return mIsDead; }
+
 
 
     private:
         std::string mName;
+        bool mHasDualLegs;
         int mGridX, mGridY;
-        int mSavedX, mSavedY;
         int mMoveRange;
 
+        Vector3 mStartPos;
+        Vector3 mTargetPos;
+        float mMoveTimer;
+        float mMoveDuration;
+
+        bool mIsMoving;
         bool mIsDead;
-        void CheckDeath();
 
         Team mTeam;
         RobotPart mParts[(int)PartSlot::Count];
+
         class MeshComponent* mPartMeshes[(int)PartSlot::Count] = { nullptr };
+        MeshComponent* mRightLegAuxMesh = nullptr;
+
+        // Animation
+        float mAnimOffset;
+
+
+        void CheckDeath();
+        Vector3 GetPartMountPosition(PartSlot slot);
 
 };
 

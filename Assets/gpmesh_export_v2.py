@@ -63,10 +63,13 @@ def generate_gpmesh_json():
         uv = uv_layer[l.index].uv
         
         # MUDANÇA 4: O tamanho base agora é 6 (Pos + Norm). 
-        # Se for <= 6, significa que ainda não adicionamos o UV (que soma +2 = 8)
         if len(gpmesh["vertices"][l.vertex_index]) <= 6:
             gpmesh["vertices"][l.vertex_index].extend([uv.x, -uv.y])
     
+    for gp_vert in gpmesh["vertices"]:
+        while len(gp_vert) < 8:
+            gp_vert.append(0.0)
+
     for poly in mesh.polygons:
         tri = []
         for loop_index in poly.loop_indices:
@@ -82,7 +85,7 @@ def generate_gpmesh_json():
             if matSlot.material.node_tree:
                 for node in matSlot.material.node_tree.nodes:
                     if node.type == 'TEX_IMAGE':
-                        textures.append("../Assets/" + node.image.name)
+                        textures.append("../Assets/Robots/" + node.image.name)
 
     gpmesh["textures"] = textures
     

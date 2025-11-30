@@ -3,10 +3,16 @@
 //
 
 #include "Level.h"
+#include <algorithm>
 #include "Game.h"
-
 #include "Actors/Block.h"
-//TODO Lidar com a morte dos robos e entender como ficou os movimentos
+#include "UI/Screens/ActionSelection.h"
+#include "UI/Screens/GameOver.h"
+#include "UI/Screens/TileSelection.h"
+#include "UI/Screens/Win.h"
+
+//TODO: Movimento, uma grid por tempo
+
 Level::Level(class Game *game, HUD *hud) :
     mGame(game),
     mCamera(mGame->GetCamera()),
@@ -16,7 +22,12 @@ Level::Level(class Game *game, HUD *hud) :
     mBattleState(BattleState::Null),
     mSelectedSlot(PartSlot::Null),
     mPlayer(nullptr),
-    enemyUnit(nullptr)
+    mEnemy(nullptr),
+    mGhostPlayer(nullptr),
+    mIsResolving(false),
+    mStepIndex(0),
+    mActionSelection(nullptr),
+    mTileSelection(nullptr)
 {
     mBattleState = BattleState::Exploration;
 
@@ -43,16 +54,29 @@ Level::Level(class Game *game, HUD *hud) :
 
     // PLAYER
     mPlayer = new Robot(game, Team::Player);
-    mPlayer->SetName("CryingBee");
+    mPlayer->SetName("BeaBee");
 
+    mPlayer->EquipPart(PartSlot::Torso,
+                         RobotPart("Honey Chest", "../Assets/Robots/Robota/RobotaTorso.gpmesh",
+                                   10, SkillType::None, 0, 0));
     mPlayer->EquipPart(PartSlot::RightArm,
-                          RobotPart("Iron Fist", "../Assets/Cube.gpmesh",
-                                    50, SkillType::Punch, 30, 1));
+                          RobotPart("Robota Dustpan", "../Assets/Robots/Robota/RobotaRightArm.gpmesh",
+                                    10, SkillType::Missile, 1000, 3));
 
     mPlayer->EquipPart(PartSlot::LeftArm,
-                          RobotPart("Thunder Beam", "../Assets/Cube.gpmesh",
-                                    50, SkillType::Missile, 40, 3));
+                          RobotPart("Robota Broom", "../Assets/Robots/Robota/RobotaLeftArm.gpmesh",
+                                    10, SkillType::Punch, 50, 1));
 
+    mPlayer->EquipPart(PartSlot::Legs,
+                          RobotPart("Robota Legs", "../Assets/Robots/Robota/RobotaLeg.gpmesh",
+                                    30, SkillType::None, 0, 2));
+
+    mPlayer->EquipPart(PartSlot::Head,
+                          RobotPart("Robota Head", "../Assets/Robots/Robota/RobotaHead.gpmesh",
+                                    30, SkillType::Repair, 0, 0));
+
+    // Comeca com o brado direito escolhido
+    SetSelectedSlot(PartSlot::RightArm);
     mPlayer->UpdateGridCoords(1, 1);
     mGrid->SetUnitAt(mPlayer, 1, 1);
 
@@ -62,26 +86,41 @@ Level::Level(class Game *game, HUD *hud) :
     MoveInGrid(mCursor, 1, 1);
 
     // ENEMY
-    enemyUnit = new Robot(game, Team::Enemy);
-    enemyUnit->SetName("EvilBee");
+    mEnemy = new Robot(game, Team::Enemy);
+    mEnemy->SetName("EvilBee");
 
-    enemyUnit->EquipPart(PartSlot::Torso,
-                         RobotPart("Heavy Armor", "../Assets/Cube.gpmesh",
-                                   100, SkillType::None, 0, 0));
+    mEnemy->EquipPart(PartSlot::Torso,
+                     RobotPart("Honey Chest", "../Assets/Robots/BeaBee/BeaBeeTorso.gpmesh",
+                               100, SkillType::None, 0, 0));
+    mEnemy->EquipPart(PartSlot::RightArm,
+                          RobotPart("Honey Blast", "../Assets/Robots/BeaBee/BeaBeeRightArm.gpmesh",
+                                    10, SkillType::Missile, 20, 3));
 
-    enemyUnit->UpdateGridCoords(2, 2);
-    mGrid->SetUnitAt(enemyUnit, 2, 2);
-    MoveInGrid(enemyUnit, 2, 2);
+    mEnemy->EquipPart(PartSlot::LeftArm,
+                          RobotPart("Queen's Drill", "../Assets/Robots/BeaBee/BeaBeeLeftArm.gpmesh",
+                                    10, SkillType::Punch, 50, 1));
+
+    mEnemy->EquipPart(PartSlot::Legs,
+                          RobotPart("Honey Boots", "../Assets/Robots/BeaBee/BeaBeeLeftLeg.gpmesh",
+                                    30, SkillType::None, 0, 2));
+
+    mEnemy->EquipPart(PartSlot::Head,
+                          RobotPart("Queen's Crown", "../Assets/Robots/BeaBee/BeaBeeHead.gpmesh",
+                                    30, SkillType::Repair, 0, 0));
+
+    mEnemy->UpdateGridCoords(2, 2);
+    mGrid->SetUnitAt(mEnemy, 2, 2);
+    MoveInGrid(mEnemy, 2, 2);
 }
 
-Level::~Level()
-{
-
-}
 
 // TODO: ajustar a posição inicial do cursor para a do robo
 void Level::MoveCursor(int xOffset, int yOffset)
 {
+    // não move quando a tela de seleção de habilidade está mostrando
+    if (mBattleState == BattleState::SkillSelection)
+        return;
+
     // define a nova posição absoluta de acordo com offset
     if (!mGrid || !mCursor) return;
 
@@ -101,11 +140,9 @@ void Level::MoveCursor(int xOffset, int yOffset)
     MoveInGrid(mCursor, newX, newY);
 }
 
-void Level::ProcessInput(SDL_Event &event)
+void Level::ProcessInput(const SDL_Event &event)
 {
-    int key = event.key.keysym.sym;
-
-    switch (key)
+    switch (event.key.keysym.sym)
     {
         case SDLK_w:
         case SDLK_UP:
@@ -128,8 +165,6 @@ void Level::ProcessInput(SDL_Event &event)
             break;
 
         case SDLK_SPACE:
-        // case SDLK_RETURN:
-            SDL_Log("Selecionou Tile: %d, %d", mCursor->GetGridX(), mCursor->GetGridY());
             HandleAction();
             break;
 
@@ -138,12 +173,23 @@ void Level::ProcessInput(SDL_Event &event)
             HandleCancel();
             break;
 
+        case SDLK_q:
+            if (mBattleState == BattleState::SkillSelection) {
+                HandleWait();
+            }
+            break;
+
         case SDLK_1:
         case SDLK_KP_1:
             if (mBattleState == BattleState::SkillSelection) {
                 SetSelectedSlot(PartSlot::RightArm);
                 SDL_Log(">> Selecionado: Braço Direito");
                 SDL_Log(">> Enter/Espaço para confirmar");
+                // close selection screen
+                mActionSelection->Close();
+                delete mActionSelection;
+                mActionSelection = nullptr;
+                HandleAction();
             }
             break;
 
@@ -153,35 +199,41 @@ void Level::ProcessInput(SDL_Event &event)
                 SetSelectedSlot(PartSlot::LeftArm);
                 SDL_Log(">> Selecionado: Braço Esquerdo");
                 SDL_Log(">> Enter/Espaço para confirmar");
+                // close selection screen
+                mActionSelection->Close();
+                delete mActionSelection;
+                mActionSelection = nullptr;
+                HandleAction();
             }
+            break;
+
+        default:
             break;
     }
 }
 
-void Level::SpawnFloor(int rows, int cols)
-{
+void Level::SpawnFloor(int rows, int cols) const {
     //SDL_Log("SPAWNWALLS -> Rows: %d, Cols: %d", rows, cols);
-    const float spacing = 500.0f;
+    constexpr float spacing = 500.0f;
 
-    float totalWidth = cols * spacing;
-    float totalHeight = rows * spacing;
+    float totalWidth = (float)cols * spacing;
+    float totalHeight = (float)rows * spacing;
 
     float startX = -totalWidth / 2.0f;
     float startY = -totalHeight / 2.0f;
-
-    float zPos = -500.0f; // Centro do cubo
 
     for (int y = 0; y < rows; y++)
     {
         for (int x = 0; x < cols; x++)
         {
-            Block* wall = new Block(mGame);
+            float zPos = -500.0f;
+            auto wall = new Block(mGame);
             wall->SetScale(Vector3(spacing, spacing, spacing)); // cubo tamanho 1x1 -> vira 500x500
 
             Vector3 pos;
             // Move o ponto da "borda" para o "centro" do bloco
-            pos.x = startX + (x * spacing) + (spacing * 0.5f);
-            pos.y = startY + (y * spacing) + (spacing * 0.5f);
+            pos.x = startX + ((float)x * spacing) + (spacing * 0.5f);
+            pos.y = startY + ((float)y * spacing) + (spacing * 0.5f);
             pos.z = zPos;
 
             wall->SetPosition(pos);
@@ -218,6 +270,9 @@ void Level::HandleAction()
                 HandleTargetingPhase();
                 break;
             }
+
+        default:
+            break;
     }
 }
 
@@ -227,6 +282,8 @@ void Level::HandleExplorationPhase()
                 mPlayer->GetGridY() == mCursor->GetGridY())
     {
         SetBattleState(BattleState::MoveSelection);
+        // Ghost
+        SpawnGhost();
 
         // BFS azul
         int range = mPlayer->GetMovementRange();
@@ -247,6 +304,8 @@ void Level::HandleExplorationPhase()
 
 void Level::HandleMovementPhase()
 {
+    int cx = mCursor->GetGridX();
+    int cy = mCursor->GetGridY();
     Tile* targetVisual = mGrid->GetTileAt(mCursor->GetGridX(), mCursor->GetGridY());
     if (targetVisual && targetVisual->GetType() == TileType::Path)
     {
@@ -257,12 +316,10 @@ void Level::HandleMovementPhase()
             return;
         }
 
-        // Move
-        // Salva a posição para UNDO
-        mPlayer->SaveGridPosition();
-
-        // Move o player
-        MoveInGrid(mPlayer, mCursor->GetGridX(), mCursor->GetGridY());
+        // Move o ghost
+        MoveInGrid(mGhostPlayer, cx, cy);
+        mPlayerTurn.moveX = cx;
+        mPlayerTurn.moveY = cy;
 
         // Limpa o azul do chão e troca o estado
         mGrid->ClearTileStates();
@@ -274,6 +331,11 @@ void Level::HandleMovementPhase()
         SDL_Log("Movimento concluido.");
         SDL_Log("PRESSIONE '1' PARA BRACO DIREITO");
         SDL_Log("PRESSIONE '2' PARA BRACO ESQUERDO");
+        SDL_Log("Ou PRESSIONE 'Q' para ESPERAR.");
+
+        // desenhar a interface
+        mActionSelection = new ActionSelection(mGame);
+
     }
     else {
         SDL_Log("Movimento invalido, muito distante.");
@@ -283,6 +345,12 @@ void Level::HandleMovementPhase()
 
 void Level::HandleSkillSelectionPhase(PartSlot slot)
 {
+    const RobotPart& part = mPlayer->GetPart(slot);
+    if (part.isBroken)
+    {
+        SDL_Log("ERRO: A parte '%s' esta QUEBRADA! Escolha outra.", part.name.c_str());
+        return;
+    }
     SetSelectedSlot(slot);
     mGrid->ClearTileStates();
 
@@ -290,8 +358,8 @@ void Level::HandleSkillSelectionPhase(PartSlot slot)
 
     // Range da skill em vermelho
     auto tiles = mGrid->GetAttackableTiles(
-        mPlayer->GetGridX(), // Origem X é o Robô
-        mPlayer->GetGridY(), // Origem Y é o Robô
+        mGhostPlayer->GetGridX(),
+        mGhostPlayer->GetGridY(), // Origem Y é o Robô
         1,
         range
     );
@@ -303,6 +371,14 @@ void Level::HandleSkillSelectionPhase(PartSlot slot)
 
     SetBattleState(BattleState::TargetSelection);
     SDL_Log("Habilidade escolhida, selecione o alvo.");
+
+    if (mActionSelection != nullptr)
+    {
+        mActionSelection->Close();
+        delete mActionSelection;
+        mActionSelection = nullptr;
+    }
+
 }
 
 void Level::HandleTargetingPhase()
@@ -310,17 +386,19 @@ void Level::HandleTargetingPhase()
     Tile* targetTile = mGrid->GetTileAt(mCursor->GetGridX(), mCursor->GetGridY());
 
     if (targetTile && targetTile->GetType() == TileType::Attack) {
-        mPlayer->AttackLocation(mCursor->GetGridX(), mCursor->GetGridY(), GetSelectedSlot());
+        mPlayerTurn.hasAction = true;
+        mPlayerTurn.skillSlot = GetSelectedSlot();
+        mPlayerTurn.targetX = mCursor->GetGridX();
+        mPlayerTurn.targetY = mCursor->GetGridY();
 
-        // Checagem de morte (TODO: mover para a fase de resolucao quando existir)
-        HandleUnitDeath(enemyUnit);
-        HandleUnitDeath(mPlayer);
 
         // Limpa o vermelho e troca de estado
         mGrid->ClearTileStates();
+        RemoveGhost();
         SetBattleState(BattleState::Exploration);
 
-        SDL_Log("Ataque realizado no tile (%d, %d). Fim do turno.", mCursor->GetGridX(), mCursor->GetGridY());
+        SDL_Log("=== PLANEJAMENTO CONCLUIDO. INICIANDO RESOLUCAO ===");
+        StartResolution();
     }else {
         SDL_Log("Alvo invalido! Selecione um quadrado dentro da range.");
     }
@@ -332,6 +410,10 @@ void Level::HandleUnitDeath(Robot*& robot)
     {
         mGrid->SetUnitAt(nullptr, robot->GetGridX(), robot->GetGridY());
         robot->SetState(ActorState::Destroy);
+        robot->SetState(ActorState::Destroy);
+        if (robot == mPlayer) mPlayer = nullptr;
+        if (robot == mEnemy)  mEnemy = nullptr;
+
         robot = nullptr;
         SDL_Log("Level removeu o robo do jogo.");
     }
@@ -339,12 +421,13 @@ void Level::HandleUnitDeath(Robot*& robot)
 
 void Level::HandleCancel()
 {
+    if (!mPlayer) return;
     // UNDO SELECTION
     switch (mBattleState) {
         case BattleState::MoveSelection:
         {
             mGrid->ClearTileStates();
-            MoveInGrid(mCursor, mPlayer->GetGridX(), mPlayer->GetGridY());
+            RemoveGhost();
             SetBattleState(BattleState::Exploration);
             SDL_Log("Selecao cancelada.");
             break;
@@ -352,58 +435,93 @@ void Level::HandleCancel()
 
         case BattleState::SkillSelection:
         {
-            // Recupera o Player
-            int restoreX = mPlayer->GetSavedX();
-            int restoreY = mPlayer->GetSavedY();
+            int px = mPlayer->GetGridX();
+            int py = mPlayer->GetGridY();
 
-            // Move o Player de volta
-            MoveInGrid(mPlayer, restoreX, restoreY);
+            // Move o Ghost de volta
+            MoveInGrid(mGhostPlayer, px, py);
 
             // Sincroniza o cursor
-            MoveInGrid(mCursor, restoreX, restoreY);
-            mGrid->SetSelectedTile(restoreX, restoreY);
+            MoveInGrid(mCursor, px, py);
+            mGrid->SetSelectedTile(px, py);
 
-            SetBattleState(BattleState::Exploration);
+            // Volta estado e repinta o azul
+            SetBattleState(BattleState::MoveSelection);
 
-            SDL_Log("Movimento desfeito (Robo voltou para %d, %d).", mPlayer->GetSavedX(), mPlayer->GetSavedY());
+            int range = mPlayer->GetMovementRange();
+            auto tiles = mGrid->GetWalkableTiles(px, py, range);
+            for (const auto& node : tiles) {
+                Tile* t = mGrid->GetTileAt(node.x, node.y);
+                if (t) t->SetTileType(TileType::Path);
+            }
+
+            // fecha a tela de seleção
+            mActionSelection->Close();
+            delete mActionSelection;
+            mActionSelection = nullptr;
+
+            SDL_Log("Movimento do fantasma desfeito.");
             break;
         }
 
         case BattleState::TargetSelection:
         {
             mGrid->ClearTileStates();
-            mGrid->ClearTileStates();
 
-            int px = mPlayer->GetGridX();
-            int py = mPlayer->GetGridY();
+            int gx = mGhostPlayer->GetGridX();
+            int gy = mGhostPlayer->GetGridY();
 
-            MoveInGrid(mCursor, px, py);
-            mGrid->SetSelectedTile(px, py);
+            MoveInGrid(mCursor, gx, gy);
+            mGrid->SetSelectedTile(gx, gy);
 
             SetBattleState(BattleState::SkillSelection);
+
+            // desenhar a interface
+            mActionSelection = new ActionSelection(mGame);
+
             SDL_Log("Mira cancelada. Escolha outra habilidade (1 ou 2).");
             break;
         }
+
+        default:
+            break;
     }
 }
 
+void Level::HandleWait() {
+    if (!mPlayer) return;
+    mPlayerTurn.moveX = mGhostPlayer->GetGridX();
+    mPlayerTurn.moveY = mGhostPlayer->GetGridY();
 
-void Level::MoveInGrid(Actor *actor, int x, int y)
-{
+    mPlayerTurn.hasAction = false;
+    mPlayerTurn.targetX = -1;
+    mPlayerTurn.targetY = -1;
+
+    mGrid->ClearTileStates();
+    RemoveGhost();
+
+    SetBattleState(BattleState::Exploration);
+    SDL_Log("Jogador escolheu ESPERAR.");
+    SDL_Log("=== INICIANDO RESOLUCAO ===");
+    CalculateEnemyAction();
+    ResolveTurn();
+    SDL_Log("=== FIM DO TURNO ===");
+}
+
+void Level::MoveInGrid(Actor *actor, int x, int y) const {
     if (!actor) return;
 
     // Atualiza o Visual (mundo 3D)
     Vector3 worldPos = mGrid->GetWorldPosition(x, y);
-
-    // Ajuste do offset de altura
     worldPos.z = OFFSET_Z;
     actor->SetPosition(worldPos);
 
     // Atualiza o Grid Lógico
-    Robot* robot = dynamic_cast<Robot*>(actor);
+    auto robot = dynamic_cast<Robot*>(actor);
     if (robot)
     {
-        mGrid->SetUnitAt(robot, x, y);  // atualizar a informacao do robo no vector da grid
+        if (actor != mGhostPlayer)
+            mGrid->SetUnitAt(robot, x, y);  // atualizar a informacao do robo no vector da grid
         robot->UpdateGridCoords(x, y);
     }
     else if (actor == mCursor)
@@ -412,6 +530,315 @@ void Level::MoveInGrid(Actor *actor, int x, int y)
         mGrid->SetSelectedTile(mCursor->GetGridX(), mCursor->GetGridY());   // visual
     }
 }
+
+void Level::SpawnGhost() {
+    if (!mGhostPlayer) {
+        mGhostPlayer = new Robot(mGame, mPlayer->GetTeam());
+        mGhostPlayer->SetName("Ghost");
+        mGhostPlayer->SetGhostMode(true);
+    }
+
+    mGhostPlayer->SetVisible(true);
+    mGhostPlayer->CopyDataFrom(mPlayer);
+    mGhostPlayer->SyncAnimationState(mPlayer);
+    mGhostPlayer->SetState(ActorState::Active);
+
+    int px = mPlayer->GetGridX();
+    int py = mPlayer->GetGridY();
+    MoveInGrid(mGhostPlayer, px, py);
+}
+
+void Level::RemoveGhost() const {
+    if (mGhostPlayer) {
+        mGhostPlayer->SetState(ActorState::Paused);
+        mGhostPlayer->SetVisible(false);
+        mGhostPlayer->SetPosition(Vector3(0.0f, 0.0f, -10000.0f));
+    }
+}
+
+void Level::CalculateEnemyAction() {
+    if  (!mEnemy) return;
+
+    // Reset
+    mEnemyTurn = TurnAction();
+
+    int ex = mEnemy->GetGridX();
+    int ey = mEnemy->GetGridY();
+    int px = mPlayer->GetGridX();
+    int py = mPlayer->GetGridY();
+
+    // Tenta mover 1 casa na direção do player
+    int dx = (px > ex) ? 1 : (px < ex ? -1 : 0);
+    int dy = (py > ey) ? 1 : (py < ey ? -1 : 0);
+
+    int nextX = ex;
+    int nextY = ey;
+
+    if (std::abs(px - ex) > std::abs(py - ey)) {
+        nextX += dx;
+    } else {
+        nextY += dy;
+    }
+
+    nextX = std::clamp(nextX, 0, mGrid->GetCols() - 1);
+    nextY = std::clamp(nextY, 0, mGrid->GetRows() - 1);
+
+    Actor* obstacle = mGrid->GetUnitAt(nextX, nextY);
+    if (obstacle != nullptr && obstacle != mEnemy) {
+        // Se estiver bloqueado, cancela o movimento e fica onde está
+        nextX = ex;
+        nextY = ey;
+    }
+
+    mEnemyTurn.moveX = nextX;
+    mEnemyTurn.moveY = nextY;
+
+    mEnemyTurn.hasAction = true;
+    mEnemyTurn.skillSlot = PartSlot::RightArm;
+
+    // TODO: Tem que levar em conta a skill
+    mEnemyTurn.targetX = px;
+    mEnemyTurn.targetY = py;
+
+    SDL_Log("Inimigo planejou ir para (%d, %d) e atacar (%d, %d)",
+        mEnemyTurn.moveX, mEnemyTurn.moveY, mEnemyTurn.targetX, mEnemyTurn.targetY);
+}
+
+void Level::ResolveTurn() {
+    CalculateEnemyAction();
+    if (mPlayerTurn.moveX != -1) {
+        mPlayerTurn.path = mGrid->CalculatePath(
+            mPlayer->GetGridX(), mPlayer->GetGridY(),
+            mPlayerTurn.moveX, mPlayerTurn.moveY
+        );
+    }
+
+    if (mEnemy && mEnemyTurn.moveX != -1) {
+        mEnemyTurn.path = mGrid->CalculatePath(
+            mEnemy->GetGridX(), mEnemy->GetGridY(),
+            mEnemyTurn.moveX, mEnemyTurn.moveY
+        );
+    }
+
+    mStepIndex = 0;
+    mIsResolving = true;
+    ExecuteNextStep();
+}
+
+void Level::OnUpdate(float deltaTime)
+{
+
+    // verifica condições de fim de jogo
+    if (mBattleState != BattleState::GameOver)
+    {
+        if (!mPlayer) {
+            // mGame->Quit();
+            new GameOver(mGame, "../Assets/Fonts/Arial.ttf");
+            SDL_Log("Jogador derrotado! Fim de jogo.");
+            mBattleState = BattleState::GameOver;
+        }
+
+        if (!mEnemy) {
+            SDL_Log("Inimigo derrotado! Jogador vence o nivel!");
+            new Win(mGame);
+            mBattleState = BattleState::GameOver;
+        }
+    }
+
+    if (mIsResolving)
+    {
+        bool playerStopped = (!mPlayer) || !mPlayer->IsMoving();
+        bool enemyStopped = (!mEnemy) || (!mEnemy->IsMoving());
+
+        if (playerStopped && enemyStopped)
+        {
+            ExecuteNextStep();
+        }
+    }
+
+    if (mBattleState == BattleState::Exploration || mBattleState == BattleState::MoveSelection || mBattleState == BattleState::TargetSelection)
+    {
+        if (mTileSelection == nullptr)
+            mTileSelection = new TileSelection(mGame);
+    }
+    else
+    {
+        if (mTileSelection != nullptr)
+        {
+            mTileSelection->Close();
+            delete mTileSelection;
+            mTileSelection = nullptr;
+        }
+    }
+}
+
+void Level::ExecuteNextStep() {
+    bool pHasSteps = mStepIndex < mPlayerTurn.path.size();
+    bool eHasSteps = mStepIndex < mEnemyTurn.path.size();
+
+    if (!pHasSteps && !eHasSteps) {
+        FinishResolution();
+        return;
+    }
+
+    Vector2 pNext = Vector2(-100.0f, -100.0f);
+    Vector2 pCurr = Vector2(-100.0f, -100.0f);
+    Vector2 eNext = Vector2(-200.0f, -200.0f);
+    Vector2 eCurr = Vector2(-200.0f, -200.0f);
+
+    if (mPlayer)
+    {
+        // Onde ele está agora
+        pCurr = Vector2((float)mPlayer->GetGridX(), (float)mPlayer->GetGridY());
+
+        // Para onde ele vai (ou fica parado se acabou os passos)
+        if (pHasSteps) {
+            pNext = mPlayerTurn.path[mStepIndex];
+        } else {
+            pNext = pCurr;
+        }
+    }
+
+    if (mEnemy)
+    {
+        // Onde ele está agora
+        eCurr = Vector2((float)mEnemy->GetGridX(), (float)mEnemy->GetGridY());
+
+        // Para onde ele vai
+        if (eHasSteps) {
+            eNext = mEnemyTurn.path[mStepIndex];
+        } else {
+            eNext = eCurr;
+        }
+    }
+
+    bool collision = false;
+
+    if (mPlayer && mEnemy)
+    {
+        if (pNext.x == eNext.x && pNext.y == eNext.y) {
+            collision = true;
+        }
+        // Colisao com outro parado
+        if (pNext.x == eCurr.x && pNext.y == eCurr.y &&
+            eNext.x == pCurr.x && eNext.y == pCurr.y)
+        {
+            collision = true;
+        }
+    }
+
+    if (collision) {
+        SDL_Log("BONK no passo %d!", mStepIndex);
+        mPlayerTurn.path.clear();
+        mEnemyTurn.path.clear();
+        FinishResolution();
+        return;
+    }
+
+
+    float stepTime = 0.3f;
+
+    if (pHasSteps && mPlayer) {
+        Vector3 targetPos = mGrid->GetWorldPosition((int)pNext.x, (int)pNext.y);
+        mPlayer->StartSmoothMovement(targetPos, stepTime);
+
+        mGrid->SetUnitAt(nullptr, mPlayer->GetGridX(), mPlayer->GetGridY()); // Sai do atual
+        mGrid->SetUnitAt(mPlayer, (int)pNext.x, (int)pNext.y);
+
+        mPlayer->UpdateGridCoords((int)pNext.x, (int)pNext.y);
+
+    }
+
+    if (eHasSteps && mEnemy) {
+        Vector3 targetPos = mGrid->GetWorldPosition((int)eNext.x, (int)eNext.y);
+        mEnemy->StartSmoothMovement(targetPos, stepTime);
+
+        mGrid->SetUnitAt(nullptr, mEnemy->GetGridX(), mEnemy->GetGridY());
+        mGrid->SetUnitAt(mEnemy, (int)eNext.x, (int)eNext.y);
+
+        mEnemy->UpdateGridCoords((int)eNext.x, (int)eNext.y);
+    }
+
+    mStepIndex++;
+}
+
+void Level::StartResolution() {
+    CalculateEnemyAction();
+
+    if (mPlayerTurn.moveX != -1) {
+        mPlayerTurn.path = mGrid->CalculatePath(
+            mPlayer->GetGridX(), mPlayer->GetGridY(),
+            mPlayerTurn.moveX, mPlayerTurn.moveY
+        );
+    }
+
+    if (mEnemy && mEnemyTurn.moveX != -1) {
+        mEnemyTurn.path = mGrid->CalculatePath(
+            mEnemy->GetGridX(), mEnemy->GetGridY(),
+            mEnemyTurn.moveX, mEnemyTurn.moveY
+        );
+    }
+
+    mStepIndex = 0;
+    mIsResolving = true;
+
+    ExecuteNextStep();
+}
+
+
+void Level::FinishResolution() {
+    SDL_Log("Movimento finalizado. Resolvendo Habilidades...");
+    mIsResolving = false;
+
+    Robot* first = nullptr;
+    Robot* second = nullptr;
+    TurnAction* act1 = nullptr;
+    TurnAction* act2 = nullptr;
+
+    if (mEnemy) {
+        int pSpeed = 10; // mPlayer->GetSpeed();
+        int eSpeed = 8;  // mEnemy->GetSpeed();
+
+        if (pSpeed >= eSpeed) {
+            first = mPlayer; second = mEnemy;
+            act1 = &mPlayerTurn; act2 = &mEnemyTurn;
+        } else {
+            first = mEnemy; second = mPlayer;
+            act1 = &mEnemyTurn; act2 = &mPlayerTurn;
+        }
+    } else {
+        first = mPlayer;
+        act1 = &mPlayerTurn;
+    }
+
+    // Primeiro Ataca
+    if (first && act1->hasAction && !first->IsDead()) {
+        first->AttackLocation(act1->targetX, act1->targetY, act1->skillSlot);
+
+        // Checa mortes
+        if (mPlayer) HandleUnitDeath(mPlayer);
+        if (mEnemy)  HandleUnitDeath(mEnemy);
+    }
+
+    // Segundo Ataca (Se ainda existir e estiver vivo)
+    bool secondAlive = false;
+    if (second == mPlayer) secondAlive = (mPlayer != nullptr);
+    else if (second == mEnemy) secondAlive = (mEnemy != nullptr);
+
+    if (secondAlive && second && act2 && act2->hasAction && !second->IsDead()) {
+        second->AttackLocation(act2->targetX, act2->targetY, act2->skillSlot);
+
+        if (mPlayer) HandleUnitDeath(mPlayer);
+        if (mEnemy)  HandleUnitDeath(mEnemy);
+    }
+
+    // Limpeza
+    mPlayerTurn = TurnAction();
+    mEnemyTurn = TurnAction();
+
+    SDL_Log("TURNO ENCERRADO.");
+}
+
 
 
 

@@ -195,6 +195,7 @@ void Game::UpdateGame(float deltaTime)
         }
     }
 
+
     // Delete any UI that are closed
     auto iter = mUIStack.begin();
     while (iter != mUIStack.end()) {
