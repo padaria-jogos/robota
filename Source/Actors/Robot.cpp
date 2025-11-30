@@ -227,6 +227,8 @@ void Robot::SetGhostMode(bool enable)
 
     if (enable) {
         ghostTex = GetGame()->GetRenderer()->GetTexture("../Assets/Hologram.png");
+        Vector3 currentScale = GetScale();
+        SetScale(currentScale * 1.02f);
     }
 
     for (int i = 0; i < (int)PartSlot::Count; i++) {
@@ -368,6 +370,11 @@ void Robot::StartSmoothMovement(const Vector3& targetWorldPos, float duration) {
         float angle = Math::Atan2(dir.y, dir.x);
         SetRotation(Vector3(0.0f, 0.0f, angle));
     }
+}
+
+void Robot::SyncAnimationState(const Robot* other) {
+    if (!other) return;
+    this->mAnimOffset = other->mAnimOffset;
 }
 
 

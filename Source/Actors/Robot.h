@@ -79,6 +79,7 @@ class Robot : public Actor{
 
         //Copy
         void CopyDataFrom(const Robot* other);
+        void SyncAnimationState(const Robot* other);
 
         // Position
         int GetGridX() const { return mGridX; }
@@ -110,6 +111,7 @@ class Robot : public Actor{
         bool IsDead() const { return mIsDead; }
 
 
+
     private:
         std::string mName;
         bool mHasDualLegs;
@@ -132,6 +134,7 @@ class Robot : public Actor{
 
         // Animation
         float mAnimOffset;
+
 
         void CheckDeath();
         Vector3 GetPartMountPosition(PartSlot slot);

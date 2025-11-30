@@ -503,6 +503,7 @@ void Level::SpawnGhost() {
 
     mGhostPlayer->SetVisible(true);
     mGhostPlayer->CopyDataFrom(mPlayer);
+    mGhostPlayer->SyncAnimationState(mPlayer);
     mGhostPlayer->SetState(ActorState::Active);
 
     int px = mPlayer->GetGridX();

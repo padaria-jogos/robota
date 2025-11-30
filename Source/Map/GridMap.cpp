@@ -40,20 +40,6 @@ GridMap::GridMap(Game* game, int rows, int cols, float cellSize)
 
     // teste
     SetSelectedTile(1, 1);
-
-    // verificar quais tiles devem ser pintados
-    for (auto &p : GetWalkableTiles(1, 1, 1))
-    {
-        std::cout << p.x << "," << p.y << " ";
-    }
-    std::cout << std::endl;
-
-    // ataque
-    for (auto &p : GetAttackableTiles(1, 1, 1, 1))
-    {
-        std::cout << p.x << "," << p.y << " ";
-    }
-    std::cout << std::endl;
 }
 
 Vector3 GridMap::GetWorldPosition(int gridX, int gridY) const
