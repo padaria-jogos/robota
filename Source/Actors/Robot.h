@@ -10,9 +10,11 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include "Actor.h"
 #include "Components/Drawing/MeshComponent.h"
+class RobotVFXManager;
 
 // TODO: Murilo olha aqui dps os tipos mecanicas etc
 enum class SkillType {
@@ -101,8 +103,11 @@ class Robot : public Actor{
         // Death
         bool IsDead() const { return mIsDead; }
 
+        RobotVFXManager* GetVFXManager() { return mVFXManager.get(); }
+
 
     private:
+        std::unique_ptr<RobotVFXManager> mVFXManager;
         std::string mName;
         int mGridX, mGridY;
         int mSavedX, mSavedY;

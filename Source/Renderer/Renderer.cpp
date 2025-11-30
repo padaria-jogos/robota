@@ -8,6 +8,7 @@
 Renderer::Renderer(SDL_Window *window)
 : mSpriteShader(nullptr)
 , mMeshShader(nullptr)
+, mParticleShader(nullptr)
 , mContext(nullptr)
 , mWindow(window)
 , mScreenWidth(1024.0f)
@@ -125,10 +126,17 @@ void Renderer::Shutdown()
 
     delete mSpriteVerts;
     mSpriteVerts = nullptr;
+
     mSpriteShader->Unload();
     delete mSpriteShader;
+
     mMeshShader->Unload();
     delete mMeshShader;
+
+    mParticleShader->Unload();
+    delete mParticleShader;
+
+    mShaders.clear();
 
     SDL_GL_DeleteContext(mContext);
 	SDL_DestroyWindow(mWindow);
@@ -213,7 +221,33 @@ bool Renderer::LoadShaders()
     mView = Matrix4::Identity;
     mProjection = Matrix4::CreateOrtho(mScreenWidth, mScreenHeight, 1000.0f, -1000.0f);
     mMeshShader->SetMatrixUniform("uViewProj", mView * mProjection);
+
+    // Create particle shader
+    mParticleShader = new Shader();
+    if (!mParticleShader->Load("../Shaders/Particle"))
+    {
+        return false;
+    }
+    
+    mParticleShader->SetActive();
+    mParticleShader->SetMatrixUniform("uViewProj", mView * mProjection);
+    
+    // Add shaders to map
+    mShaders["Sprite"] = mSpriteShader;
+    mShaders["Mesh"] = mMeshShader;
+    mShaders["Particle"] = mParticleShader;
+
     return true;
+}
+
+Shader* Renderer::GetShader(const std::string& shaderName)
+{
+    auto iter = mShaders.find(shaderName);
+    if (iter != mShaders.end())
+    {
+        return iter->second;
+    }
+    return nullptr;
 }
 
 void Renderer::CreateSpriteVerts()

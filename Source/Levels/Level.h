@@ -30,7 +30,7 @@ class Level
         Level(Game* game, HUD *hud);
         virtual ~Level();
 
-        void ProcessInput(SDL_Event &event);
+        virtual void ProcessInput(SDL_Event &event);
         virtual void OnUpdate(float deltaTime) {};
 
         void MoveInGrid(Actor *actor, int x, int y);
@@ -43,6 +43,9 @@ class Level
 
         void SetSelectedSlot(PartSlot slot) { mSelectedSlot = slot; }
         void SetBattleState(BattleState state) { mBattleState = state; }
+
+        Robot* GetPlayerRobot() const { return mPlayer; }
+        Robot* GetEnemyRobot() const { return enemyUnit; }
 
     protected:
         Game* mGame;
