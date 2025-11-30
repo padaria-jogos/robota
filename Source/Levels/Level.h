@@ -36,7 +36,8 @@ enum class BattleState {
     Exploration,    // Navegando livremente
     MoveSelection,  // Robô selecionado, escolhendo destino
     SkillSelection, // Robô moveu, escolhendo habilidade
-    TargetSelection // Selecionando a grid alvo da habilidade
+    TargetSelection, // Selecionando a grid alvo da habilidade
+    GameOver        // Fim de jogo
 };
 
 class Level

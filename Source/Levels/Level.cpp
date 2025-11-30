@@ -7,7 +7,9 @@
 #include "Game.h"
 #include "Actors/Block.h"
 #include "UI/Screens/ActionSelection.h"
+#include "UI/Screens/GameOver.h"
 #include "UI/Screens/TileSelection.h"
+#include "UI/Screens/Win.h"
 
 //TODO: Movimento, uma grid por tempo
 
@@ -56,10 +58,10 @@ Level::Level(class Game *game, HUD *hud) :
 
     mPlayer->EquipPart(PartSlot::Torso,
                          RobotPart("Honey Chest", "../Assets/Robots/Robota/RobotaTorso.gpmesh",
-                                   100, SkillType::None, 0, 0));
+                                   10, SkillType::None, 0, 0));
     mPlayer->EquipPart(PartSlot::RightArm,
                           RobotPart("Robota Dustpan", "../Assets/Robots/Robota/RobotaRightArm.gpmesh",
-                                    1000, SkillType::Missile, 1000, 3));
+                                    10, SkillType::Missile, 1000, 3));
 
     mPlayer->EquipPart(PartSlot::LeftArm,
                           RobotPart("Robota Broom", "../Assets/Robots/Robota/RobotaLeftArm.gpmesh",
@@ -624,8 +626,22 @@ void Level::ResolveTurn() {
 
 void Level::OnUpdate(float deltaTime)
 {
-    if (!mPlayer) {
-        mGame->Quit();
+
+    // verifica condições de fim de jogo
+    if (mBattleState != BattleState::GameOver)
+    {
+        if (!mPlayer) {
+            // mGame->Quit();
+            new GameOver(mGame, "../Assets/Fonts/Arial.ttf");
+            SDL_Log("Jogador derrotado! Fim de jogo.");
+            mBattleState = BattleState::GameOver;
+        }
+
+        if (!mEnemy) {
+            SDL_Log("Inimigo derrotado! Jogador vence o nivel!");
+            new Win(mGame);
+            mBattleState = BattleState::GameOver;
+        }
     }
 
     if (mIsResolving)
