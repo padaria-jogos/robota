@@ -112,6 +112,7 @@ class Robot : public Actor{
 
     private:
         std::string mName;
+        bool mHasDualLegs;
         int mGridX, mGridY;
         int mMoveRange;
 
@@ -128,6 +129,9 @@ class Robot : public Actor{
 
         class MeshComponent* mPartMeshes[(int)PartSlot::Count] = { nullptr };
         MeshComponent* mRightLegAuxMesh = nullptr;
+
+        // Animation
+        float mAnimOffset;
 
         void CheckDeath();
         Vector3 GetPartMountPosition(PartSlot slot);

@@ -14,6 +14,7 @@ Robot::Robot(class Game *game, Team team) : Actor(game)
                                             , mMoveRange(2)
                                             , mIsDead(false)
                                             , mIsMoving(false)
+                                            , mHasDualLegs(false)
 {
 
     for (int i = 0; i < (int)PartSlot::Count; i++)
@@ -29,8 +30,11 @@ Robot::Robot(class Game *game, Team team) : Actor(game)
 
     mRightLegAuxMesh->SetPositionOffset(rightLegOffset);
 
-    SetScale(Vector3(65.0f, 65.0f, 65.0f)); //200.0f
+    SetScale(Vector3(60.0f, 60.0f, 60.0f));
     SetRotation(Vector3(0.0f, 0.0f, Math::ToRadians(270.0f)));
+
+    //Anim rand
+    mAnimOffset = Random::GetFloatRange(0.0f, 100.0f);
 }
 
 void Robot::UpdateGridCoords(int x, int y) {
@@ -129,35 +133,54 @@ void Robot::EquipPart(PartSlot slot, const RobotPart& part)
 
         if (mPartMeshes[index]) {
             mPartMeshes[index]->SetMesh(mesh);
-            if (mTeam == Team::Enemy) {
-                Texture* enemyText = mGame->GetRenderer()->GetTexture("../Assets/Robots/BeaBee/BeaBeeTextureEvil.png");
-                mPartMeshes[index]->SetTextureOverride(enemyText);
-            }
+            // if (mTeam == Team::Enemy) {
+            //     Texture* enemyText = mGame->GetRenderer()->GetTexture("../Assets/Robots/BeaBee/BeaBeeTextureEvil.png");
+            //     mPartMeshes[index]->SetTextureOverride(enemyText);
+            // }
         }
 
-        if (slot == PartSlot::Legs && mRightLegAuxMesh) {
-            std::string rightPath = part.meshPath;
+        if (slot == PartSlot::Legs)
+        {
+            std::string meshPath = part.meshPath;
             std::string search = "LeftLeg";
-            size_t found = rightPath.find(search);
+            size_t found = meshPath.find(search);
 
             if (found != std::string::npos)
             {
-                // Troca "LeftLeg" por "RightLeg"
-                rightPath.replace(found, search.length(), "RightLeg");
-                auto* meshRight = renderer->GetMesh(rightPath);
+                // Robo bipede
+                mHasDualLegs = true;
 
-                mRightLegAuxMesh->SetMesh(meshRight);
-                mRightLegAuxMesh->SetVisible(true);
+                // Esquerda
+                Vector3 defaultOffset = GetPartMountPosition(PartSlot::Legs);
+                mPartMeshes[index]->SetPositionOffset(defaultOffset);
 
-                // TODO: Inimigo trocar a cor?
-                if (mTeam == Team::Enemy) {
-                    Texture* enemyText = mGame->GetRenderer()->GetTexture("../Assets/Robots/BeaBee/BeaBeeTextureEvil.png");
-                    mRightLegAuxMesh->SetTextureOverride(enemyText);
+                // Direita
+                if (mRightLegAuxMesh) {
+                    std::string rightPath = meshPath;
+                    rightPath.replace(found, search.length(), "RightLeg");
+
+                    auto* meshRight = mGame->GetRenderer()->GetMesh(rightPath);
+                    mRightLegAuxMesh->SetMesh(meshRight);
+                    mRightLegAuxMesh->SetVisible(true);
+
+                    // Inverte o Y para a direita
+                    Vector3 rightOffset = defaultOffset;
+                    rightOffset.y *= -1.0f;
+                    mRightLegAuxMesh->SetPositionOffset(rightOffset);
                 }
             }
-            else {
-                // Se não achou "LeftLeg", perna de tank
-                mRightLegAuxMesh->SetVisible(false);
+            else
+            {
+                // Robo tanque/roda
+                mHasDualLegs = false;
+
+                Vector3 centerOffset = GetPartMountPosition(PartSlot::Legs);
+                centerOffset.y = 0.0f;
+                mPartMeshes[index]->SetPositionOffset(centerOffset);
+
+                if (mRightLegAuxMesh) {
+                    mRightLegAuxMesh->SetVisible(false);
+                }
             }
         }
 
@@ -192,7 +215,7 @@ void Robot::CopyDataFrom(const Robot *other) {
         // Pega a peça do original
         const RobotPart& originalPart = other->GetPart(slot);
 
-        // Equipa neste robô (Isso já carrega a Mesh correta!)
+        // Equipa neste robô
         this->EquipPart(slot, originalPart);
     }
 }
@@ -219,7 +242,6 @@ void Robot::SetGhostMode(bool enable)
 
 void Robot::SetVisible(bool visible)
 {
-
     // Esconde todas as partes equipadas
     for (int i = 0; i < (int)PartSlot::Count; i++)
     {
@@ -271,19 +293,59 @@ void Robot::OnUpdate(float deltaTime) {
     }
 
     // Animação inicial
-    float time = SDL_GetTicks() / 1000.0f;
-    float angle = Math::Sin(time * 5.0f) * Math::ToRadians(20.0f);
+    float time = (SDL_GetTicks() / 1000.0f) + mAnimOffset;
+
+    // Idle
+    float baseArmAngle = Math::ToRadians(65.0f);
+    float breathSway = Math::Sin(time * 2.0f) * Math::ToRadians(3.0f);
+
 
     if (mPartMeshes[(int)PartSlot::RightArm])
     {
-        Quaternion rot = Quaternion(Vector3::UnitX, angle);
+        Quaternion rot = Quaternion(Vector3::UnitX, -(baseArmAngle + breathSway));
         mPartMeshes[(int)PartSlot::RightArm]->SetRotationOffset(rot);
     }
 
     if (mPartMeshes[(int)PartSlot::LeftArm])
     {
-        Quaternion rot = Quaternion(Vector3::UnitX, -angle);
+        Quaternion rot = Quaternion(Vector3::UnitX, (baseArmAngle + breathSway));
         mPartMeshes[(int)PartSlot::LeftArm]->SetRotationOffset(rot);
+    }
+
+    if (mPartMeshes[(int)PartSlot::Head])
+    {
+        float headAngle = Math::Sin(time * 2.0f) * Math::ToRadians(40.0f);
+        Quaternion headRot = Quaternion(Vector3::UnitZ, headAngle);
+        mPartMeshes[(int)PartSlot::Head]->SetRotationOffset(headRot);
+    }
+
+    // Movimentacao Walk
+    if (mIsMoving && mHasDualLegs)
+    {
+        float walkSpeed = 10.0f;
+        float walkTime = SDL_GetTicks() / 1000.0f;
+
+        // Amplitude do passo
+        float walkAngle = Math::Sin(walkTime * walkSpeed) * Math::ToRadians(40.0f);
+
+        // Perna Esquerda
+        if (mPartMeshes[(int)PartSlot::Legs]) {
+            mPartMeshes[(int)PartSlot::Legs]->SetRotationOffset(Quaternion(Vector3::UnitY, walkAngle));
+        }
+
+        // Perna Direita
+        if (mRightLegAuxMesh) {
+            mRightLegAuxMesh->SetRotationOffset(Quaternion(Vector3::UnitY, -walkAngle));
+        }
+    }
+    else if (!mIsMoving && mHasDualLegs)
+    {
+        // Se parou, reseta a rotação para 0
+        if (mPartMeshes[(int)PartSlot::Legs])
+            mPartMeshes[(int)PartSlot::Legs]->SetRotationOffset(Quaternion::Identity);
+
+        if (mRightLegAuxMesh)
+            mRightLegAuxMesh->SetRotationOffset(Quaternion::Identity);
     }
 }
 
@@ -291,10 +353,21 @@ void Robot::StartSmoothMovement(const Vector3& targetWorldPos, float duration) {
     mStartPos = GetPosition();
     mTargetPos = targetWorldPos;
     mTargetPos.z = mStartPos.z;
-
     mMoveDuration = duration;
     mMoveTimer = 0.0f;
     mIsMoving = true;
+
+    // Direction
+    Vector3 dir = mTargetPos - mStartPos;
+    dir.z = 0.0f;
+
+    if (dir.LengthSq() > 0.001f)
+    {
+        dir.Normalize();
+
+        float angle = Math::Atan2(dir.y, dir.x);
+        SetRotation(Vector3(0.0f, 0.0f, angle));
+    }
 }
 
 
