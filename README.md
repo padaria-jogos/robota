@@ -9,9 +9,8 @@
   Os jogadores devem observar durante o playtest ...
 
   Créditos:
-    Nomes dos membros do grupo e atribuições de tarefas.
-    André Assis - Sistema de Partículas,
-    Heitor Henrique - Modelos 3D, Sprites, código geral,
-    Isabela Fernandes -
-    Mateus Krause - 
-    Murilo Ribeiro - Design, Mêcanicas, IA
+- André Assis - Sistema de Partículas,
+- Heitor Henrique - Modelos 3D, Sprites, código geral,
+- Isabela Fernandes -
+- Mateus Krause - 
+- Murilo Ribeiro - Design, Mêcanicas, IA
