@@ -18,6 +18,7 @@
 #include "Camera.h"
 
 #include "UI/Screens/MainMenu.h"
+#include "Scenes/MainMenuScene.h"
 #include "Levels/Level1.h"
 
 Game::Game()
@@ -111,7 +112,8 @@ void Game::SetScene(GameScene nextScene)
     {
         case GameScene::MainMenu:
         {
-            new MainMenu(this, "../Assets/Fonts/Arial.ttf");
+            // new MainMenu(this, "../Assets/Fonts/Arial.ttf");
+            new MainMenuScene(this);
         }
         break;
 
