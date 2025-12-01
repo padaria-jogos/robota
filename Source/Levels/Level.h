@@ -119,4 +119,8 @@ class Level
         // IA simples para testar o fluxo do jogo
         void CalculateEnemyAction();
         void ResolveTurn();
+
+        void NotifyPlayer(const std::string& message) const;
+        void NotifyEnemy(const std::string& message) const;
+        void NotifyBoth(const std::string& message) const;
 };

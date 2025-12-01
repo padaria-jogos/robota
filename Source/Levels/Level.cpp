@@ -4,6 +4,7 @@
 
 #include "Level.h"
 #include <algorithm>
+#include <sstream>
 #include "Game.h"
 #include "Actors/Block.h"
 #include "UI/Screens/ActionSelection.h"
@@ -112,6 +113,11 @@ Level::Level(class Game *game, HUD *hud) :
     mEnemy->UpdateGridCoords(2, 2);
     mGrid->SetUnitAt(mEnemy, 2, 2);
     MoveInGrid(mEnemy, 2, 2);
+
+    if (mHud)
+    {
+        mHud->TrackRobots(mPlayer, mEnemy);
+    }
 }
 
 
@@ -184,8 +190,8 @@ void Level::ProcessInput(const SDL_Event &event)
         case SDLK_KP_1:
             if (mBattleState == BattleState::SkillSelection) {
                 SetSelectedSlot(PartSlot::RightArm);
-                SDL_Log(">> Selecionado: Braço Direito");
-                SDL_Log(">> Enter/Espaço para confirmar");
+                NotifyPlayer(">> Selecionado: Braço Direito");
+                NotifyPlayer(">> Enter/Espaço para confirmar");
                 HandleAction();
             }
             break;
@@ -194,8 +200,8 @@ void Level::ProcessInput(const SDL_Event &event)
         case SDLK_KP_2:
             if (mBattleState == BattleState::SkillSelection) {
                 SetSelectedSlot(PartSlot::LeftArm);
-                SDL_Log(">> Selecionado: Braço Esquerdo");
-                SDL_Log(">> Enter/Espaço para confirmar");
+                NotifyPlayer(">> Selecionado: Braço Esquerdo");
+                NotifyPlayer(">> Enter/Espaço para confirmar");
                 HandleAction();
             }
             break;
@@ -287,11 +293,11 @@ void Level::HandleExplorationPhase()
             if (t) t->SetTileType(TileType::Path);
         }
 
-        SDL_Log("Robo selecionado! Escolha o destino.");
+        NotifyPlayer("Robo selecionado! Escolha o destino.");
     }
     else
     {
-        SDL_Log("Essa unidade nao e sua.");
+        NotifyPlayer("Essa unidade nao e sua.");
     }
 }
 
@@ -305,7 +311,7 @@ void Level::HandleMovementPhase()
         // Verifica se não tem ninguém no destino (exceto eu mesmo)
         Actor* obstacle = mGrid->GetUnitAt(mCursor->GetGridX(), mCursor->GetGridY());
         if (obstacle && obstacle != mPlayer) {
-            SDL_Log("Tile ocupado!");
+            NotifyPlayer("Tile ocupado!");
             return;
         }
 
@@ -321,15 +327,15 @@ void Level::HandleMovementPhase()
         // Setup padrão de parte selecionada
         SetSelectedSlot(GetSelectedSlot());
 
-        SDL_Log("Movimento concluido.");
-        SDL_Log("PRESSIONE '1' PARA BRACO DIREITO");
-        SDL_Log("PRESSIONE '2' PARA BRACO ESQUERDO");
-        SDL_Log("Ou PRESSIONE 'Q' para ESPERAR.");
+        NotifyPlayer("Movimento concluido.");
+        NotifyPlayer("PRESSIONE '1' PARA BRACO DIREITO");
+        NotifyPlayer("PRESSIONE '2' PARA BRACO ESQUERDO");
+        NotifyPlayer("Ou PRESSIONE 'Q' para ESPERAR.");
 
 
     }
     else {
-        SDL_Log("Movimento invalido, muito distante.");
+        NotifyPlayer("Movimento invalido, muito distante.");
     }
 }
 
@@ -339,7 +345,8 @@ void Level::HandleSkillSelectionPhase(PartSlot slot)
     const RobotPart& part = mPlayer->GetPart(slot);
     if (part.isBroken)
     {
-        SDL_Log("ERRO: A parte '%s' esta QUEBRADA! Escolha outra.", part.name.c_str());
+        std::string msg = "ERRO: A parte '" + part.name + "' esta QUEBRADA! Escolha outra.";
+        NotifyPlayer(msg);
         return;
     }
     SetSelectedSlot(slot);
@@ -361,7 +368,7 @@ void Level::HandleSkillSelectionPhase(PartSlot slot)
     }
 
     SetBattleState(BattleState::TargetSelection);
-    SDL_Log("Habilidade escolhida, selecione o alvo.");
+    NotifyPlayer("Habilidade escolhida, selecione o alvo.");
 
 
 }
@@ -382,10 +389,10 @@ void Level::HandleTargetingPhase()
         RemoveGhost();
         SetBattleState(BattleState::Exploration);
 
-        SDL_Log("=== PLANEJAMENTO CONCLUIDO. INICIANDO RESOLUCAO ===");
+        NotifyPlayer("=== PLANEJAMENTO CONCLUIDO. INICIANDO RESOLUCAO ===");
         StartResolution();
     }else {
-        SDL_Log("Alvo invalido! Selecione um quadrado dentro da range.");
+        NotifyPlayer("Alvo invalido! Selecione um quadrado dentro da range.");
     }
 }
 
@@ -400,7 +407,7 @@ void Level::HandleUnitDeath(Robot*& robot)
         if (robot == mEnemy)  mEnemy = nullptr;
 
         robot = nullptr;
-        SDL_Log("Level removeu o robo do jogo.");
+        NotifyBoth("Level removeu o robo do jogo.");
     }
 }
 
@@ -414,7 +421,7 @@ void Level::HandleCancel()
             mGrid->ClearTileStates();
             RemoveGhost();
             SetBattleState(BattleState::Exploration);
-            SDL_Log("Selecao cancelada.");
+            NotifyPlayer("Selecao cancelada.");
             break;
         }
 
@@ -440,12 +447,7 @@ void Level::HandleCancel()
                 if (t) t->SetTileType(TileType::Path);
             }
 
-            // fecha a tela de seleção
-            // mActionSelection->Close();
-            // delete mActionSelection;
-            // mActionSelection = nullptr;
-
-            SDL_Log("Movimento do fantasma desfeito.");
+            NotifyPlayer("Movimento do fantasma desfeito.");
             break;
         }
 
@@ -461,10 +463,7 @@ void Level::HandleCancel()
 
             SetBattleState(BattleState::SkillSelection);
 
-            // desenhar a interface
-            // mActionSelection = new ActionSelection(mGame);
-
-            SDL_Log("Mira cancelada. Escolha outra habilidade (1 ou 2).");
+            NotifyPlayer("Mira cancelada. Escolha outra habilidade (1 ou 2).");
             break;
         }
 
@@ -486,11 +485,11 @@ void Level::HandleWait() {
     RemoveGhost();
 
     SetBattleState(BattleState::Exploration);
-    SDL_Log("Jogador escolheu ESPERAR.");
-    SDL_Log("=== INICIANDO RESOLUCAO ===");
+    NotifyPlayer("Jogador escolheu ESPERAR.");
+    NotifyBoth("=== INICIANDO RESOLUCAO ===");
     CalculateEnemyAction();
     ResolveTurn();
-    SDL_Log("=== FIM DO TURNO ===");
+    NotifyBoth("=== FIM DO TURNO ===");
 }
 
 void Level::MoveInGrid(Actor *actor, int x, int y) const {
@@ -585,8 +584,10 @@ void Level::CalculateEnemyAction() {
     mEnemyTurn.targetX = px;
     mEnemyTurn.targetY = py;
 
-    SDL_Log("Inimigo planejou ir para (%d, %d) e atacar (%d, %d)",
-        mEnemyTurn.moveX, mEnemyTurn.moveY, mEnemyTurn.targetX, mEnemyTurn.targetY);
+    std::ostringstream enemyPlan;
+    enemyPlan << "Inimigo planejou ir para (" << mEnemyTurn.moveX << ", " << mEnemyTurn.moveY
+              << ") e atacar (" << mEnemyTurn.targetX << ", " << mEnemyTurn.targetY << ")";
+    NotifyEnemy(enemyPlan.str());
 }
 
 void Level::ResolveTurn() {
@@ -619,12 +620,12 @@ void Level::OnUpdate(float deltaTime)
         if (!mPlayer) {
             // mGame->Quit();
             new GameOver(mGame, "../Assets/Fonts/Arial.ttf");
-            SDL_Log("Jogador derrotado! Fim de jogo.");
+            NotifyPlayer("Jogador derrotado! Fim de jogo.");
             mBattleState = BattleState::GameOver;
         }
 
         if (!mEnemy) {
-            SDL_Log("Inimigo derrotado! Jogador vence o nivel!");
+            NotifyEnemy("Inimigo derrotado! Jogador vence o nivel!");
             new Win(mGame);
             mBattleState = BattleState::GameOver;
         }
@@ -730,7 +731,9 @@ void Level::ExecuteNextStep() {
     }
 
     if (collision) {
-        SDL_Log("BONK no passo %d!", mStepIndex);
+        std::ostringstream bonkMsg;
+        bonkMsg << "BONK no passo " << mStepIndex << "!";
+        NotifyBoth(bonkMsg.str());
         mPlayerTurn.path.clear();
         mEnemyTurn.path.clear();
         FinishResolution();
@@ -789,7 +792,7 @@ void Level::StartResolution() {
 
 
 void Level::FinishResolution() {
-    SDL_Log("Movimento finalizado. Resolvendo Habilidades...");
+    NotifyBoth("Movimento finalizado. Resolvendo Habilidades...");
     mIsResolving = false;
 
     Robot* first = nullptr;
@@ -838,7 +841,35 @@ void Level::FinishResolution() {
     mPlayerTurn = TurnAction();
     mEnemyTurn = TurnAction();
 
-    SDL_Log("TURNO ENCERRADO.");
+    NotifyBoth("TURNO ENCERRADO.");
+}
+
+void Level::NotifyPlayer(const std::string& message) const
+{
+    SDL_Log("%s", message.c_str());
+    if (mHud)
+    {
+        mHud->AddPlayerMessage(message);
+    }
+}
+
+void Level::NotifyEnemy(const std::string& message) const
+{
+    SDL_Log("%s", message.c_str());
+    if (mHud)
+    {
+        mHud->AddEnemyMessage(message);
+    }
+}
+
+void Level::NotifyBoth(const std::string& message) const
+{
+    SDL_Log("%s", message.c_str());
+    if (mHud)
+    {
+        mHud->AddPlayerMessage(message);
+        mHud->AddEnemyMessage(message);
+    }
 }
 
 

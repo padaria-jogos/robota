@@ -55,3 +55,7 @@ void UIImage::Draw(class Shader* shader)
     // Draw quad
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 }
+void UIImage::SetTexture(const std::string &imagePath)
+{
+    mTexture = GetGame()->GetRenderer()->GetTexture(imagePath);
+}
