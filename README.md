@@ -1,5 +1,8 @@
 
 <img width="895" height="548" alt="image" src="https://github.com/user-attachments/assets/462986ff-4e84-4a62-bffa-75b675e380fb" />
+<img width="1008" height="558" alt="image2" src="https://github.com/user-attachments/assets/22aac1c9-c31d-47f4-bd89-f0ae715f5a20" />
+<img width="1008" height="558" alt="image3" src="https://github.com/user-attachments/assets/8f78aaf9-ae41-473e-9d2d-0c65cf61c3c6" />
+
 
 # ROBOTA
 
