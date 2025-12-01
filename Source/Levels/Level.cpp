@@ -32,6 +32,7 @@ Level::Level(class Game *game, HUD *hud) :
 {
     mBattleState = BattleState::Exploration;
     // ost
+    mGame->GetAudio()->StopAllSounds();
     mLevelMusic = mGame->GetAudio()->PlaySound("Backpullver-Shamanez-Overnight.wav", true);
     // hud
     // mHUD = new HUD(this, "../Assets/Fonts/Arial.ttf");
@@ -59,11 +60,11 @@ Level::Level(class Game *game, HUD *hud) :
     mPlayer->SetName("BeaBee");
 
     mPlayer->EquipPart(PartSlot::Torso,
-                         RobotPart("Honey Chest", "../Assets/Robots/Robota/RobotaTorso.gpmesh",
-                                   10, SkillType::None, 0, 0));
+                         RobotPart("Trashcan Chest", "../Assets/Robots/Robota/RobotaTorso.gpmesh",
+                                   50, SkillType::None, 0, 0));
     mPlayer->EquipPart(PartSlot::RightArm,
                           RobotPart("Robota Dustpan", "../Assets/Robots/Robota/RobotaRightArm.gpmesh",
-                                    10, SkillType::Missile, 1000, 3));
+                                    20, SkillType::Missile, 1000, 3));
 
     mPlayer->EquipPart(PartSlot::LeftArm,
                           RobotPart("Robota Broom", "../Assets/Robots/Robota/RobotaLeftArm.gpmesh",
@@ -71,7 +72,7 @@ Level::Level(class Game *game, HUD *hud) :
 
     mPlayer->EquipPart(PartSlot::Legs,
                           RobotPart("Robota Legs", "../Assets/Robots/Robota/RobotaLeg.gpmesh",
-                                    30, SkillType::None, 0, 2));
+                                    20, SkillType::None, 0, 2));
 
     mPlayer->EquipPart(PartSlot::Head,
                           RobotPart("Robota Head", "../Assets/Robots/Robota/RobotaHead.gpmesh",
@@ -93,7 +94,7 @@ Level::Level(class Game *game, HUD *hud) :
 
     mEnemy->EquipPart(PartSlot::Torso,
                      RobotPart("Honey Chest", "../Assets/Robots/BeaBee/BeaBeeTorso.gpmesh",
-                               100, SkillType::None, 0, 0));
+                               50, SkillType::None, 0, 0));
     mEnemy->EquipPart(PartSlot::RightArm,
                           RobotPart("Honey Blast", "../Assets/Robots/BeaBee/BeaBeeRightArm.gpmesh",
                                     10, SkillType::Missile, 20, 3));
