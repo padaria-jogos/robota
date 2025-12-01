@@ -60,6 +60,8 @@ class Level
         void SetSelectedSlot(PartSlot slot) { mSelectedSlot = slot; }
         void SetBattleState(BattleState state) { mBattleState = state; }
 
+        SoundHandle mLevelMusic;
+
     protected:
         Game* mGame;
         Camera* mCamera;

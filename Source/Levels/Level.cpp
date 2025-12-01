@@ -30,7 +30,8 @@ Level::Level(class Game *game, HUD *hud) :
     mTileSelection(nullptr)
 {
     mBattleState = BattleState::Exploration;
-
+    // ost
+    mLevelMusic = mGame->GetAudio()->PlaySound("Backpullver-Shamanez-Overnight.wav", true);
     // hud
     // mHUD = new HUD(this, "../Assets/Fonts/Arial.ttf");
     // mHUD->SetScore(0);
