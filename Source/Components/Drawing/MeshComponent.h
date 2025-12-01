@@ -6,6 +6,7 @@
 
 #include "../Component.h"
 #include <cstddef>
+#include "Math.h"
 
 class MeshComponent : public Component
 {

@@ -16,6 +16,7 @@
 #include "Actors/GridCursor.h"
 #include "Map/GridMap.h"
 #include "UI/Screens/HUD.h"
+#include "UI/Screens/ActionSelection.h"
 
 struct TurnAction {
     // Move
@@ -35,7 +36,8 @@ enum class BattleState {
     Exploration,    // Navegando livremente
     MoveSelection,  // Robô selecionado, escolhendo destino
     SkillSelection, // Robô moveu, escolhendo habilidade
-    TargetSelection // Selecionando a grid alvo da habilidade
+    TargetSelection, // Selecionando a grid alvo da habilidade
+    GameOver        // Fim de jogo
 };
 
 class Level
@@ -67,6 +69,8 @@ class Level
         HUD* mHud;
         GridCursor* mCursor;
         GridMap* mGrid;
+        UIScreen* mActionSelection;
+        UIScreen* mTileSelection;
 
         // battle
         BattleState mBattleState;
