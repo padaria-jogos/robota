@@ -11,7 +11,7 @@ ActionSelection::ActionSelection(class Game* game)
     // add game logo
     // AddImage("../Assets/UIBackground.png", Vector2(0.0f, 0.0f), 0.7f, 0.0f, 1);
 
-    // btn start
+    // btn esquerdo
     AddButton("Braço Esquerdo", [this]() {
         // virtually press button 2
         SDL_Event event;
@@ -21,12 +21,12 @@ ActionSelection::ActionSelection(class Game* game)
 
         SDL_PushEvent(&event);
 
-    }, Vector2(-150.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 10);
+    }, Vector2(-300.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 10);
 
     mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
     mButtons.back()->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
 
-    // btn quit
+    // btn direito
     AddButton("Braço Direito", [this]() {
         // virtually press button 1
         SDL_Event event;
@@ -35,7 +35,21 @@ ActionSelection::ActionSelection(class Game* game)
         event.key.repeat = 0;
 
         SDL_PushEvent(&event);
-    }, Vector2(150.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 20);
+    }, Vector2(0.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 20);
+
+    mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
+    mButtons.back()->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+
+    // btn desistir
+    AddButton("Pular turno", [this]() {
+        // virtually press button 1
+        SDL_Event event;
+        event.type = SDL_KEYDOWN;
+        event.key.keysym.sym = SDLK_q;
+        event.key.repeat = 0;
+
+        SDL_PushEvent(&event);
+    }, Vector2(300.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 20);
 
     mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
     mButtons.back()->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));

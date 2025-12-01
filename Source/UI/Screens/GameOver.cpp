@@ -18,6 +18,9 @@ void GameOver::HandleKeyPress(int key)
     if (key == SDLK_RETURN)
     {
         // return to main menu
+        delete mGame->GetLevel();
+        mGame->SetLevel(nullptr);
+        this->Close();
         mGame->SetScene(GameScene::MainMenu);
     }
 }

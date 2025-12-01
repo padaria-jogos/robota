@@ -185,10 +185,6 @@ void Level::ProcessInput(const SDL_Event &event)
                 SetSelectedSlot(PartSlot::RightArm);
                 SDL_Log(">> Selecionado: Braço Direito");
                 SDL_Log(">> Enter/Espaço para confirmar");
-                // close selection screen
-                mActionSelection->Close();
-                delete mActionSelection;
-                mActionSelection = nullptr;
                 HandleAction();
             }
             break;
@@ -199,10 +195,6 @@ void Level::ProcessInput(const SDL_Event &event)
                 SetSelectedSlot(PartSlot::LeftArm);
                 SDL_Log(">> Selecionado: Braço Esquerdo");
                 SDL_Log(">> Enter/Espaço para confirmar");
-                // close selection screen
-                mActionSelection->Close();
-                delete mActionSelection;
-                mActionSelection = nullptr;
                 HandleAction();
             }
             break;
@@ -333,8 +325,6 @@ void Level::HandleMovementPhase()
         SDL_Log("PRESSIONE '2' PARA BRACO ESQUERDO");
         SDL_Log("Ou PRESSIONE 'Q' para ESPERAR.");
 
-        // desenhar a interface
-        mActionSelection = new ActionSelection(mGame);
 
     }
     else {
@@ -372,12 +362,6 @@ void Level::HandleSkillSelectionPhase(PartSlot slot)
     SetBattleState(BattleState::TargetSelection);
     SDL_Log("Habilidade escolhida, selecione o alvo.");
 
-    if (mActionSelection != nullptr)
-    {
-        mActionSelection->Close();
-        delete mActionSelection;
-        mActionSelection = nullptr;
-    }
 
 }
 
@@ -456,9 +440,9 @@ void Level::HandleCancel()
             }
 
             // fecha a tela de seleção
-            mActionSelection->Close();
-            delete mActionSelection;
-            mActionSelection = nullptr;
+            // mActionSelection->Close();
+            // delete mActionSelection;
+            // mActionSelection = nullptr;
 
             SDL_Log("Movimento do fantasma desfeito.");
             break;
@@ -477,7 +461,7 @@ void Level::HandleCancel()
             SetBattleState(BattleState::SkillSelection);
 
             // desenhar a interface
-            mActionSelection = new ActionSelection(mGame);
+            // mActionSelection = new ActionSelection(mGame);
 
             SDL_Log("Mira cancelada. Escolha outra habilidade (1 ou 2).");
             break;
@@ -668,6 +652,23 @@ void Level::OnUpdate(float deltaTime)
             mTileSelection->Close();
             delete mTileSelection;
             mTileSelection = nullptr;
+        }
+    }
+
+    // se no estado de seleção de ataque
+    if (mBattleState == BattleState::SkillSelection)
+    {
+        if (mActionSelection == nullptr)
+            mActionSelection = new ActionSelection(mGame);
+
+    }
+    else
+    {
+        if (mActionSelection != nullptr)
+        {
+            mActionSelection->Close();
+            delete mActionSelection;
+            mActionSelection = nullptr;
         }
     }
 }
