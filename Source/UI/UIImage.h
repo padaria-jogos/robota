@@ -18,6 +18,7 @@ public:
 
     void Draw(class Shader* shader) override;
 
+    void SetTexture(const std::string &imagePath);
 protected:
     class Texture* mTexture;
 };

@@ -18,6 +18,7 @@
 #include "Camera.h"
 
 #include "UI/Screens/MainMenu.h"
+#include "UI/Screens/HUD.h"
 #include "Levels/Level1.h"
 
 Game::Game()
@@ -118,6 +119,7 @@ void Game::SetScene(GameScene nextScene)
         case GameScene::Level1:
         {
             delete mLevel;
+            mHUD = new HUD(this, "../Assets/Fonts/Arial.ttf");
             mLevel = new Level1(this, mHUD); // se der problema definir destrutor level sem virtual e remover o do level1
         }
     }
