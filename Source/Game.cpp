@@ -78,6 +78,9 @@ bool Game::Initialize()
     mRenderer = new Renderer(mWindow);
     mRenderer->Initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
+    // Audio
+    mAudio = new AudioSystem();
+
     // start at main menu
     SetScene(GameScene::MainMenu);
     mTicksCount = SDL_GetTicks();
