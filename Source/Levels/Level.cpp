@@ -60,22 +60,22 @@ Level::Level(class Game *game, HUD *hud) :
     mPlayer->SetName("BeaBee");
 
     mPlayer->EquipPart(PartSlot::Torso,
-                         RobotPart("Trashcan Chest", "../Assets/Robots/Robota/RobotaTorso.gpmesh",
+                         RobotPart("Trashcan Chest", "../Assets/Robots/Rosevif/RosevifTorso.gpmesh",
                                    50, SkillType::None, 0, 0));
     mPlayer->EquipPart(PartSlot::RightArm,
-                          RobotPart("Robota Dustpan", "../Assets/Robots/Robota/RobotaRightArm.gpmesh",
+                          RobotPart("Robota Dustpan", "../Assets/Robots/Rosevif/RosevifRightArm.gpmesh",
                                     20, SkillType::Missile, 1000, 3));
 
     mPlayer->EquipPart(PartSlot::LeftArm,
-                          RobotPart("Robota Broom", "../Assets/Robots/Robota/RobotaLeftArm.gpmesh",
+                          RobotPart("Robota Broom", "../Assets/Robots/Rosevif/RosevifLeftArm.gpmesh",
                                     10, SkillType::Punch, 50, 1));
 
     mPlayer->EquipPart(PartSlot::Legs,
-                          RobotPart("Robota Legs", "../Assets/Robots/Robota/RobotaLeg.gpmesh",
+                          RobotPart("Robota Legs", "../Assets/Robots/Rosevif/RosevifLeftLeg.gpmesh",
                                     20, SkillType::None, 0, 2));
 
     mPlayer->EquipPart(PartSlot::Head,
-                          RobotPart("Robota Head", "../Assets/Robots/Robota/RobotaHead.gpmesh",
+                          RobotPart("Robota Head", "../Assets/Robots/Rosevif/RosevifHead.gpmesh",
                                     30, SkillType::Repair, 0, 0));
 
     // Comeca com o brado direito escolhido
