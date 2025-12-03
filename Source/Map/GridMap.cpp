@@ -38,8 +38,10 @@ GridMap::GridMap(Game* game, int rows, int cols, float cellSize)
         }
     }
 
-    // teste
-    SetSelectedTile(1, 1);
+    // Seleciona tile inicial apenas se o grid não estiver vazio
+    if (mRows > 0 && mCols > 0) {
+        SetSelectedTile(0, 0);
+    }
 }
 
 Vector3 GridMap::GetWorldPosition(int gridX, int gridY) const
@@ -119,9 +121,8 @@ std::vector<TileNode> GridMap::GetWalkableTiles(int startX, int startY, int maxR
 
                 if (!visited[idx])
                 {
-                    // TODO: reimplementar no futuro
                     // É caminhável? (Não tem obstáculo/inimigo)
-                    if (GetUnitAt(nx, ny) == nullptr)
+                    if (GetUnitAt(nx, ny) == nullptr && IsWalkable(nx, ny))
                     {
                         visited[idx] = true;
                         frontier.push({nx, ny, current.distance + 1});
@@ -166,13 +167,17 @@ std::vector<Vector2> GridMap::CalculatePath(int startX, int startY, int endX, in
             if (nx >= 0 && nx < mCols && ny >= 0 && ny < mRows) {
                 int idx = ny * mCols + nx;
                 if (cameFrom.find(idx) == cameFrom.end()) {
-                    bool isWalkable = (GetUnitAt(nx, ny) == nullptr);
+                    // Tile deve ser caminhável OU ser o destino (se o destino também for caminhável)
+                    bool isWalkable = IsWalkable(nx, ny);
+                    bool hasNoUnit = (GetUnitAt(nx, ny) == nullptr);
                     bool isDestination = (idx == endIdx);
 
-                    if (isWalkable || isDestination)
+                    // Permite passar por tiles com unidades apenas se for o destino
+                    // Mas não permite passar por paredes :p
+                    if (isWalkable && (hasNoUnit || isDestination))
                     {
                         frontier.push(idx);
-                        cameFrom[idx] = currentIdx; // "Cheguei no idx vindo do current"
+                        cameFrom[idx] = currentIdx; // Cheguei no idx vindo do currentIdx
                     }
                 }
             }
@@ -227,12 +232,15 @@ std::vector<TileNode> GridMap::GetAttackableTiles(int startX, int startY, int mi
 void GridMap::ClearTileStates()
 {
     for (auto* tile : mTiles) {
-        tile->SetTileType(TileType::Default);
+        // Só limpa os tiles temporários (Path e Attack e preserva tiles permanentes como Wall)
+        TileType currentType = tile->GetType();
+        if (currentType == TileType::Path || currentType == TileType::Attack) {
+            tile->SetTileType(TileType::Default);
+        }
     }
 }
 
 
-// TODO: testar depois
 Tile* GridMap::GetTileAt(int x, int y)
 {
     if (x >= 0 && x < mCols && y >= 0 && y < mRows) {
@@ -270,7 +278,25 @@ void GridMap::SetUnitAt(Actor* actor, int x, int y)
     }
 }
 
+bool GridMap::IsWalkable(int x, int y) const
+{
+    Tile* tile = const_cast<GridMap*>(this)->GetTileAt(x, y);
+    if (!tile) {
+        return false; // Fora do mapa ou tile inválido
+    }
+    
+    TileType type = tile->GetType();
+    // Paredes não são caminháveis
+    return type != TileType::Wall;
+}
+
 GridMap::~GridMap()
 {
+    // Deletar todos os Tiles antes de limpar o vetor
+    for (auto* tile : mTiles) {
+        if (tile) {
+            delete tile;
+        }
+    }
     mTiles.clear();
 }

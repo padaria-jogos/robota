@@ -50,6 +50,8 @@ public:
     void SetSelectedTile(int x, int y);
     void ClearTileStates();
 
+    bool IsWalkable(int x, int y) const;
+
 
 private:
     class Game* mGame;

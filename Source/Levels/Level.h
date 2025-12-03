@@ -18,6 +18,19 @@
 #include "UI/Screens/HUD.h"
 #include "UI/Screens/ActionSelection.h"
 
+struct LevelConfig {
+    std::string csvPath;
+    std::string floorTexture;
+    std::string wallTexture;
+    std::string musicPath;
+    
+    LevelConfig() : 
+        csvPath(""),
+        floorTexture(""),
+        wallTexture(""),
+        musicPath("") {}
+};
+
 struct TurnAction {
     // Move
     int moveX, moveY;
@@ -48,7 +61,13 @@ class Level
 
         void ProcessInput(const SDL_Event &event);
         virtual void OnUpdate(float deltaTime);
+        
+        // Carrega configuração da arena a partir de JSON
+        static bool LoadLevelConfig(const std::string& jsonPath, LevelConfig& config);
+        // Carrega o level usando a config
+        void LoadLevel(const LevelConfig& config);
 
+        void LoadLevel(const std::string path);
         void MoveInGrid(Actor *actor, int x, int y) const;
 
         GridMap* GetGrid() const { return mGrid; }
@@ -84,7 +103,6 @@ class Level
         Robot *mPlayer;
         Robot *mEnemy;
 
-        void SpawnFloor(int rows, int cols) const;
         void MoveCursor(int tile_x, int tile_y);
 
     private:
@@ -92,6 +110,9 @@ class Level
         static const int COLS = 4;
         const float SIZE = 500.0f;
         const float OFFSET_Z = -100;
+        
+        // Level config (texturas, música, etc)
+        LevelConfig mLevelConfig;
 
         // Pre Action
         Robot* mGhostPlayer;

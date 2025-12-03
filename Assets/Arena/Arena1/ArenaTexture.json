@@ -1,0 +1,40 @@
+{
+  "frames": [
+    {
+      "filename": "ArenaBlocks.png",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 32
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    }
+  ],
+  "meta": {
+    "app": "http://free-tex-packer.com",
+    "version": "0.6.7",
+    "image": "ArenaTexture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 96,
+      "h": 32
+    },
+    "scale": 1
+  }
+}

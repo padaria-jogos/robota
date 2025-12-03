@@ -4,15 +4,22 @@
 
 #include "Level.h"
 #include <algorithm>
+#include <fstream>
 #include <sstream>
 #include "Game.h"
 #include "Actors/Block.h"
+#include "Json.h"
 #include "UI/Screens/ActionSelection.h"
 #include "UI/Screens/GameOver.h"
 #include "UI/Screens/TileSelection.h"
 #include "UI/Screens/Win.h"
 
-//TODO: Movimento, uma grid por tempo
+// Constantes de altura Z para posicionamento de objetos
+namespace {
+    constexpr float FLOOR_Z = -500.0f;
+    constexpr float WALL_Z = 0.0f;
+}
+
 
 Level::Level(class Game *game, HUD *hud) :
     mGame(game),
@@ -45,76 +52,18 @@ Level::Level(class Game *game, HUD *hud) :
     mCamera = new Camera(game, eye, target, up, 70.0f, 10.0f, 10000.0f);
     mGame->SetCamera(mCamera);
 
-    // spawn floor
-    SpawnFloor(ROWS, COLS);
-
-    // grid
-    mGrid = new GridMap(game, ROWS, COLS, SIZE);
 
     // cursor
     mCursor = new GridCursor(game);
-    // mCursor->Move(0, 0);
 
-    // PLAYER
+    // PLAYER e ENEMY
     mPlayer = new Robot(game, Team::Player);
-    mPlayer->SetName("BeaBee");
-
-    mPlayer->EquipPart(PartSlot::Torso,
-                         RobotPart("Trashcan Chest", "../Assets/Robots/Rosevif/RosevifTorso.gpmesh",
-                                   50, SkillType::None, 0, 0));
-    mPlayer->EquipPart(PartSlot::RightArm,
-                          RobotPart("Robota Dustpan", "../Assets/Robots/Rosevif/RosevifRightArm.gpmesh",
-                                    20, SkillType::Missile, 1000, 3));
-
-    mPlayer->EquipPart(PartSlot::LeftArm,
-                          RobotPart("Robota Broom", "../Assets/Robots/Rosevif/RosevifLeftArm.gpmesh",
-                                    10, SkillType::Punch, 50, 1));
-
-    mPlayer->EquipPart(PartSlot::Legs,
-                          RobotPart("Robota Legs", "../Assets/Robots/Rosevif/RosevifLeftLeg.gpmesh",
-                                    20, SkillType::None, 0, 2));
-
-    mPlayer->EquipPart(PartSlot::Head,
-                          RobotPart("Robota Head", "../Assets/Robots/Rosevif/RosevifHead.gpmesh",
-                                    30, SkillType::Repair, 0, 0));
-
-    // Comeca com o brado direito escolhido
-    SetSelectedSlot(PartSlot::RightArm);
-    mPlayer->UpdateGridCoords(1, 1);
-    mGrid->SetUnitAt(mPlayer, 1, 1);
-
-    MoveInGrid(mPlayer, 1, 1);
-
-    // cursor no seu personagem
-    MoveInGrid(mCursor, 1, 1);
-
-    // ENEMY
     mEnemy = new Robot(game, Team::Enemy);
-    mEnemy->SetName("EvilBee");
-
-    mEnemy->EquipPart(PartSlot::Torso,
-                     RobotPart("Honey Chest", "../Assets/Robots/BeaBee/BeaBeeTorso.gpmesh",
-                               50, SkillType::None, 0, 0));
-    mEnemy->EquipPart(PartSlot::RightArm,
-                          RobotPart("Honey Blast", "../Assets/Robots/BeaBee/BeaBeeRightArm.gpmesh",
-                                    10, SkillType::Missile, 20, 3));
-
-    mEnemy->EquipPart(PartSlot::LeftArm,
-                          RobotPart("Queen's Drill", "../Assets/Robots/BeaBee/BeaBeeLeftArm.gpmesh",
-                                    10, SkillType::Punch, 50, 1));
-
-    mEnemy->EquipPart(PartSlot::Legs,
-                          RobotPart("Honey Boots", "../Assets/Robots/BeaBee/BeaBeeLeftLeg.gpmesh",
-                                    30, SkillType::None, 0, 2));
-
-    mEnemy->EquipPart(PartSlot::Head,
-                          RobotPart("Queen's Crown", "../Assets/Robots/BeaBee/BeaBeeHead.gpmesh",
-                                    30, SkillType::Repair, 0, 0));
-
-    mEnemy->UpdateGridCoords(2, 2);
-    mGrid->SetUnitAt(mEnemy, 2, 2);
-    MoveInGrid(mEnemy, 2, 2);
-
+    
+    // Começa com o braço direito escolhido
+    SetSelectedSlot(PartSlot::RightArm);
+    
+    // HUD tracking
     if (mHud)
     {
         mHud->TrackRobots(mPlayer, mEnemy);
@@ -122,7 +71,6 @@ Level::Level(class Game *game, HUD *hud) :
 }
 
 
-// TODO: ajustar a posição inicial do cursor para a do robo
 void Level::MoveCursor(int xOffset, int yOffset)
 {
     // não move quando a tela de seleção de habilidade está mostrando
@@ -182,35 +130,6 @@ void Level::ProcessInput(const SDL_Event &event)
     }
 }
 
-void Level::SpawnFloor(int rows, int cols) const {
-    //SDL_Log("SPAWNWALLS -> Rows: %d, Cols: %d", rows, cols);
-    constexpr float spacing = 500.0f;
-
-    float totalWidth = (float)cols * spacing;
-    float totalHeight = (float)rows * spacing;
-
-    float startX = -totalWidth / 2.0f;
-    float startY = -totalHeight / 2.0f;
-
-    for (int y = 0; y < rows; y++)
-    {
-        for (int x = 0; x < cols; x++)
-        {
-            float zPos = -500.0f;
-            auto wall = new Block(mGame);
-            wall->SetScale(Vector3(spacing, spacing, spacing)); // cubo tamanho 1x1 -> vira 500x500
-
-            Vector3 pos;
-            // Move o ponto da "borda" para o "centro" do bloco
-            pos.x = startX + ((float)x * spacing) + (spacing * 0.5f);
-            pos.y = startY + ((float)y * spacing) + (spacing * 0.5f);
-            pos.z = zPos;
-
-            wall->SetPosition(pos);
-            wall->SetTexture(0);
-        }
-    }
-}
 
 void Level::HandleAction()
 {
@@ -299,14 +218,9 @@ void Level::HandleMovementPhase()
         SetSelectedSlot(GetSelectedSlot());
 
         NotifyPlayer("Movimento concluido.");
-        NotifyPlayer("PRESSIONE '1' PARA BRACO DIREITO");
-        NotifyPlayer("PRESSIONE '2' PARA BRACO ESQUERDO");
-        NotifyPlayer("Ou PRESSIONE 'Q' para ESPERAR.");
-
-
     }
     else {
-        NotifyPlayer("Movimento invalido, muito distante.");
+        NotifyPlayer("Movimento invalido.");
     }
 }
 
@@ -464,7 +378,7 @@ void Level::HandleWait() {
 }
 
 void Level::MoveInGrid(Actor *actor, int x, int y) const {
-    if (!actor) return;
+    if (!actor || !mGrid) return;
 
     // Atualiza o Visual (mundo 3D)
     Vector3 worldPos = mGrid->GetWorldPosition(x, y);
@@ -486,7 +400,7 @@ void Level::MoveInGrid(Actor *actor, int x, int y) const {
     }
 }
 
-void Level::SpawnGhost() {
+void Level::SpawnGhost() { // TODO: Sync da rotação
     if (!mGhostPlayer) {
         mGhostPlayer = new Robot(mGame, mPlayer->GetTeam());
         mGhostPlayer->SetName("Ghost");
@@ -770,7 +684,7 @@ void Level::FinishResolution() {
     TurnAction* act2 = nullptr;
 
     if (mEnemy) {
-        int pSpeed = 10; // mPlayer->GetSpeed();
+        int pSpeed = 10; // mPlayer->GetSpeed(); TODO: Definir forma de decidir quem bate primeiro
         int eSpeed = 8;  // mEnemy->GetSpeed();
 
         if (pSpeed >= eSpeed) {
@@ -839,6 +753,261 @@ void Level::NotifyBoth(const std::string& message) const
         mHud->AddPlayerMessage(message);
         mHud->AddEnemyMessage(message);
     }
+}
+
+bool Level::LoadLevelConfig(const std::string& jsonPath, LevelConfig& config)
+{
+    std::ifstream file(jsonPath);
+    if (!file.is_open()) {
+        SDL_Log("ERRO: Nao foi possivel abrir config: %s", jsonPath.c_str());
+        return false;
+    }
+
+    nlohmann::json j;
+    try {
+        file >> j;
+    } catch (const std::exception& e) {
+        SDL_Log("ERRO ao parsear JSON %s: %s", jsonPath.c_str(), e.what());
+        return false;
+    }
+
+    // Lê os campos do JSON
+    if (j.contains("csv")) {
+        config.csvPath = j["csv"].get<std::string>();
+    }
+    
+    if (j.contains("theme")) {
+        auto theme = j["theme"];
+        if (theme.contains("floor")) {
+            config.floorTexture = theme["floor"].get<std::string>();
+        }
+        if (theme.contains("wall")) {
+            config.wallTexture = theme["wall"].get<std::string>();
+        }
+    }
+    
+    if (j.contains("music")) {
+        config.musicPath = j["music"].get<std::string>();
+    }
+
+    SDL_Log("Config carregado: CSV=%s, Floor=%s, Wall=%s, Music=%s", 
+            config.csvPath.c_str(), 
+            config.floorTexture.c_str(),
+            config.wallTexture.c_str(),
+            config.musicPath.c_str());
+
+    return true;
+}
+
+void Level::LoadLevel(const LevelConfig& config)
+{
+    // Salva a config
+    mLevelConfig = config;
+    
+    std::ifstream file(config.csvPath);
+    if (!file.is_open()) {
+        SDL_Log("ERRO FATAL: Nao foi possivel abrir o level: %s", config.csvPath.c_str());
+        return;
+    }
+
+    // Ler os dados do CSV
+    std::vector<std::vector<int>> mapData;
+    std::string line;
+
+    while (std::getline(file, line))
+    {
+        std::vector<int> row;
+        std::stringstream ss(line);
+        std::string cell;
+
+        while (std::getline(ss, cell, ','))
+        {
+            if (!cell.empty()) {
+                row.push_back(std::stoi(cell));
+            }
+        }
+        if (!row.empty()) {
+            mapData.push_back(row);
+        }
+    }
+
+    int rows = mapData.size();
+    int cols = (rows > 0) ? mapData[0].size() : 0;
+
+    SDL_Log("LoadLevel: Lido %d linhas, %d colunas do CSV", rows, cols);
+
+    if (rows == 0 || cols == 0) {
+        SDL_Log("ERRO: CSV vazio ou invalido!");
+        return;
+    }
+
+    // Calcular bounding box da área útil (células != -1 e != 0)
+    int minX = cols, maxX = -1;
+    int minY = rows, maxY = -1;
+    
+    for (int y = 0; y < rows; y++) {
+        for (int x = 0; x < cols; x++) {
+            if (mapData[y][x] != -1 && mapData[y][x] != 0) {
+                minX = std::min(minX, x);
+                maxX = std::max(maxX, x);
+                minY = std::min(minY, y);
+                maxY = std::max(maxY, y);
+            }
+        }
+    }
+    
+    // Se não encontrou nenhuma célula válida, usa o mapa completo
+    if (maxX < minX) {
+        minX = 0;
+        maxX = cols - 1;
+        minY = 0;
+        maxY = rows - 1;
+    }
+    
+    int gridRows = maxY - minY + 1;
+    int gridCols = maxX - minX + 1;
+    
+    SDL_Log("Area util: (%d,%d) ate (%d,%d) = grid %dx%d", minX, minY, maxX, maxY, gridRows, gridCols);
+
+    // Criar todos os Blocks (chão e paredes) antes da GridMap
+    // Isso garante que os Blocks sejam renderizados primeiro (por baixo dos Tiles)
+    for (int y = minY; y <= maxY; y++)
+    {
+        for (int x = minX; x <= maxX; x++)
+        {
+            int tileID = mapData[y][x];
+            int gridX = x - minX;
+            int gridY = y - minY;
+
+            // Cria Blocks baseado no tipo de tile
+            switch (tileID)
+            {
+                case 0: // Nada
+                    break;
+                    
+                case 1: // Chão padrao
+                case 5: // Spawn do player (com chão)
+                case 11: // Spawn Inimigo (com chão)
+                {
+                    Block* floor = new Block(mGame);
+                    Vector3 floorPos = Vector3(
+                        (gridX - gridCols / 2.0f) * 500.0f + 250.0f,
+                        (gridY - gridRows / 2.0f) * 500.0f + 250.0f,
+                        FLOOR_Z
+                    );
+                    floor->SetPosition(floorPos);
+                    floor->SetScale(Vector3(500.0f, 500.0f, 500.0f));
+                    floor->SetTexture(mLevelConfig.floorTexture);
+                }
+                break;
+                
+                case 2: // Parede (chão + parede)
+                {
+                    // Cria chão base
+                    Block* floor = new Block(mGame);
+                    Vector3 floorPos = Vector3(
+                        (gridX - gridCols / 2.0f) * 500.0f + 250.0f,
+                        (gridY - gridRows / 2.0f) * 500.0f + 250.0f,
+                        FLOOR_Z
+                    );
+                    floor->SetPosition(floorPos);
+                    floor->SetScale(Vector3(500.0f, 500.0f, 500.0f));
+                    floor->SetTexture(mLevelConfig.floorTexture);
+                    
+                    // Cria parede em cima do chão
+                    Block* wall = new Block(mGame);
+                    Vector3 wallPos = Vector3(
+                        (gridX - gridCols / 2.0f) * 500.0f + 250.0f,
+                        (gridY - gridRows / 2.0f) * 500.0f + 250.0f,
+                        WALL_Z
+                    );
+                    wall->SetPosition(wallPos);
+                    wall->SetScale(Vector3(500.0f, 500.0f, 500.0f));
+                    wall->SetTexture(mLevelConfig.wallTexture);
+                }
+                break;
+
+                default:
+                    break;
+            }
+        }
+    }
+
+    // Criar GridMap e configurar Tiles
+    if (mGrid) {
+        SDL_Log("Deletando GridMap anterior...");
+        delete mGrid;
+        mGrid = nullptr;
+    }
+
+    SDL_Log("Criando novo GridMap %dx%d...", gridRows, gridCols);
+    mGrid = new GridMap(mGame, gridRows, gridCols, 500.0f);
+
+
+    for (int y = minY; y <= maxY; y++)
+    {
+        for (int x = minX; x <= maxX; x++)
+        {
+            int tileID = mapData[y][x];
+
+            // Converte coordenadas do CSV para coordenadas da grid
+            int gridX = x - minX;
+            int gridY = y - minY;
+
+            // Pega o Tile visual que o GridMap criou
+            Tile* tile = mGrid->GetTileAt(gridX, gridY);
+
+            // Configura o Tile e spawn de atores
+            switch (tileID)
+            {
+                case 0:
+                case -1:// Nada - esconde o tile
+                    if (tile) {
+                        tile->SetState(ActorState::Paused);
+                    }
+                    break;
+
+                case 1: // Chão
+                    if (tile) {
+                        tile->SetTileType(TileType::Default);
+                        tile->SetState(ActorState::Active);
+                    }
+                    break;
+                
+                case 2: // Parede
+                    if (tile) {
+                        tile->SetTileType(TileType::Wall);
+                        tile->SetState(ActorState::Active);
+                    }
+                    break;
+                
+                case 5: // Spawn do player
+                    if (tile) {
+                        tile->SetTileType(TileType::Default);
+                        tile->SetState(ActorState::Active);
+                    }
+                    mPlayer->UpdateGridCoords(gridX, gridY);
+                    mGrid->SetUnitAt(mPlayer, gridX, gridY);
+                    MoveInGrid(mPlayer, gridX, gridY);
+                    break;
+
+                case 11: // Spawn Inimigo
+                    if (tile) {
+                        tile->SetTileType(TileType::Default);
+                        tile->SetState(ActorState::Active);
+                    }
+                    mEnemy->UpdateGridCoords(gridX, gridY);
+                    mGrid->SetUnitAt(mEnemy, gridX, gridY);
+                    MoveInGrid(mEnemy, gridX, gridY);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    }
+
+    SDL_Log("Level carregado: %d x %d", rows, cols);
 }
 
 

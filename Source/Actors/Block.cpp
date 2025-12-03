@@ -24,3 +24,8 @@ void Block::OnUpdate(float deltaTime)
 {
 
 }
+
+void Block::SetTexture(const std::string &texturePath) {
+    Texture* texture = mGame->GetRenderer()->GetTexture(texturePath);
+    mMeshComponent->SetTextureOverride(texture);
+}
