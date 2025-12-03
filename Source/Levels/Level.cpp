@@ -180,7 +180,9 @@ void Level::HandleExplorationPhase()
 
         for (const auto& node : tiles) {
             Tile* t = mGrid->GetTileAt(node.x, node.y);
-            if (t) t->SetTileType(TileType::Path);
+            if (t && t->GetType() != TileType::Wall) {
+                t->SetTileType(TileType::Path);
+            }
         }
 
         NotifyPlayer("Robo selecionado! Escolha o destino.");
@@ -249,7 +251,9 @@ void Level::HandleSkillSelectionPhase(PartSlot slot)
 
     for (const auto& node : tiles) {
         Tile* t = mGrid->GetTileAt(node.x, node.y);
-        if (t) t->SetTileType(TileType::Attack);
+        if (t && t->GetType() != TileType::Wall) {
+            t->SetTileType(TileType::Attack);
+        }
     }
 
     SetBattleState(BattleState::TargetSelection);
@@ -329,7 +333,9 @@ void Level::HandleCancel()
             auto tiles = mGrid->GetWalkableTiles(px, py, range);
             for (const auto& node : tiles) {
                 Tile* t = mGrid->GetTileAt(node.x, node.y);
-                if (t) t->SetTileType(TileType::Path);
+                if (t && t->GetType() != TileType::Wall) {
+                    t->SetTileType(TileType::Path);
+                }
             }
 
             NotifyPlayer("Movimento do fantasma desfeito.");
