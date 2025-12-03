@@ -165,13 +165,17 @@ void Game::ProcessInput()
                 Quit();
                 break;
             case SDL_KEYDOWN:
-                // Handle key press for UI screens
+                // Processa input nas UIs primeiro
                 if (!mUIStack.empty()) {
                     mUIStack.back()->HandleKeyPress(event.key.keysym.sym);
                 }
 
-                // Handle key press for level
-                if (mLevel)
+                // Processa input no level
+                // Mas pula se for ESPAÇO e houver UI modal (evita processamento duplicado)
+                bool hasModalUI = !mUIStack.empty() && mUIStack.back()->IsModal();
+                bool isSpaceKey = event.key.keysym.sym == SDLK_SPACE;
+                
+                if (mLevel && !(hasModalUI && isSpaceKey))
                 {
                     mLevel->ProcessInput(event);
                 }
@@ -205,6 +209,7 @@ void Game::UpdateGame(float deltaTime)
     auto iter = mUIStack.begin();
     while (iter != mUIStack.end()) {
         if ((*iter)->GetState() == UIScreen::UIState::Closing) {
+            delete *iter;
             iter = mUIStack.erase(iter);
         } else {
             ++iter;

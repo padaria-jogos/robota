@@ -153,22 +153,18 @@ void Level::ProcessInput(const SDL_Event &event)
     switch (event.key.keysym.sym)
     {
         case SDLK_w:
-        case SDLK_UP:
             MoveCursor(0, 1);
             break;
 
         case SDLK_s:
-        case SDLK_DOWN:
             MoveCursor(0, -1);
             break;
 
         case SDLK_a:
-        case SDLK_LEFT:
             MoveCursor(1, 0);
             break;
 
         case SDLK_d:
-        case SDLK_RIGHT:
             MoveCursor(-1, 0);
             break;
 
@@ -179,32 +175,6 @@ void Level::ProcessInput(const SDL_Event &event)
         case SDLK_BACKSPACE:
         case SDLK_ESCAPE:
             HandleCancel();
-            break;
-
-        case SDLK_q:
-            if (mBattleState == BattleState::SkillSelection) {
-                HandleWait();
-            }
-            break;
-
-        case SDLK_1:
-        case SDLK_KP_1:
-            if (mBattleState == BattleState::SkillSelection) {
-                SetSelectedSlot(PartSlot::RightArm);
-                NotifyPlayer(">> Selecionado: Braço Direito");
-                NotifyPlayer(">> Enter/Espaço para confirmar");
-                HandleAction();
-            }
-            break;
-
-        case SDLK_2:
-        case SDLK_KP_2:
-            if (mBattleState == BattleState::SkillSelection) {
-                SetSelectedSlot(PartSlot::LeftArm);
-                NotifyPlayer(">> Selecionado: Braço Esquerdo");
-                NotifyPlayer(">> Enter/Espaço para confirmar");
-                HandleAction();
-            }
             break;
 
         default:
@@ -653,7 +623,6 @@ void Level::OnUpdate(float deltaTime)
         if (mTileSelection != nullptr)
         {
             mTileSelection->Close();
-            delete mTileSelection;
             mTileSelection = nullptr;
         }
     }
@@ -670,7 +639,6 @@ void Level::OnUpdate(float deltaTime)
         if (mActionSelection != nullptr)
         {
             mActionSelection->Close();
-            delete mActionSelection;
             mActionSelection = nullptr;
         }
     }

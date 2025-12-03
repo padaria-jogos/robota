@@ -3,6 +3,7 @@
 //
 
 #include "ActionSelection.h"
+#include "../../Levels/Level.h"
 
 ActionSelection::ActionSelection(class Game* game)
         :UIScreen(game, "../Assets/Fonts/Arial.ttf"),
@@ -13,14 +14,11 @@ ActionSelection::ActionSelection(class Game* game)
 
     // btn esquerdo
     AddButton("Braço Esquerdo", [this]() {
-        // virtually press button 2
-        SDL_Event event;
-        event.type = SDL_KEYDOWN;
-        event.key.keysym.sym = SDLK_1;
-        event.key.repeat = 0;
-
-        SDL_PushEvent(&event);
-
+        auto* level = mGame->GetLevel();
+        if (level) {
+            level->SetSelectedSlot(PartSlot::LeftArm);
+            level->HandleAction();
+        }
     }, Vector2(-300.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 10);
 
     mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
@@ -28,13 +26,11 @@ ActionSelection::ActionSelection(class Game* game)
 
     // btn direito
     AddButton("Braço Direito", [this]() {
-        // virtually press button 1
-        SDL_Event event;
-        event.type = SDL_KEYDOWN;
-        event.key.keysym.sym = SDLK_2;
-        event.key.repeat = 0;
-
-        SDL_PushEvent(&event);
+        auto* level = mGame->GetLevel();
+        if (level) {
+            level->SetSelectedSlot(PartSlot::RightArm);
+            level->HandleAction();
+        }
     }, Vector2(0.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 20);
 
     mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
@@ -42,13 +38,10 @@ ActionSelection::ActionSelection(class Game* game)
 
     // btn desistir
     AddButton("Pular turno", [this]() {
-        // virtually press button 1
-        SDL_Event event;
-        event.type = SDL_KEYDOWN;
-        event.key.keysym.sym = SDLK_q;
-        event.key.repeat = 0;
-
-        SDL_PushEvent(&event);
+        auto* level = mGame->GetLevel();
+        if (level) {
+            level->HandleWait();
+        }
     }, Vector2(300.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 20);
 
     mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
@@ -63,12 +56,12 @@ void ActionSelection::HandleKeyPress(int key)
     // navega de acordo com o input
     switch (key)
     {
-        case SDLK_LEFT:
+        case SDLK_a:
         {
             // remove highlight
             mButtons[mSelectedButtonIndex]->SetHighlighted(false);
 
-            // move para cima (circular)
+            // move para esquerda (circular)
             mSelectedButtonIndex--;
             if (mSelectedButtonIndex < 0)
                 mSelectedButtonIndex = (int)mButtons.size() - 1;
@@ -78,12 +71,12 @@ void ActionSelection::HandleKeyPress(int key)
         }
             break;
 
-        case SDLK_RIGHT:
+        case SDLK_d:
         {
             // remove highlight
             mButtons[mSelectedButtonIndex]->SetHighlighted(false);
 
-            // move para baixo (circular)
+            // move para direita (circular)
             mSelectedButtonIndex++;
             if (mSelectedButtonIndex >= (int)mButtons.size())
                 mSelectedButtonIndex = 0;
@@ -93,8 +86,7 @@ void ActionSelection::HandleKeyPress(int key)
         }
             break;
 
-        case SDLK_KP_ENTER:
-        case SDLK_RETURN:
+        case SDLK_SPACE:
         {
             // click no botão selecionado
             mButtons[mSelectedButtonIndex]->OnClick();

@@ -3,6 +3,7 @@
 //
 
 #include "TileSelection.h"
+#include "../../Levels/Level.h"
 
 TileSelection::TileSelection(class Game* game)
         :UIScreen(game, "../Assets/Fonts/Arial.ttf"),
@@ -13,14 +14,10 @@ TileSelection::TileSelection(class Game* game)
 
     // btn start
     AddButton("Selecionar Tile", [this]() {
-        // virtually press button 2
-        SDL_Event event;
-        event.type = SDL_KEYDOWN;
-        event.key.keysym.sym = SDLK_SPACE;
-        event.key.repeat = 0;
-
-        SDL_PushEvent(&event);
-
+        auto* level = mGame->GetLevel();
+        if (level) {
+            level->HandleAction();
+        }
     }, Vector2(0.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 10);
 
     mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
@@ -35,12 +32,12 @@ void TileSelection::HandleKeyPress(int key)
     // navega de acordo com o input
     switch (key)
     {
-        case SDLK_LEFT:
+        case SDLK_a:
         {
             // remove highlight
             mButtons[mSelectedButtonIndex]->SetHighlighted(false);
 
-            // move para cima (circular)
+            // move para esquerda (circular)
             mSelectedButtonIndex--;
             if (mSelectedButtonIndex < 0)
                 mSelectedButtonIndex = (int)mButtons.size() - 1;
@@ -50,12 +47,12 @@ void TileSelection::HandleKeyPress(int key)
         }
             break;
 
-        case SDLK_RIGHT:
+        case SDLK_d:
         {
             // remove highlight
             mButtons[mSelectedButtonIndex]->SetHighlighted(false);
 
-            // move para baixo (circular)
+            // move para direita (circular)
             mSelectedButtonIndex++;
             if (mSelectedButtonIndex >= (int)mButtons.size())
                 mSelectedButtonIndex = 0;
@@ -65,8 +62,7 @@ void TileSelection::HandleKeyPress(int key)
         }
             break;
 
-        case SDLK_KP_ENTER:
-        case SDLK_RETURN:
+        case SDLK_SPACE:
         {
             // click no botão selecionado
             mButtons[mSelectedButtonIndex]->OnClick();

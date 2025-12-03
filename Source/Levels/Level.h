@@ -60,6 +60,11 @@ class Level
         void SetSelectedSlot(PartSlot slot) { mSelectedSlot = slot; }
         void SetBattleState(BattleState state) { mBattleState = state; }
 
+        // Chamados pelos UIs
+        void HandleAction();
+        void HandleCancel();
+        void HandleWait();
+
         SoundHandle mLevelMusic;
 
     protected:
@@ -96,11 +101,6 @@ class Level
         TurnAction mEnemyTurn;    // IA define isso dps
         bool mIsResolving;
         int mStepIndex;
-
-        // Lógica do gameplay
-        void HandleAction();
-        void HandleCancel();
-        void HandleWait();
 
         // Handle Phase
         void HandleExplorationPhase();
