@@ -18,16 +18,33 @@
 #include "UI/Screens/HUD.h"
 #include "UI/Screens/ActionSelection.h"
 
+// IDs dos tiles no CSV
+enum TileID {
+    TILE_EMPTY = -1,
+    TILE_VOID = 0,
+    TILE_FLOOR = 1,
+    TILE_WALL = 2,
+    TILE_PLAYER_SPAWN = 5,
+    TILE_HONEY = 6,
+    TILE_FIRE = 7,
+    TILE_DESTRUCTIBLE = 8,
+    TILE_ENEMY_SPAWN = 11
+};
+
 struct LevelConfig {
     std::string csvPath;
     std::string floorTexture;
     std::string wallTexture;
+    std::string honeyTexture;
+    std::string fireTexture;
+    std::vector<std::string> destructibleMeshes;  // Lista de meshes destrutíveis
     std::string musicPath;
     
     LevelConfig() : 
         csvPath(""),
         floorTexture(""),
         wallTexture(""),
+        honeyTexture(""),
         musicPath("") {}
 };
 
@@ -106,8 +123,7 @@ class Level
         void MoveCursor(int tile_x, int tile_y);
 
     private:
-        static const int ROWS = 4;
-        static const int COLS = 4;
+        const Vector3 TILE_SCALE = Vector3(500.0f, 500.0f, 500.0f);
         const float SIZE = 500.0f;
         const float OFFSET_Z = -100;
         

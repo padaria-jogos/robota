@@ -205,6 +205,7 @@ void Game::UpdateGame(float deltaTime)
         }
     }
 
+    mAudio->Update(deltaTime);
 
     // Delete any UI that are closed
     auto iter = mUIStack.begin();

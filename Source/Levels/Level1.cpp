@@ -20,7 +20,7 @@ Level1::Level1(Game* game, HUD *hud) : Level(game, hud)
     mPlayer->LoadFromJson("../Saves/PlayerBuild.json");
     
     // Setup do Enemy - carrega do JSON
-    mEnemy->LoadFromJson("../Assets/Robots/Rosevif/Rosevif.json");
+    mEnemy->LoadFromJson("../Assets/Robots/BeaBee/BeaBee.json");
     
     // Carrega a Arena 1
     LevelConfig config;

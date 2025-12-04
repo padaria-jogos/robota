@@ -16,6 +16,7 @@ public:
 
     void SetTexture(const size_t textureId) const { mMeshComponent->SetTextureIndex(textureId); }
     void SetTexture(const std::string& texturePath);
+    void SetMesh(class Mesh* mesh) { mMeshComponent->SetMesh(mesh); }
 
     void OnUpdate(float deltaTime) override;
 

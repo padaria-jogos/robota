@@ -6,6 +6,7 @@
 #include "Game.h"
 #include "Random.h"
 #include "Json.h"
+#include "Destructible.h"
 #include <fstream>
 
 Robot::Robot(class Game *game, Team team) : Actor(game)
@@ -47,9 +48,30 @@ void Robot::UpdateGridCoords(int x, int y) {
 void Robot::TakeDamage(int damage, PartSlot slotHit) {
     int index = (int)slotHit;
 
+    // Se a parte alvo já está quebrada, sorteia uma parte que não esteja quebrada
     if (mParts[index].isBroken) {
-        // Dano no torso se a parte já tiver quebrada
-        index = (int)PartSlot::Torso;
+        std::vector<PartSlot> validParts;
+        for (int i = 0; i < (int)PartSlot::Count; i++)
+        {
+            if (!mParts[i].isBroken) {
+                validParts.push_back((PartSlot)i);
+            }
+        }
+
+        if (!validParts.empty())
+        {
+            // Sorteia uma parte válida não quebrada
+            int randomIndex = Random::GetIntRange(0, validParts.size() - 1);
+            index = (int)validParts[randomIndex];
+            SDL_Log("Parte original quebrada, redirecionando dano para: %s", mParts[index].name.c_str());
+        }
+        else
+        {
+            // Se todas estão quebradas, robô já deveria estar morto
+            SDL_Log("AVISO: Todas as partes já estão quebradas!");
+            CheckDeath();
+            return;
+        }
     }
 
     mParts[index].currentHP -= damage;
@@ -89,36 +111,38 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
 
     // Verificar o que tem na grid
     GridMap* grid = mGame->GetLevel()->GetGrid();
-    Robot* victim = dynamic_cast<Robot*>(grid->GetUnitAt(targetX, targetY));
-
+    Actor* target = grid->GetUnitAt(targetX, targetY);
+    
+    if (!target) {
+        SDL_Log("Miss");
+        return;
+    }
+    
+    // Verifica se é um Robot
+    Robot* victim = dynamic_cast<Robot*>(target);
     if (victim)
     {
-        std::vector<PartSlot> validParts;
-        for (int i = 0; i < (int)PartSlot::Count; i++)
-        {
-            // Acessamos partes que ainda nao quebraram
-            if (!victim->mParts[i].isBroken) {
-                validParts.push_back((PartSlot)i);
-            }
-        }
-
-        if (!validParts.empty())
-        {
-            // Sorteia uma parte válida não quebrada
-            int randomIndex = Random::GetIntRange(0, validParts.size() - 1);
-            PartSlot targetSlot = validParts[randomIndex];
-            SDL_Log("%s ACERTOU %s no %s!", GetName().c_str(), victim->GetName().c_str(), GetSlotName(targetSlot).c_str());
-            victim->TakeDamage(damageDealt, targetSlot);
-        }else
-        {
-            // Se chegou aqui, o robô já deveria estar morto
-            SDL_Log("Já deveria estare morto");
-            victim->TakeDamage(damageDealt, PartSlot::Torso);
-        }
-    }else
-    {
-        SDL_Log("Miss");
+        // Sorteia uma parte aleatória para receber o dano  TODO: Futuramente conseguir decidir onde o irá mirar
+        int randomPart = Random::GetIntRange(0, (int)PartSlot::Count - 1);
+        PartSlot targetSlot = (PartSlot)randomPart;
+        
+        SDL_Log("%s ATACOU %s visando %s!", GetName().c_str(), victim->GetName().c_str(), GetSlotName(targetSlot).c_str());
+        victim->TakeDamage(damageDealt, targetSlot);
+        return;
     }
+    
+    // Verifica se é um Destructible
+    Destructible* destructible = dynamic_cast<Destructible*>(target);
+    if (destructible)
+    {
+        SDL_Log("%s DESTRUIU um objeto!", GetName().c_str());
+        destructible->OnDestroy();
+        destructible->SetState(ActorState::Destroy);
+        grid->SetUnitAt(nullptr, targetX, targetY);
+        grid->SetTerrainType(targetX, targetY, TerrainType::Floor);
+        return;
+    }
+
 }
 
 void Robot::EquipPart(PartSlot slot, const RobotPart& part)

@@ -11,6 +11,7 @@
 #include "Game.h"
 #include "Math.h"
 #include "Actors/Block.h"
+#include "Actors/Destructible.h"
 #include "Json.h"
 #include "UI/Screens/ActionSelection.h"
 #include "UI/Screens/GameOver.h"
@@ -23,7 +24,7 @@ namespace {
     constexpr float WALL_Z = 0.0f;
 }
 
-
+// TODO: Dinamite. Formatos de Ataques(Urgente), Fazer o Modelo do ultimo boss
 Level::Level(class Game *game, HUD *hud) :
     mGame(game),
     mCamera(mGame->GetCamera()),
@@ -294,7 +295,7 @@ void Level::HandleTargetingPhase()
             int cy = mCursor->GetGridY();
             
             if (px == cx && py == cy) {
-                // Atacou o próprio tile com mel - verifica o tipo BASE
+                // Atacou o próprio tile com mel
                 TerrainType terrainType = mGrid->GetTerrainType(px, py);
                 if (terrainType == TerrainType::Honey) {
                     // Remove o mel do tile (muda o tipo base)
@@ -303,7 +304,7 @@ void Level::HandleTargetingPhase()
                     // Troca a textura do Block para chão normal
                     Actor* floorActor = mGrid->GetFloorBlock(px, py);
                     if (floorActor) {
-                        Block* floorBlock = static_cast<Block*>(floorActor);
+                        auto* floorBlock = dynamic_cast<Block*>(floorActor);
                         floorBlock->SetTexture(mLevelConfig.floorTexture);
                     }
                     
@@ -923,6 +924,18 @@ bool Level::LoadLevelConfig(const std::string& jsonPath, LevelConfig& config)
         if (theme.contains("wall")) {
             config.wallTexture = theme["wall"].get<std::string>();
         }
+        if (theme.contains("honey")) {
+            config.honeyTexture = theme["honey"].get<std::string>();
+        }
+        if (theme.contains("fire")) {
+            config.fireTexture = theme["fire"].get<std::string>();
+        }
+    }
+    
+    if (j.contains("destructibles")) {
+        for (auto& mesh : j["destructibles"]) {
+            config.destructibleMeshes.push_back(mesh.get<std::string>());
+        }
     }
     
     if (j.contains("music")) {
@@ -1009,8 +1022,8 @@ void Level::LoadLevel(const LevelConfig& config)
     // Criar todos os Blocks (renderizados primeiro)
     SDL_Log("Criando Blocks de chao e paredes...");
     
-    // Armazena Blocks de chão para guardar referências depois
-    std::vector<std::pair<Vector2, Block*>> floorBlockRefs;
+    // Armazena Blocks de chão e destrutíveis para guardar referências depois
+    std::vector<std::pair<Vector2, Actor*>> floorBlockRefs;
     
     for (int y = minY; y <= maxY; y++)
     {
@@ -1028,46 +1041,88 @@ void Level::LoadLevel(const LevelConfig& config)
 
             switch (tileID)
             {
-                case 0:   // Vazio
-                case -1:  // Fora do mapa
+                case TILE_VOID:
+                case TILE_EMPTY:
                     break;
                     
-                case 1:   // Chão normal
-                case 5:   // Spawn player
-                case 11:  // Spawn enemy
+                case TILE_FLOOR:
+                case TILE_PLAYER_SPAWN:
+                case TILE_ENEMY_SPAWN:
                 {
-                    Block* floor = new Block(mGame);
+                    auto* floor = new Block(mGame);
                     floor->SetPosition(basePos);
-                    floor->SetScale(Vector3(500.0f, 500.0f, 500.0f));
+                    floor->SetScale(TILE_SCALE);
                     floor->SetTexture(mLevelConfig.floorTexture);
-                    floorBlockRefs.push_back({Vector2(gridX, gridY), floor});
+                    floorBlockRefs.emplace_back(Vector2(gridX, gridY), floor);
                 }
                 break;
                 
-                case 6:   // Mel
+                case TILE_HONEY:
                 {
-                    Block* honeyFloor = new Block(mGame);
+                    auto* honeyFloor = new Block(mGame);
                     honeyFloor->SetPosition(basePos);
-                    honeyFloor->SetScale(Vector3(500.0f, 500.0f, 500.0f));
-                    honeyFloor->SetTexture("../Assets/Textures/sticky_floor_honey.png");
-                    floorBlockRefs.push_back({Vector2(gridX, gridY), honeyFloor});
+                    honeyFloor->SetScale(TILE_SCALE);
+                    honeyFloor->SetTexture(mLevelConfig.honeyTexture);
+                    floorBlockRefs.emplace_back(Vector2(gridX, gridY), honeyFloor);
                 }
                 break;
                 
-                case 2:   // Parede
+                case TILE_FIRE:
+                {
+                    auto* fireFloor = new Block(mGame);
+                    fireFloor->SetPosition(basePos);
+                    fireFloor->SetScale(TILE_SCALE);
+                    fireFloor->SetTexture(mLevelConfig.fireTexture);
+                    floorBlockRefs.emplace_back(Vector2(gridX, gridY), fireFloor);
+                }
+                break;
+                
+                case TILE_DESTRUCTIBLE:
                 {
                     // Chão base
-                    Block* floor = new Block(mGame);
+                    auto* floor = new Block(mGame);
                     floor->SetPosition(basePos);
-                    floor->SetScale(Vector3(500.0f, 500.0f, 500.0f));
+                    floor->SetScale(TILE_SCALE);
+                    floor->SetTexture(mLevelConfig.floorTexture);
+                    floorBlockRefs.emplace_back(Vector2(gridX, gridY), floor);
+                    
+                    // Objeto destrutível em cima
+                    if (!mLevelConfig.destructibleMeshes.empty()) {
+                        auto* destructible = new Destructible(mGame);
+                        
+                        // Usa mesma posição E escala do tile
+                        Vector3 objPos = basePos;
+                        objPos.z = -250; // acima e menor
+                        
+                        destructible->SetPosition(objPos);
+                        destructible->SetScale(TILE_SCALE);
+                        
+                        // Escolhe um mesh aleatório da lista
+                        int randomIndex = rand() % mLevelConfig.destructibleMeshes.size();
+                        std::string meshPath = mLevelConfig.destructibleMeshes[randomIndex];
+                        auto* mesh = mGame->GetRenderer()->GetMesh(meshPath);
+                        destructible->SetMesh(mesh);
+                        
+                        // Guarda referência para registrar no GridMap depois
+                        floorBlockRefs.emplace_back(Vector2(gridX, gridY), destructible);
+                    }
+                }
+                break;
+                
+                case TILE_WALL:
+                {
+                    // Chão base
+                    auto* floor = new Block(mGame);
+                    floor->SetPosition(basePos);
+                    floor->SetScale(TILE_SCALE);
                     floor->SetTexture(mLevelConfig.floorTexture);
                     
                     // Parede em cima
-                    Block* wall = new Block(mGame);
+                    auto* wall = new Block(mGame);
                     Vector3 wallPos = basePos;
                     wallPos.z = WALL_Z;
                     wall->SetPosition(wallPos);
-                    wall->SetScale(Vector3(500.0f, 500.0f, 500.0f));
+                    wall->SetScale(TILE_SCALE);
                     wall->SetTexture(mLevelConfig.wallTexture);
                 }
                 break;
@@ -1078,7 +1133,7 @@ void Level::LoadLevel(const LevelConfig& config)
         }
     }
 
-    // Criar GridMap e configurar tudo
+    // Criar GridMap e configurar
     if (mGrid) {
         SDL_Log("Deletando GridMap anterior...");
         delete mGrid;
@@ -1106,28 +1161,54 @@ void Level::LoadLevel(const LevelConfig& config)
 
             switch (tileID)
             {
-                case 0:
-                case -1:  // Vazio
+                case TILE_VOID:
+                case TILE_EMPTY:
                     if (tile) {
                         tile->SetState(ActorState::Paused);
                     }
                     break;
 
-                case 1:   // Chão normal
+                case TILE_FLOOR:
                     if (tile) {
                         tile->SetState(ActorState::Active);
                     }
                     mGrid->SetTerrainType(gridX, gridY, TerrainType::Floor);
                     break;
                 
-                case 2:   // Parede
+                case TILE_WALL:
                     if (tile) {
                         tile->SetState(ActorState::Active);
                     }
                     mGrid->SetTerrainType(gridX, gridY, TerrainType::Wall);
                     break;
                 
-                case 5:   // Spawn player
+                case TILE_FIRE:
+                    if (tile) {
+                        tile->SetState(ActorState::Active);
+                    }
+                    mGrid->SetTerrainType(gridX, gridY, TerrainType::Fire);
+                    break;
+                
+                case TILE_DESTRUCTIBLE:
+                {
+                    if (tile) {
+                        tile->SetState(ActorState::Active);
+                    }
+                    mGrid->SetTerrainType(gridX, gridY, TerrainType::Wall);  // Bloqueia movimento como parede
+                    
+                    // Encontra o destrutível criado anteriormente para este gridX, gridY
+                    for (const auto& [pos, actor] : floorBlockRefs) {
+                        if (pos.x == gridX && pos.y == gridY) {
+                            if (dynamic_cast<Destructible*>(actor)) {
+                                mGrid->SetUnitAt(actor, gridX, gridY);
+                                break;
+                            }
+                        }
+                    }
+                }
+                break;
+                
+                case TILE_PLAYER_SPAWN:
                     if (tile) {
                         tile->SetState(ActorState::Active);
                     }
@@ -1137,7 +1218,7 @@ void Level::LoadLevel(const LevelConfig& config)
                     MoveInGrid(mPlayer, gridX, gridY);
                     break;
 
-                case 11:  // Spawn enemy
+                case TILE_ENEMY_SPAWN:
                     if (tile) {
                         tile->SetState(ActorState::Active);
                     }
@@ -1147,7 +1228,7 @@ void Level::LoadLevel(const LevelConfig& config)
                     MoveInGrid(mEnemy, gridX, gridY);
                     break;
                 
-                case 6:   // Mel
+                case TILE_HONEY:
                     if (tile) {
                         tile->SetState(ActorState::Active);
                     }
