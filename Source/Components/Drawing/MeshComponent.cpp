@@ -15,6 +15,8 @@ MeshComponent::MeshComponent(Actor* owner)
         , mTextureOverride(nullptr)
         , mOffset(Vector3::Zero)
         , mRotationOffset(Quaternion::Identity)
+        , mMetallic(0.7f)
+        , mUnlit(false)
 {
     mOwner->GetGame()->GetRenderer()->AddMeshComp(this);
 }
@@ -42,6 +44,12 @@ void MeshComponent::Draw(Shader* shader)
 
         // Set the world transform
         shader->SetMatrixUniform("uWorldTransform", finalWorld);
+
+        // Set the metallic property
+        shader->SetFloatUniform("uMetallic", mMetallic);
+        
+        // Set the unlit property
+        shader->SetIntUniform("uUnlit", mUnlit ? 1 : 0);
 
         // Set the active texture
         Texture* t = mTextureOverride;

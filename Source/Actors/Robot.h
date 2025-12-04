@@ -13,6 +13,7 @@
 #include <string>
 #include "Actor.h"
 #include "Components/Drawing/MeshComponent.h"
+#include "Components/Lighting/PointLightComponent.h"
 
 // TODO: Murilo olha aqui dps os tipos mecanicas etc
 enum class SkillType {
@@ -150,6 +151,9 @@ class Robot : public Actor{
 
         class MeshComponent* mPartMeshes[(int)PartSlot::Count] = { nullptr };
         MeshComponent* mRightLegAuxMesh = nullptr;
+        
+        // Point light para iluminação do robô
+        PointLightComponent* mLight = nullptr;
 
         // Animation
         float mAnimOffset;

@@ -26,17 +26,28 @@ Robot::Robot(class Game *game, Team team) : Actor(game)
         // Define onde essa peça vai ficar quando for equipada
         Vector3 offset = GetPartMountPosition((PartSlot)i);
         mPartMeshes[i]->SetPositionOffset(offset);
+
+        mPartMeshes[i]->SetMetallic(1.0f); // Robo tem que ser metalico
     }
     mRightLegAuxMesh = new MeshComponent(this);
     Vector3 rightLegOffset = Vector3(0.0f, 0.6f, 2.5f);
 
     mRightLegAuxMesh->SetPositionOffset(rightLegOffset);
+    mRightLegAuxMesh->SetMetallic(1.0f);
 
     SetScale(Vector3(60.0f, 60.0f, 60.0f));
     SetRotation(Vector3(0.0f, 0.0f, Math::ToRadians(270.0f)));
 
     //Anim rand
     mAnimOffset = Random::GetFloatRange(0.0f, 100.0f);
+    
+    // Luz pontual no robo
+    mLight = new PointLightComponent(this);
+    mLight->SetColor(Vector3(1.0f, 1.0f, 1.0f));
+    mLight->SetIntensity(1.5f);
+    mLight->SetRadius(400.0f);
+    // Spotlight no robo
+    mLight->SetOffset(Vector3(0.0f, 0.0f, 250.0f));
 }
 
 void Robot::UpdateGridCoords(int x, int y) {

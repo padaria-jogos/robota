@@ -15,6 +15,9 @@ Tile::Tile(Game* game)
     mMeshComp = new MeshComponent(this);
     Mesh* mesh = game->GetRenderer()->GetMesh("../Assets/Tile.gpmesh");
     mMeshComp->SetMesh(mesh);
+    
+    // Tiles são unlit (sem efeitos de iluminação)
+    mMeshComp->SetUnlit(true);
 
     UpdateTexture();
 }

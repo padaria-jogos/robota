@@ -7,6 +7,7 @@
 
 Level1::Level1(Game* game, HUD *hud) : Level(game, hud)
 {
+    SetWorldLightIntensity(1.0f);
     // Teste Setup do Player
     mPlayer->LoadFromJson("../Assets/Robots/Robota/Robota.json");
     

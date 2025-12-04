@@ -11,7 +11,7 @@
 class Block : public Actor
 {
 public:
-    Block(class Game* game);
+    Block(class Game* game, float metallic = 0.0f);
     ~Block();
 
     void SetTexture(const size_t textureId) const { mMeshComponent->SetTextureIndex(textureId); }

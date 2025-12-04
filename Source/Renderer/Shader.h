@@ -23,6 +23,7 @@ public:
     void SetVectorUniform (const char* name, const Vector4& vector) const;
 	void SetMatrixUniform(const char* name, const Matrix4& matrix) const;
     void SetFloatUniform(const char* name, float value) const;
+    void SetIntUniform(const char* name, int value) const;
     void SetTextureUniform(const char *name, int value) const;
 
 private:

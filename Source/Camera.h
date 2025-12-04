@@ -12,6 +12,10 @@ public:
     Camera(class Game* game, const Vector3 &eye, const Vector3 &target, const Vector3 &up,
            float foy, float near, float far);
     void Update(float deltaTime);
+    
+    // Rotação câmera
+    void RotateLeft();
+    void RotateRight();
 
     // Get/set position
     Vector3 GetPosition() const { return mEye; }
@@ -40,6 +44,9 @@ private:
     Vector3 mEye;
     Vector3 mTarget;
     Vector3 mUp;
+    
+    // 0, 90, 180, 270 graus TESTE (pode mudar mateus)
+    int mCameraAngleIndex;
 
     Matrix4 mPerspProjMatrix;
     Matrix4 mViewMatrix;

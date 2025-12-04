@@ -74,6 +74,10 @@ Level::Level(class Game *game, HUD *hud) :
     }
 }
 
+void Level::SetWorldLightIntensity(float intensity)
+{
+    mGame->GetRenderer()->SetWorldLightIntensity(intensity);
+}
 
 void Level::MoveCursor(int xOffset, int yOffset)
 {
@@ -1111,14 +1115,14 @@ void Level::LoadLevel(const LevelConfig& config)
                 
                 case TILE_WALL:
                 {
-                    // Chão base
-                    auto* floor = new Block(mGame);
+                    // Chão base (não metálico)
+                    auto* floor = new Block(mGame, 0.0f);
                     floor->SetPosition(basePos);
                     floor->SetScale(TILE_SCALE);
                     floor->SetTexture(mLevelConfig.floorTexture);
                     
-                    // Parede em cima
-                    auto* wall = new Block(mGame);
+                    // Parede em cima (metálica)
+                    auto* wall = new Block(mGame, 0.6f);
                     Vector3 wallPos = basePos;
                     wallPos.z = WALL_Z;
                     wall->SetPosition(wallPos);

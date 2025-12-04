@@ -97,6 +97,15 @@ void Shader::SetFloatUniform(const char *name, float value) const
     glUniform1f(loc, value);
 }
 
+void Shader::SetIntUniform(const char *name, int value) const
+{
+    // Find the uniform by this name
+    GLuint loc = glGetUniformLocation(mShaderProgram, name);
+
+    // Send the int data to the uniform
+    glUniform1i(loc, value);
+}
+
 void Shader::SetTextureUniform(const char *name, int value) const
 {
     // Find the uniform by this name

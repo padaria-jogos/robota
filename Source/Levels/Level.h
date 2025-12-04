@@ -95,6 +95,9 @@ class Level
 
         void SetSelectedSlot(PartSlot slot) { mSelectedSlot = slot; }
         void SetBattleState(BattleState state) { mBattleState = state; }
+        
+        // Controle de iluminação do mundo (0.0 = escuro, 1.0 = normal, >1.0 = super iluminado)
+        void SetWorldLightIntensity(float intensity);
 
         // Chamados pelos UIs
         void HandleAction();

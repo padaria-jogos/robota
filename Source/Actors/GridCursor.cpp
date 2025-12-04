@@ -17,6 +17,9 @@ GridCursor::GridCursor(Game* game) : Actor(game)
     mMesh = new MeshComponent(this);
     Mesh* mesh = mGame->GetRenderer()->GetMesh("../Assets/Cursor.gpmesh");
     mMesh->SetMesh(mesh);
+    
+    // Cursor é unlit (sem efeitos de iluminação)
+    mMesh->SetUnlit(true);
 
     SetScale(Vector3(100.0f, 100.0f, 100.0f));
     SetPosition(Vector3(0, 0, 150));    // sample position

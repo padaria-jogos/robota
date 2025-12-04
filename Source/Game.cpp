@@ -166,7 +166,19 @@ void Game::ProcessInput()
                 Quit();
                 break;
             case SDL_KEYDOWN:
-                // Processa input nas UIs primeiro
+                // Rotação da câmera com Q e E (processa ANTES de tudo)
+                if (event.key.keysym.sym == SDLK_q)
+                {
+                    mCamera->RotateLeft();
+                    break;  // Não processa mais nada
+                }
+                else if (event.key.keysym.sym == SDLK_e)
+                {
+                    mCamera->RotateRight();
+                    break;  // Não processa mais nada
+                }
+                
+                // Processa input nas UIs
                 if (!mUIStack.empty()) {
                     mUIStack.back()->HandleKeyPress(event.key.keysym.sym);
                 }

@@ -30,6 +30,9 @@ public:
 
     void AddUIElement(class UIElement *comp);
     void RemoveUIElement(class UIElement *comp);
+    
+    void AddPointLight(class PointLightComponent* light);
+    void RemovePointLight(class PointLightComponent* light);
 
     void Clear();
     void Draw();
@@ -42,6 +45,8 @@ public:
 
     void SetViewMatrix(const Matrix4& view) { mView = view; }
     void SetProjectionMatrix(const Matrix4& proj) { mProjection = proj; }
+    void SetCameraPosition(const Vector3& pos) { mCameraPos = pos; }
+    void SetWorldLightIntensity(float intensity) { mWorldLightIntensity = intensity; }
 
 private:
     void Draw(RendererMode mode, const Matrix4 &modelMatrix, const Vector2 &cameraPos, VertexArray *vertices,
@@ -67,6 +72,8 @@ private:
     // View/projection for 3D shaders
     Matrix4 mView;
     Matrix4 mProjection;
+    Vector3 mCameraPos;
+    float mWorldLightIntensity = 1.0f;
 
     // Map of textures loaded
     std::unordered_map<std::string, class Texture*> mTextures;
@@ -80,6 +87,9 @@ private:
 
     // UI screens to draw
     std::vector<class UIElement*> mUIComps;
+    
+    // Dynamic point lights
+    std::vector<class PointLightComponent*> mPointLights;
 
     // Width/height of screem
     float mScreenWidth;

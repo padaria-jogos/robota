@@ -33,6 +33,13 @@ public:
     void SetRotationOffset(float angle, const Vector3& axis) {
         mRotationOffset = Quaternion(axis, angle);
     }
+    
+    // Material properties
+    void SetMetallic(float metallic) { mMetallic = metallic; }
+    float GetMetallic() const { return mMetallic; }
+    
+    void SetUnlit(bool unlit) { mUnlit = unlit; }
+    bool IsUnlit() const { return mUnlit; }
 
 protected:
     class Mesh* mMesh;
@@ -41,4 +48,6 @@ protected:
     class Texture* mTextureOverride;
     Vector3 mOffset;
     Quaternion mRotationOffset;
+    float mMetallic;  // 0.0 = não metálico, 1.0 = totalmente metálico
+    bool mUnlit;      // true = sem iluminação, apenas cor da textura
 };
