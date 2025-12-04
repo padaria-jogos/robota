@@ -1,0 +1,8 @@
+{
+    "csv": "../Assets/Arena/Arena2/Arena2.csv",
+    "theme": {
+        "floor": "../Assets/Textures/floor_default.png",
+        "wall": "../Assets/Textures/wall_default.png"
+    },
+    "music": "../Assets/Sounds/honey_theme.wav"
+}

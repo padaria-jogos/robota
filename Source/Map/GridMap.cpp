@@ -19,6 +19,12 @@ GridMap::GridMap(Game* game, int rows, int cols, float cellSize)
 
     // Nenhum robô no começo
     mUnitsGrid.resize(mRows * mCols, nullptr);
+    
+    // Inicializa tipos de terreno como Floor
+    mTerrainTypes.resize(mRows * mCols, TerrainType::Floor);
+    
+    // Inicializa referências de blocks como nullptr
+    mFloorBlocks.resize(mRows * mCols, nullptr);
 
     // definir os tiles em cada bloco
     for (int i = 0; i < mRows; i++) {
@@ -231,8 +237,8 @@ std::vector<TileNode> GridMap::GetAttackableTiles(int startX, int startY, int mi
 
 void GridMap::ClearTileStates()
 {
+    // Apenas limpa os overlays visuais temporários (Path e Attack)
     for (auto* tile : mTiles) {
-        // Só limpa os tiles temporários (Path e Attack e preserva tiles permanentes como Wall)
         TileType currentType = tile->GetType();
         if (currentType == TileType::Path || currentType == TileType::Attack) {
             tile->SetTileType(TileType::Default);
@@ -280,14 +286,51 @@ void GridMap::SetUnitAt(Actor* actor, int x, int y)
 
 bool GridMap::IsWalkable(int x, int y) const
 {
-    Tile* tile = const_cast<GridMap*>(this)->GetTileAt(x, y);
-    if (!tile) {
-        return false; // Fora do mapa ou tile inválido
+    if (x < 0 || x >= mCols || y < 0 || y >= mRows) {
+        return false;
     }
     
-    TileType type = tile->GetType();
-    // Paredes não são caminháveis
-    return type != TileType::Wall;
+    // Verifica o tipo de terreno
+    int idx = y * mCols + x;
+    TerrainType terrain = mTerrainTypes[idx];
+    
+    // Apenas paredes são intransponíveis
+    // Mel, fogo e outros hazards são caminháveis, mas aplicam efeitos depois
+    return terrain != TerrainType::Wall;
+}
+
+void GridMap::SetTerrainType(int x, int y, TerrainType type)
+{
+    if (x >= 0 && x < mCols && y >= 0 && y < mRows) {
+        int idx = y * mCols + x;
+        mTerrainTypes[idx] = type;
+    }
+}
+
+TerrainType GridMap::GetTerrainType(int x, int y) const
+{
+    if (x >= 0 && x < mCols && y >= 0 && y < mRows) {
+        int idx = y * mCols + x;
+        return mTerrainTypes[idx];
+    }
+    return TerrainType::Floor;
+}
+
+void GridMap::SetFloorBlock(int x, int y, Actor* block)
+{
+    if (x >= 0 && x < mCols && y >= 0 && y < mRows) {
+        int idx = y * mCols + x;
+        mFloorBlocks[idx] = block;
+    }
+}
+
+Actor* GridMap::GetFloorBlock(int x, int y) const
+{
+    if (x >= 0 && x < mCols && y >= 0 && y < mRows) {
+        int idx = y * mCols + x;
+        return mFloorBlocks[idx];
+    }
+    return nullptr;
 }
 
 GridMap::~GridMap()

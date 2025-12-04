@@ -1,0 +1,10 @@
+{
+  "name": "Queen's Crown",
+  "slot": "Head",
+  "meshPath": "../Assets/Robots/BeaBee/BeaBeeHead.gpmesh",
+  "maxHP": 30,
+  "skill": "Repair",
+  "damage": 0,
+  "range": 0,
+  "description": "Coroa da rainha com capacidade de auto-reparo e comandar abelhas."
+}

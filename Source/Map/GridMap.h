@@ -12,6 +12,7 @@
 #include <vector>
 #include "Math.h"
 #include "Actors/Tile.h"
+#include "TerrainType.h"
 
 // Vertices BFS
 struct TileNode {
@@ -51,12 +52,22 @@ public:
     void ClearTileStates();
 
     bool IsWalkable(int x, int y) const;
+    
+    // Gerencia o tipo de terreno (o que realmente está no chão)
+    void SetTerrainType(int x, int y, TerrainType type);
+    TerrainType GetTerrainType(int x, int y) const;
+    
+    // Gerencia os Blocks de chão (para poder trocar texturas)
+    void SetFloorBlock(int x, int y, class Actor* block);
+    class Actor* GetFloorBlock(int x, int y) const;
 
 
 private:
     class Game* mGame;
     std::vector<Tile*> mTiles;
     std::vector<Actor*> mUnitsGrid;
+    std::vector<TerrainType> mTerrainTypes;  // Tipo de terreno de cada célula
+    std::vector<Actor*> mFloorBlocks;        // Referência aos Blocks de chão
 
     int mRows;
     int mCols;

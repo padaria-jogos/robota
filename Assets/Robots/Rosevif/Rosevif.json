@@ -1,0 +1,10 @@
+{
+  "name": "Rosevif",
+  "parts": {
+    "Torso": "../Assets/Parts/Torsos/CatChest.json",
+    "RightArm": "../Assets/Parts/Arms/RightClaw.json",
+    "LeftArm": "../Assets/Parts/Arms/LeftClaw.json",
+    "Legs": "../Assets/Parts/Legs/FastBoots.json",
+    "Head": "../Assets/Parts/Heads/CatHelmet.json"
+  }
+}

@@ -20,6 +20,7 @@
 #include "UI/Screens/MainMenu.h"
 #include "UI/Screens/HUD.h"
 #include "Levels/Level1.h"
+#include "Levels/Level2.h"
 
 Game::Game()
         :mWindow(nullptr)

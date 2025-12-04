@@ -136,6 +136,9 @@ class Level
         void StartResolution();
         void ExecuteNextStep();
         void FinishResolution();
+        
+        // Processa efeitos dos tiles onde os robôs estão
+        void ProcessTileEffects();
 
         // IA simples para testar o fluxo do jogo
         void CalculateEnemyAction();

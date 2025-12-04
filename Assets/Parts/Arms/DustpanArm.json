@@ -1,0 +1,10 @@
+{
+  "name": "Robota Dustpan",
+  "slot": "RightArm",
+  "meshPath": "../Assets/Robots/Robota/RobotaRightArm.gpmesh",
+  "maxHP": 20,
+  "skill": "Missile",
+  "damage": 1000,
+  "range": 3,
+  "description": "Lança projéteis de lixo reciclado a longa distância."
+}

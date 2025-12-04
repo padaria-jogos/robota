@@ -1,8 +1,8 @@
 {
     "csv": "../Assets/Arena/Arena1/Arena1.csv",
     "theme": {
-        "floor": "../Assets/Textures/floor_default.png",
-        "wall": "../Assets/Textures/wall_default.png"
+        "floor": "../Assets/Textures/floor_honey.png",
+        "wall": "../Assets/Textures/wall_honey.png"
     },
     "music": "../Assets/Sounds/Backpullver-Shamanez-Overnight.wav"
 }

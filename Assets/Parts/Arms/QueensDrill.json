@@ -1,0 +1,10 @@
+{
+  "name": "Queen's Drill",
+  "slot": "LeftArm",
+  "meshPath": "../Assets/Robots/BeaBee/BeaBeeLeftArm.gpmesh",
+  "maxHP": 10,
+  "skill": "Punch",
+  "damage": 50,
+  "range": 1,
+  "description": "Ferrão extremamente afiado. Ataque corpo a corpo."
+}

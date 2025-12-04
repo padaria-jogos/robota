@@ -30,6 +30,12 @@ enum class Team {
     Neutral //Obstáculos etc
 };
 
+enum class StatusEffect {
+    None,
+    Stunned,    // Não pode se mover (mel)
+    Burning     // Recebe dano ao final do turno (fogo)
+};
+
 enum PartSlot {
     Null,
     Head,
@@ -72,6 +78,11 @@ class Robot : public Actor{
 
         //Equip
         void EquipPart(PartSlot slot, const RobotPart& part);
+        bool EquipPartFromJson(const std::string& partJsonPath);
+        
+        // Load/Save robot configuration from JSON
+        bool LoadFromJson(const std::string& jsonPath);
+        bool SaveToJson(const std::string& jsonPath);
 
         void SetName(std::string name)  { mName = name; }
         std::string GetName() const { return mName; }
@@ -109,6 +120,12 @@ class Robot : public Actor{
         // Death
         bool IsMoving() const { return mIsMoving; }
         bool IsDead() const { return mIsDead; }
+        
+        // Status Effects
+        void ApplyStatusEffect(StatusEffect effect);
+        void RemoveStatusEffect(StatusEffect effect);
+        bool HasStatusEffect(StatusEffect effect) const;
+        StatusEffect GetCurrentStatus() const { return mStatusEffect; }
 
 
 
@@ -125,6 +142,8 @@ class Robot : public Actor{
 
         bool mIsMoving;
         bool mIsDead;
+        
+        StatusEffect mStatusEffect;
 
         Team mTeam;
         RobotPart mParts[(int)PartSlot::Count];

@@ -25,7 +25,9 @@ file(GLOB_RECURSE SRC_FILES
 )
 
 # executable
-add_executable(${PROJECT_NAME} ${SRC_FILES})
+add_executable(${PROJECT_NAME} ${SRC_FILES}
+        Source/Levels/Level2.cpp
+        Source/Levels/Level2.h)
 
 # includes
 target_include_directories(${PROJECT_NAME} PRIVATE ${SOURCE_DIRS})

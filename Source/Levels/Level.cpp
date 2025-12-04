@@ -6,7 +6,10 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <vector>
+#include <utility>
 #include "Game.h"
+#include "Math.h"
 #include "Actors/Block.h"
 #include "Json.h"
 #include "UI/Screens/ActionSelection.h"
@@ -170,6 +173,14 @@ void Level::HandleExplorationPhase()
     if (mPlayer->GetGridX() == mCursor->GetGridX() &&
                 mPlayer->GetGridY() == mCursor->GetGridY())
     {
+        // Verifica se está stunned (preso no mel)
+        if (mPlayer->HasStatusEffect(StatusEffect::Stunned)) {
+            NotifyPlayer("VOCÊ ESTÁ PRESO NO MEL! Não pode se mover, mas pode atacar.");
+            SetBattleState(BattleState::SkillSelection);
+            SetSelectedSlot(PartSlot::RightArm);
+            return;
+        }
+        
         SetBattleState(BattleState::MoveSelection);
         // Ghost
         SpawnGhost();
@@ -180,7 +191,7 @@ void Level::HandleExplorationPhase()
 
         for (const auto& node : tiles) {
             Tile* t = mGrid->GetTileAt(node.x, node.y);
-            if (t && t->GetType() != TileType::Wall) {
+            if (t) {
                 t->SetTileType(TileType::Path);
             }
         }
@@ -240,24 +251,32 @@ void Level::HandleSkillSelectionPhase(PartSlot slot)
     mGrid->ClearTileStates();
 
     int range = mPlayer->GetPartRange(slot);
+    
+    // Se stunned, permite atacar próprio tile (minRange = 0)
+    int minRange = mPlayer->HasStatusEffect(StatusEffect::Stunned) ? 0 : 1;
 
     // Range da skill em vermelho
     auto tiles = mGrid->GetAttackableTiles(
         mGhostPlayer->GetGridX(),
         mGhostPlayer->GetGridY(), // Origem Y é o Robô
-        1,
+        minRange,
         range
     );
 
     for (const auto& node : tiles) {
         Tile* t = mGrid->GetTileAt(node.x, node.y);
-        if (t && t->GetType() != TileType::Wall) {
+        if (t) {
             t->SetTileType(TileType::Attack);
         }
     }
 
     SetBattleState(BattleState::TargetSelection);
-    NotifyPlayer("Habilidade escolhida, selecione o alvo.");
+    
+    if (mPlayer->HasStatusEffect(StatusEffect::Stunned)) {
+        NotifyPlayer("Preso no mel! Ataque o próprio tile para se libertar.");
+    } else {
+        NotifyPlayer("Habilidade escolhida, selecione o alvo.");
+    }
 
 
 }
@@ -267,6 +286,42 @@ void Level::HandleTargetingPhase()
     Tile* targetTile = mGrid->GetTileAt(mCursor->GetGridX(), mCursor->GetGridY());
 
     if (targetTile && targetTile->GetType() == TileType::Attack) {
+        // Caso especial: Atacando o próprio tile (mel) para se livrar do stun
+        if (mPlayer->HasStatusEffect(StatusEffect::Stunned)) {
+            int px = mPlayer->GetGridX();
+            int py = mPlayer->GetGridY();
+            int cx = mCursor->GetGridX();
+            int cy = mCursor->GetGridY();
+            
+            if (px == cx && py == cy) {
+                // Atacou o próprio tile com mel - verifica o tipo BASE
+                TerrainType terrainType = mGrid->GetTerrainType(px, py);
+                if (terrainType == TerrainType::Honey) {
+                    // Remove o mel do tile (muda o tipo base)
+                    mGrid->SetTerrainType(px, py, TerrainType::Floor);
+                    
+                    // Troca a textura do Block para chão normal
+                    Actor* floorActor = mGrid->GetFloorBlock(px, py);
+                    if (floorActor) {
+                        Block* floorBlock = static_cast<Block*>(floorActor);
+                        floorBlock->SetTexture(mLevelConfig.floorTexture);
+                    }
+                    
+                    // Remove o stun
+                    mPlayer->RemoveStatusEffect(StatusEffect::Stunned);
+                    NotifyPlayer("Você se libertou do mel!");
+                    
+                    mGrid->ClearTileStates();
+                    SetBattleState(BattleState::Exploration);
+                    
+                    // Inimigo age sozinho
+                    CalculateEnemyAction();
+                    ResolveTurn();
+                    return;
+                }
+            }
+        }
+        
         mPlayerTurn.hasAction = true;
         mPlayerTurn.skillSlot = GetSelectedSlot();
         mPlayerTurn.targetX = mCursor->GetGridX();
@@ -303,6 +358,14 @@ void Level::HandleUnitDeath(Robot*& robot)
 void Level::HandleCancel()
 {
     if (!mPlayer) return;
+    
+    // Se está stunned, não pode cancelar (deve atacar o mel)
+    if (mPlayer->HasStatusEffect(StatusEffect::Stunned) && 
+        mBattleState == BattleState::SkillSelection) {
+        NotifyPlayer("Você está preso no mel! Precisa atacar para se libertar!");
+        return;
+    }
+    
     // UNDO SELECTION
     switch (mBattleState) {
         case BattleState::MoveSelection:
@@ -333,7 +396,7 @@ void Level::HandleCancel()
             auto tiles = mGrid->GetWalkableTiles(px, py, range);
             for (const auto& node : tiles) {
                 Tile* t = mGrid->GetTileAt(node.x, node.y);
-                if (t && t->GetType() != TileType::Wall) {
+                if (t) {
                     t->SetTileType(TileType::Path);
                 }
             }
@@ -679,6 +742,73 @@ void Level::StartResolution() {
     ExecuteNextStep();
 }
 
+void Level::ProcessTileEffects()
+{
+    NotifyBoth("=== Processando efeitos dos tiles ===");
+    
+    // Processa efeitos para o Player
+    if (mPlayer && !mPlayer->IsDead()) {
+        int px = mPlayer->GetGridX();
+        int py = mPlayer->GetGridY();
+
+        TerrainType terrainType = mGrid->GetTerrainType(px, py);
+        
+        if (true) {
+            
+            switch (terrainType) {
+                case TerrainType::Honey:
+                    // Aplica stun (não pode se mover no próximo turno)
+                    mPlayer->ApplyStatusEffect(StatusEffect::Stunned);
+                    NotifyPlayer("Pisou no mel! Não pode se mover no próximo turno!");
+                    break;
+                    
+                case TerrainType::Fire:
+                    // Causa dano
+                    {
+                        int fireDamage = 10;
+                        mPlayer->TakeDamage(fireDamage, PartSlot::Legs);
+                        NotifyPlayer("Queimou nas chamas! Recebeu " + std::to_string(fireDamage) + " de dano!");
+                        HandleUnitDeath(mPlayer);
+                    }
+                    break;
+                    
+                default:
+                    //TODO: Remover efeitos
+                    break;
+            }
+        }
+    }
+    
+    // Processa efeitos para o Enemy TODO: Lembrar de considerar os status na IA
+    if (mEnemy && !mEnemy->IsDead()) {
+        int ex = mEnemy->GetGridX();
+        int ey = mEnemy->GetGridY();
+
+        TerrainType terrainType = mGrid->GetTerrainType(ex, ey);
+        
+        if (true) {
+            
+            switch (terrainType) {
+                case TerrainType::Honey:
+                    mEnemy->ApplyStatusEffect(StatusEffect::Stunned);
+                    NotifyEnemy("Inimigo pisou no mel! Não pode se mover!");
+                    break;
+                    
+                case TerrainType::Fire:
+                    {
+                        int fireDamage = 10;
+                        mEnemy->TakeDamage(fireDamage, PartSlot::Legs);
+                        NotifyEnemy("Inimigo queimou nas chamas! Recebeu " + std::to_string(fireDamage) + " de dano!");
+                        HandleUnitDeath(mEnemy);
+                    }
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
+    }
+}
 
 void Level::FinishResolution() {
     NotifyBoth("Movimento finalizado. Resolvendo Habilidades...");
@@ -725,6 +855,9 @@ void Level::FinishResolution() {
         if (mPlayer) HandleUnitDeath(mPlayer);
         if (mEnemy)  HandleUnitDeath(mEnemy);
     }
+    
+    // Processa efeitos dos tiles (mel, fogo, etc)
+    ProcessTileEffects();
 
     // Limpeza
     mPlayerTurn = TurnAction();
@@ -872,11 +1005,13 @@ void Level::LoadLevel(const LevelConfig& config)
     
     int gridRows = maxY - minY + 1;
     int gridCols = maxX - minX + 1;
-    
-    SDL_Log("Area util: (%d,%d) ate (%d,%d) = grid %dx%d", minX, minY, maxX, maxY, gridRows, gridCols);
 
-    // Criar todos os Blocks (chão e paredes) antes da GridMap
-    // Isso garante que os Blocks sejam renderizados primeiro (por baixo dos Tiles)
+    // Criar todos os Blocks (renderizados primeiro)
+    SDL_Log("Criando Blocks de chao e paredes...");
+    
+    // Armazena Blocks de chão para guardar referências depois
+    std::vector<std::pair<Vector2, Block*>> floorBlockRefs;
+    
     for (int y = minY; y <= maxY; y++)
     {
         for (int x = minX; x <= maxX; x++)
@@ -884,49 +1019,53 @@ void Level::LoadLevel(const LevelConfig& config)
             int tileID = mapData[y][x];
             int gridX = x - minX;
             int gridY = y - minY;
+            
+            Vector3 basePos = Vector3(
+                (gridX - gridCols / 2.0f) * 500.0f + 250.0f,
+                (gridY - gridRows / 2.0f) * 500.0f + 250.0f,
+                FLOOR_Z
+            );
 
-            // Cria Blocks baseado no tipo de tile
             switch (tileID)
             {
-                case 0: // Nada
+                case 0:   // Vazio
+                case -1:  // Fora do mapa
                     break;
                     
-                case 1: // Chão padrao
-                case 5: // Spawn do player (com chão)
-                case 11: // Spawn Inimigo (com chão)
+                case 1:   // Chão normal
+                case 5:   // Spawn player
+                case 11:  // Spawn enemy
                 {
                     Block* floor = new Block(mGame);
-                    Vector3 floorPos = Vector3(
-                        (gridX - gridCols / 2.0f) * 500.0f + 250.0f,
-                        (gridY - gridRows / 2.0f) * 500.0f + 250.0f,
-                        FLOOR_Z
-                    );
-                    floor->SetPosition(floorPos);
+                    floor->SetPosition(basePos);
                     floor->SetScale(Vector3(500.0f, 500.0f, 500.0f));
                     floor->SetTexture(mLevelConfig.floorTexture);
+                    floorBlockRefs.push_back({Vector2(gridX, gridY), floor});
                 }
                 break;
                 
-                case 2: // Parede (chão + parede)
+                case 6:   // Mel
                 {
-                    // Cria chão base
+                    Block* honeyFloor = new Block(mGame);
+                    honeyFloor->SetPosition(basePos);
+                    honeyFloor->SetScale(Vector3(500.0f, 500.0f, 500.0f));
+                    honeyFloor->SetTexture("../Assets/Textures/sticky_floor_honey.png");
+                    floorBlockRefs.push_back({Vector2(gridX, gridY), honeyFloor});
+                }
+                break;
+                
+                case 2:   // Parede
+                {
+                    // Chão base
                     Block* floor = new Block(mGame);
-                    Vector3 floorPos = Vector3(
-                        (gridX - gridCols / 2.0f) * 500.0f + 250.0f,
-                        (gridY - gridRows / 2.0f) * 500.0f + 250.0f,
-                        FLOOR_Z
-                    );
-                    floor->SetPosition(floorPos);
+                    floor->SetPosition(basePos);
                     floor->SetScale(Vector3(500.0f, 500.0f, 500.0f));
                     floor->SetTexture(mLevelConfig.floorTexture);
                     
-                    // Cria parede em cima do chão
+                    // Parede em cima
                     Block* wall = new Block(mGame);
-                    Vector3 wallPos = Vector3(
-                        (gridX - gridCols / 2.0f) * 500.0f + 250.0f,
-                        (gridY - gridRows / 2.0f) * 500.0f + 250.0f,
-                        WALL_Z
-                    );
+                    Vector3 wallPos = basePos;
+                    wallPos.z = WALL_Z;
                     wall->SetPosition(wallPos);
                     wall->SetScale(Vector3(500.0f, 500.0f, 500.0f));
                     wall->SetTexture(mLevelConfig.wallTexture);
@@ -939,72 +1078,80 @@ void Level::LoadLevel(const LevelConfig& config)
         }
     }
 
-    // Criar GridMap e configurar Tiles
+    // Criar GridMap e configurar tudo
     if (mGrid) {
         SDL_Log("Deletando GridMap anterior...");
         delete mGrid;
         mGrid = nullptr;
     }
 
-    SDL_Log("Criando novo GridMap %dx%d...", gridRows, gridCols);
+    SDL_Log("Criando GridMap %dx%d e configurando tiles...", gridRows, gridCols);
     mGrid = new GridMap(mGame, gridRows, gridCols, 500.0f);
+    
+    // Guardar referências dos Blocks no GridMap
+    for (const auto& [pos, block] : floorBlockRefs) {
+        mGrid->SetFloorBlock(pos.x, pos.y, block);
+    }
 
-
+    // Configurar TerrainTypes, Tiles visuais e spawns
     for (int y = minY; y <= maxY; y++)
     {
         for (int x = minX; x <= maxX; x++)
         {
             int tileID = mapData[y][x];
-
-            // Converte coordenadas do CSV para coordenadas da grid
             int gridX = x - minX;
             int gridY = y - minY;
-
-            // Pega o Tile visual que o GridMap criou
+            
             Tile* tile = mGrid->GetTileAt(gridX, gridY);
 
-            // Configura o Tile e spawn de atores
             switch (tileID)
             {
                 case 0:
-                case -1:// Nada - esconde o tile
+                case -1:  // Vazio
                     if (tile) {
                         tile->SetState(ActorState::Paused);
                     }
                     break;
 
-                case 1: // Chão
+                case 1:   // Chão normal
                     if (tile) {
-                        tile->SetTileType(TileType::Default);
                         tile->SetState(ActorState::Active);
                     }
+                    mGrid->SetTerrainType(gridX, gridY, TerrainType::Floor);
                     break;
                 
-                case 2: // Parede
+                case 2:   // Parede
                     if (tile) {
-                        tile->SetTileType(TileType::Wall);
                         tile->SetState(ActorState::Active);
                     }
+                    mGrid->SetTerrainType(gridX, gridY, TerrainType::Wall);
                     break;
                 
-                case 5: // Spawn do player
+                case 5:   // Spawn player
                     if (tile) {
-                        tile->SetTileType(TileType::Default);
                         tile->SetState(ActorState::Active);
                     }
+                    mGrid->SetTerrainType(gridX, gridY, TerrainType::Floor);
                     mPlayer->UpdateGridCoords(gridX, gridY);
                     mGrid->SetUnitAt(mPlayer, gridX, gridY);
                     MoveInGrid(mPlayer, gridX, gridY);
                     break;
 
-                case 11: // Spawn Inimigo
+                case 11:  // Spawn enemy
                     if (tile) {
-                        tile->SetTileType(TileType::Default);
                         tile->SetState(ActorState::Active);
                     }
+                    mGrid->SetTerrainType(gridX, gridY, TerrainType::Floor);
                     mEnemy->UpdateGridCoords(gridX, gridY);
                     mGrid->SetUnitAt(mEnemy, gridX, gridY);
                     MoveInGrid(mEnemy, gridX, gridY);
+                    break;
+                
+                case 6:   // Mel
+                    if (tile) {
+                        tile->SetState(ActorState::Active);
+                    }
+                    mGrid->SetTerrainType(gridX, gridY, TerrainType::Honey);
                     break;
 
                 default:

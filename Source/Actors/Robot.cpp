@@ -3,10 +3,10 @@
 //
 
 #include "Robot.h"
-// #include "Game.h"
-
 #include "Game.h"
 #include "Random.h"
+#include "Json.h"
+#include <fstream>
 
 Robot::Robot(class Game *game, Team team) : Actor(game)
                                             , mName("Robo")
@@ -15,6 +15,7 @@ Robot::Robot(class Game *game, Team team) : Actor(game)
                                             , mIsDead(false)
                                             , mIsMoving(false)
                                             , mHasDualLegs(false)
+                                            , mStatusEffect(StatusEffect::None)
 {
 
     for (int i = 0; i < (int)PartSlot::Count; i++)
@@ -186,6 +187,198 @@ void Robot::EquipPart(PartSlot slot, const RobotPart& part)
 
 
     }
+}
+
+bool Robot::EquipPartFromJson(const std::string& partJsonPath)
+{
+    std::ifstream file(partJsonPath);
+    if (!file.is_open()) {
+        SDL_Log("ERRO: Não foi possível abrir arquivo de parte: %s", partJsonPath.c_str());
+        return false;
+    }
+
+    nlohmann::json j;
+    try {
+        file >> j;
+    } catch (const std::exception& e) {
+        SDL_Log("ERRO: Falha ao parsear JSON da parte: %s", e.what());
+        return false;
+    }
+
+    // Helper para converter string de skill para enum
+    auto stringToSkillType = [](const std::string& str) -> SkillType {
+        if (str == "Punch") return SkillType::Punch;
+        if (str == "Missile") return SkillType::Missile;
+        if (str == "Dash") return SkillType::Dash;
+        if (str == "Shield") return SkillType::Shield;
+        if (str == "Repair") return SkillType::Repair;
+        return SkillType::None;
+    };
+
+    // Helper para converter string de slot para enum
+    auto stringToPartSlot = [](const std::string& str) -> PartSlot {
+        if (str == "Torso") return PartSlot::Torso;
+        if (str == "Head") return PartSlot::Head;
+        if (str == "RightArm") return PartSlot::RightArm;
+        if (str == "LeftArm") return PartSlot::LeftArm;
+        if (str == "Legs") return PartSlot::Legs;
+        return PartSlot::Null;
+    };
+
+    PartSlot slot = stringToPartSlot(j["slot"].get<std::string>());
+    if (slot == PartSlot::Null) {
+        SDL_Log("ERRO: Slot inválido em %s", partJsonPath.c_str());
+        return false;
+    }
+
+    RobotPart part(
+        j["name"].get<std::string>(),
+        j["meshPath"].get<std::string>(),
+        j["maxHP"].get<int>(),
+        stringToSkillType(j["skill"].get<std::string>()),
+        j["damage"].get<int>(),
+        j["range"].get<int>()
+    );
+
+    EquipPart(slot, part);
+    SDL_Log("Parte '%s' equipada no slot %s", part.name.c_str(), j["slot"].get<std::string>().c_str());
+    return true;
+}
+
+bool Robot::LoadFromJson(const std::string& jsonPath)
+{
+    std::ifstream file(jsonPath);
+    if (!file.is_open()) {
+        SDL_Log("ERRO: Não foi possível abrir o arquivo de robô: %s", jsonPath.c_str());
+        return false;
+    }
+
+    nlohmann::json j;
+    try {
+        file >> j;
+    } catch (const std::exception& e) {
+        SDL_Log("ERRO: Falha ao parsear JSON do robô: %s", e.what());
+        return false;
+    }
+
+    // Nome do robô
+    if (j.contains("name")) {
+        SetName(j["name"].get<std::string>());
+    }
+
+    // Helper para converter string de skill para enum
+    auto stringToSkillType = [](const std::string& str) -> SkillType {
+        if (str == "Punch") return SkillType::Punch;
+        if (str == "Missile") return SkillType::Missile;
+        if (str == "Dash") return SkillType::Dash;
+        if (str == "Shield") return SkillType::Shield;
+        if (str == "Repair") return SkillType::Repair;
+        return SkillType::None;
+    };
+
+    // Helper para converter string de slot para enum
+    auto stringToPartSlot = [](const std::string& str) -> PartSlot {
+        if (str == "Torso") return PartSlot::Torso;
+        if (str == "Head") return PartSlot::Head;
+        if (str == "RightArm") return PartSlot::RightArm;
+        if (str == "LeftArm") return PartSlot::LeftArm;
+        if (str == "Legs") return PartSlot::Legs;
+        return PartSlot::Null;
+    };
+
+    // Carregar partes
+    if (j.contains("parts")) {
+        for (auto& [slotName, partData] : j["parts"].items()) {
+            PartSlot slot = stringToPartSlot(slotName);
+            if (slot == PartSlot::Null) {
+                SDL_Log("AVISO: Slot desconhecido '%s' ignorado", slotName.c_str());
+                continue;
+            }
+
+            // Se partData é uma string, é um caminho para outro JSON
+            if (partData.is_string()) {
+                std::string partPath = partData.get<std::string>();
+                if (!EquipPartFromJson(partPath)) {
+                    SDL_Log("ERRO: Falha ao carregar parte de %s", partPath.c_str());
+                }
+            }
+            // Se é um objeto, carrega inline (compatibilidade com formato antigo)
+            else if (partData.is_object()) {
+                RobotPart part(
+                    partData["name"].get<std::string>(),
+                    partData["meshPath"].get<std::string>(),
+                    partData["maxHP"].get<int>(),
+                    stringToSkillType(partData["skill"].get<std::string>()),
+                    partData["damage"].get<int>(),
+                    partData["range"].get<int>()
+                );
+                EquipPart(slot, part);
+            }
+        }
+    }
+
+    SDL_Log("Robô '%s' carregado com sucesso de %s", GetName().c_str(), jsonPath.c_str());
+    return true;
+}
+
+bool Robot::SaveToJson(const std::string& jsonPath)
+{
+    // Helper para converter SkillType para string
+    auto skillTypeToString = [](SkillType skill) -> std::string {
+        switch (skill) {
+            case SkillType::Punch: return "Punch";
+            case SkillType::Missile: return "Missile";
+            case SkillType::Dash: return "Dash";
+            case SkillType::Shield: return "Shield";
+            case SkillType::Repair: return "Repair";
+            default: return "None";
+        }
+    };
+
+    // Helper para converter PartSlot para string
+    auto partSlotToString = [](PartSlot slot) -> std::string {
+        switch (slot) {
+            case PartSlot::Torso: return "Torso";
+            case PartSlot::Head: return "Head";
+            case PartSlot::RightArm: return "RightArm";
+            case PartSlot::LeftArm: return "LeftArm";
+            case PartSlot::Legs: return "Legs";
+            default: return "Null";
+        }
+    };
+
+    nlohmann::json j;
+    j["name"] = mName;
+
+    // Salvar todas as partes equipadas
+    for (int i = 1; i < (int)PartSlot::Count; i++) {
+        PartSlot slot = (PartSlot)i;
+        const RobotPart& part = mParts[i];
+        
+        // Pular partes vazias/quebradas se quiser
+        if (part.name == "Empty") continue;
+
+        std::string slotName = partSlotToString(slot);
+        j["parts"][slotName] = {
+            {"name", part.name},
+            {"meshPath", part.meshPath},
+            {"maxHP", part.maxHP},
+            {"skill", skillTypeToString(part.skill)},
+            {"damage", part.damage},
+            {"range", part.range}
+        };
+    }
+
+    // Escrever arquivo
+    std::ofstream file(jsonPath);
+    if (!file.is_open()) {
+        SDL_Log("ERRO: Não foi possível salvar robô em: %s", jsonPath.c_str());
+        return false;
+    }
+
+    file << j.dump(2);
+    SDL_Log("Robô '%s' salvo com sucesso em %s", mName.c_str(), jsonPath.c_str());
+    return true;
 }
 
 void Robot::CheckDeath()
@@ -377,6 +570,36 @@ void Robot::SyncAnimationState(const Robot* other) {
     this->mAnimOffset = other->mAnimOffset;
 }
 
+// Status Effects
+void Robot::ApplyStatusEffect(StatusEffect effect)
+{
+    mStatusEffect = effect;
+    
+    std::string effectName;
+    switch (effect) {
+        case StatusEffect::Stunned:
+            effectName = "STUNNED (Preso no mel!)";
+            break;
+        case StatusEffect::Burning:
+            effectName = "BURNING (Pegando fogo!)";
+            break;
+        default:
+            effectName = "None";
+            break;
+    }
+    
+    SDL_Log("%s recebeu efeito: %s", mName.c_str(), effectName.c_str());
+}
 
+void Robot::RemoveStatusEffect(StatusEffect effect)
+{
+    if (mStatusEffect == effect) {
+        SDL_Log("%s removeu o efeito de status!", mName.c_str());
+        mStatusEffect = StatusEffect::None;
+    }
+}
 
-
+bool Robot::HasStatusEffect(StatusEffect effect) const
+{
+    return mStatusEffect == effect;
+}
