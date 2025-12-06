@@ -45,6 +45,9 @@ Level1::Level1(Game* game, HUD *hud) : Level(game, hud)
     mEnemy->LoadFromJson("../Assets/Robots/BeaBee/BeaBee.json");
 
     // ---------- ARENA ----------
+    mSkybox = new Skybox(mGame);
+    mSkybox->SetTexture("../Assets/Textures/SkyboxLevel1.png");
+
     // Carrega a Arena 1
     LevelConfig config;
     if (LoadLevelConfig("../Assets/Arena/Arena1/Arena1.json", config)) {

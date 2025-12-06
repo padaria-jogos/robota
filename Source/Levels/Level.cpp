@@ -41,12 +41,16 @@ Level::Level(class Game *game, HUD *hud) :
     mIsResolving(false),
     mStepIndex(0),
     mActionSelection(nullptr),
-    mTileSelection(nullptr)
+    mTileSelection(nullptr),
+    mSkybox(nullptr)
 {
     mBattleState = BattleState::Exploration;
 
     if (!mCamera)
         SDL_Log("Failed to load camera");
+
+    if (!mSkybox)
+        SDL_Log("Failed to initialize skybox");
 
     // ---------- SOUND ----------
     mGame->GetAudio()->StopAllSounds();

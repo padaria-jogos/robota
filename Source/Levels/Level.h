@@ -14,6 +14,7 @@
 #include "Game.h"
 #include "Actors/Robot.h"
 #include "Actors/GridCursor.h"
+#include "Actors/Skybox.h"
 #include "Map/GridMap.h"
 #include "UI/Screens/HUD.h"
 #include "UI/Screens/ActionSelection.h"
@@ -108,6 +109,9 @@ class Level
     protected:
         Game* mGame;
         Camera* mCamera;
+
+        // skybox
+        Skybox* mSkybox;
 
         HUD* mHud;
         GridCursor* mCursor;
