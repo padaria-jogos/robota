@@ -92,7 +92,6 @@ class Level
         BattleState GetBattleState() const { return mBattleState; }
         PartSlot GetSelectedSlot() const { return mSelectedSlot; }
 
-
         void SetSelectedSlot(PartSlot slot) { mSelectedSlot = slot; }
         void SetBattleState(BattleState state) { mBattleState = state; }
         
@@ -124,6 +123,8 @@ class Level
         Robot *mEnemy;
 
         void MoveCursor(int tile_x, int tile_y);
+
+        void ConfigureCutscene();
 
     private:
         const Vector3 TILE_SCALE = Vector3(500.0f, 500.0f, 500.0f);

@@ -167,16 +167,20 @@ void Game::ProcessInput()
                 break;
             case SDL_KEYDOWN:
                 // Rotação da câmera com Q e E (processa ANTES de tudo)
-                if (event.key.keysym.sym == SDLK_q)
-                {
-                    mCamera->RotateLeft();
-                    break;  // Não processa mais nada
-                }
-                else if (event.key.keysym.sym == SDLK_e)
-                {
-                    mCamera->RotateRight();
-                    break;  // Não processa mais nada
-                }
+                // if (event.key.keysym.sym == SDLK_q)
+                // {
+                //     mCamera->RotateLeft();
+                //     break;  // Não processa mais nada
+                // }
+                // else if (event.key.keysym.sym == SDLK_e)
+                // {
+                //     mCamera->RotateRight();
+                //     break;  // Não processa mais nada
+                // }
+
+                // handle key press camera
+                if (mCamera)
+                    mCamera->HandleKeyPress(event.key.keysym.sym);
                 
                 // Processa input nas UIs
                 if (!mUIStack.empty()) {
@@ -207,6 +211,10 @@ void Game::ProcessInput()
 
 void Game::UpdateGame(float deltaTime)
 {
+    // update camera
+    if (mCamera)
+        mCamera->Update(deltaTime);
+
     // Update all actors and pending actors
     UpdateActors(deltaTime);
 

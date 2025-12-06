@@ -25,9 +25,11 @@ namespace {
 }
 
 // TODO: Dinamite. Formatos de Ataques(Urgente), Fazer o Modelo do ultimo boss
+// TODO: Verificar se a câmera está sendo destruída
+
 Level::Level(class Game *game, HUD *hud) :
     mGame(game),
-    mCamera(mGame->GetCamera()),
+    mCamera(game->GetCamera()),
     mHud(hud),
     mCursor(nullptr),
     mGrid(nullptr),
@@ -42,36 +44,27 @@ Level::Level(class Game *game, HUD *hud) :
     mTileSelection(nullptr)
 {
     mBattleState = BattleState::Exploration;
-    // ost
+
+    if (!mCamera)
+        SDL_Log("Failed to load camera");
+
+    // ---------- SOUND ----------
     mGame->GetAudio()->StopAllSounds();
     mLevelMusic = mGame->GetAudio()->PlaySound("Backpullver-Shamanez-Overnight.wav", true);
-    // hud
-    // mHUD = new HUD(this, "../Assets/Fonts/Arial.ttf");
-    // mHUD->SetScore(0);
 
-    // create camera
-    Vector3 eye(0.0f, -2500.0f, 1000.0f);
-    Vector3 target(0.0f, 0.0f, 0.0f);
-    Vector3 up(0.0f, 0.0f, 1.0f);
-    mCamera = new Camera(game, eye, target, up, 70.0f, 10.0f, 10000.0f);
-    mGame->SetCamera(mCamera);
-
-
-    // cursor
+    // ---------- CURSOR ----------
     mCursor = new GridCursor(game);
 
-    // PLAYER e ENEMY
+    // ---------- ROBOTS ----------
     mPlayer = new Robot(game, Team::Player);
     mEnemy = new Robot(game, Team::Enemy);
     
     // Começa com o braço direito escolhido
     SetSelectedSlot(PartSlot::RightArm);
-    
+
     // HUD tracking
     if (mHud)
-    {
         mHud->TrackRobots(mPlayer, mEnemy);
-    }
 }
 
 void Level::SetWorldLightIntensity(float intensity)
@@ -104,24 +97,47 @@ void Level::MoveCursor(int xOffset, int yOffset)
     MoveInGrid(mCursor, newX, newY);
 }
 
+// helper for ProcessInput positioning
+Vector2 SnapDirection(const Vector2& v)
+{
+    if (fabs(v.x) > fabs(v.y))
+        return Vector2(v.x > 0 ? 1 : -1, 0);
+
+    return Vector2(0, v.y > 0 ? 1 : -1);
+}
+
 void Level::ProcessInput(const SDL_Event &event)
 {
+    // free camera mode overlap inputs, so we skip game inputs when active
+    // TODO: por alguma razão, ainda consigo selecionar o robô
+    if (mCamera->IsFreeCameraMode())
+        return;
+
+    // get the direction relative to the camera
+    Vector3 f3 = Vector3::Normalize(mCamera->GetTarget() - mCamera->GetPosition());
+    Vector2 f2 = SnapDirection(Vector2(f3.x, f3.y));
+
+    Vector2 forward  = f2;
+    Vector2 backward = f2 * Vector2(-1.0f, -1.0f);
+    Vector2 left     = Vector2(f2.y, -f2.x);
+    Vector2 right    = Vector2(-f2.y, f2.x);
+
     switch (event.key.keysym.sym)
     {
         case SDLK_w:
-            MoveCursor(0, 1);
+            MoveCursor(forward.x, forward.y);
             break;
 
         case SDLK_s:
-            MoveCursor(0, -1);
+            MoveCursor(backward.x, backward.y);
             break;
 
         case SDLK_a:
-            MoveCursor(1, 0);
+            MoveCursor(left.x, left.y);
             break;
 
         case SDLK_d:
-            MoveCursor(-1, 0);
+            MoveCursor(right.x, right.y);
             break;
 
         case SDLK_SPACE:
@@ -137,7 +153,6 @@ void Level::ProcessInput(const SDL_Event &event)
             break;
     }
 }
-
 
 void Level::HandleAction()
 {
@@ -572,7 +587,6 @@ void Level::ResolveTurn() {
 
 void Level::OnUpdate(float deltaTime)
 {
-
     // verifica condições de fim de jogo
     if (mBattleState != BattleState::GameOver)
     {

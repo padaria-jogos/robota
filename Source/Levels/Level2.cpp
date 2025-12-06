@@ -28,6 +28,12 @@ Level2::Level2(Game* game, HUD *hud) : Level(game, hud)
     }
 }
 
+void Level2::ConfigureCutscene()
+{
+    return;
+}
+
+
 void Level2::OnUpdate(float deltaTime)
 {
     Level::OnUpdate(deltaTime);
