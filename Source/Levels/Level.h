@@ -18,6 +18,7 @@
 #include "Map/GridMap.h"
 #include "UI/Screens/HUD.h"
 #include "UI/Screens/ActionSelection.h"
+#include "IA/IA.h"
 
 // IDs dos tiles no CSV
 enum TileID {
@@ -130,6 +131,8 @@ class Level
 
         void ConfigureCutscene();
 
+        void InitializeIA();
+
     private:
         const Vector3 TILE_SCALE = Vector3(500.0f, 500.0f, 500.0f);
         const float SIZE = 500.0f;
@@ -146,6 +149,12 @@ class Level
         TurnAction mEnemyTurn;    // IA define isso dps
         bool mIsResolving;
         int mStepIndex;
+
+        // IA
+        IA *mIA;
+        std::vector<std::vector<int>> mIAGridData;
+        void UpdateIARobotStats(RobotStats *playerStats, RobotStats *enemyStats);
+        void UpdateIAGridData();
 
         // Handle Phase
         void HandleExplorationPhase();

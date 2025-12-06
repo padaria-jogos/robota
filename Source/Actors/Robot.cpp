@@ -276,7 +276,7 @@ bool Robot::EquipPartFromJson(const std::string& partJsonPath)
     );
 
     EquipPart(slot, part);
-    SDL_Log("Parte '%s' equipada no slot %s", part.name.c_str(), j["slot"].get<std::string>().c_str());
+    // SDL_Log("Parte '%s' equipada no slot %s", part.name.c_str(), j["slot"].get<std::string>().c_str());
     return true;
 }
 

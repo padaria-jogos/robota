@@ -42,15 +42,10 @@ Level::Level(class Game *game, HUD *hud) :
     mStepIndex(0),
     mActionSelection(nullptr),
     mTileSelection(nullptr),
-    mSkybox(nullptr)
+    mSkybox(nullptr),
+    mIA(nullptr)
 {
     mBattleState = BattleState::Exploration;
-
-    if (!mCamera)
-        SDL_Log("Failed to load camera");
-
-    if (!mSkybox)
-        SDL_Log("Failed to initialize skybox");
 
     // ---------- SOUND ----------
     mGame->GetAudio()->StopAllSounds();
@@ -260,7 +255,6 @@ void Level::HandleMovementPhase()
         NotifyPlayer("Movimento invalido.");
     }
 }
-
 
 void Level::HandleSkillSelectionPhase(PartSlot slot)
 {
@@ -518,53 +512,161 @@ void Level::RemoveGhost() const {
     }
 }
 
-void Level::CalculateEnemyAction() {
-    if  (!mEnemy) return;
+void Level::InitializeIA()
+{
+    RobotStats playerStats;
+    RobotStats enemyStats;
+
+    UpdateIARobotStats(&playerStats, &enemyStats);
+    mIA = new IA(playerStats, enemyStats); // lembrar de dar um deletee em algum momento
+}
+
+void Level::UpdateIARobotStats(RobotStats *playerStats, RobotStats *enemyStats)
+{
+    if (!mPlayer || !mEnemy) {
+        SDL_Log("UpdateIARobotStats WARNING: Player ou Enemy nulos.");
+        return;
+    }
+
+    auto FillStats = [&](Robot* robot, RobotStats* outStats)
+    {
+        outStats->name = robot->GetName();
+        outStats->position = Vector2(robot->GetGridX(), robot->GetGridY());
+
+        auto ConvertSkill = [&](SkillType t) -> std::string {
+            switch (t) {
+                case SkillType::Punch:  return "Punch";
+                case SkillType::Missile:return "Missile";
+                case SkillType::Dash:   return "Dash";
+                case SkillType::Shield: return "Shield";
+                case SkillType::Repair: return "Repair";
+                default: return "None";
+            }
+        };
+
+        auto FillPart = [&](const RobotPart& p, PartStats& ps)
+        {
+            ps.maxHP     = p.maxHP;
+            ps.currentHP = p.currentHP;
+            ps.damage    = p.damage;
+            ps.range     = p.range;
+            ps.skill     = ConvertSkill(p.skill);
+        };
+
+        FillPart(robot->GetPart(PartSlot::Head),      outStats->head);
+        FillPart(robot->GetPart(PartSlot::Torso),     outStats->torso);
+        FillPart(robot->GetPart(PartSlot::RightArm),  outStats->rightArm);
+        FillPart(robot->GetPart(PartSlot::LeftArm),   outStats->leftArm);
+        FillPart(robot->GetPart(PartSlot::Legs),      outStats->legs);
+    };
+
+    // Preenche player e enemy
+    FillStats(mPlayer, playerStats);
+    FillStats(mEnemy,  enemyStats);
+}
+
+/*
+ * Define a matriz do mapa para a ia tomar decisões:
+ * 0 = chão livre, caminhável
+ * 1 = parede, bloqueio
+ * 2 = destrutível, bloqueio, porém pode ser destruído
+ * 3 = mel, terreno especial (efeito)
+ * 4 = fogo, terreno especial (efeito)
+ */
+void Level::UpdateIAGridData()
+{
+    if (!mGrid)
+        return;
+
+    int rows = mGrid->GetRows();
+    int cols = mGrid->GetCols();
+
+    mIAGridData.clear();
+    mIAGridData.resize(rows, std::vector<int>(cols, 0));
+
+    for (int y = 0; y < rows; y++)
+    {
+        for (int x = 0; x < cols; x++)
+        {
+            TerrainType terrain = mGrid->GetTerrainType(x, y);
+            Actor* unit = mGrid->GetUnitAt(x, y);
+
+            // ---------- BLOQUEIOS ----------
+            if (unit && dynamic_cast<Destructible*>(unit))  // tem que vir primeiro destructible é wall
+            {
+                mIAGridData[y][x] = 2;     // destrutível
+                continue;
+            }
+
+            if (terrain == TerrainType::Wall)
+            {
+                mIAGridData[y][x] = 1;     // parede
+                continue;
+            }
+
+            // ---------- TERRENOS ESPECIAIS (EFEITOS) ----------
+            if (terrain == TerrainType::Honey)
+            {
+                mIAGridData[y][x] = 3;     // mel
+                continue;
+            }
+
+            if (terrain == TerrainType::Fire)
+            {
+                mIAGridData[y][x] = 4;     // fogo
+                continue;
+            }
+
+            // ---------- TERRENO LIVRE ----------
+            mIAGridData[y][x] = 0;
+        }
+    }
+}
+
+
+void Level::CalculateEnemyAction()
+{
+    if (!mEnemy)
+        return;
+
+    if (!mIA)
+        InitializeIA();
 
     // Reset
     mEnemyTurn = TurnAction();
 
-    int ex = mEnemy->GetGridX();
-    int ey = mEnemy->GetGridY();
-    int px = mPlayer->GetGridX();
-    int py = mPlayer->GetGridY();
+    // ---------- CALCULAR AÇÃO DO INIMIGO ----------
+    UpdateIAGridData();
+    mIA->UpdatePlayerPosition(Vector2(mPlayer->GetGridX(), mPlayer->GetGridY()));
+    mIA->UpdateEnemyPosition(Vector2(mEnemy->GetGridX(), mEnemy->GetGridY()));
 
-    // Tenta mover 1 casa na direção do player
-    int dx = (px > ex) ? 1 : (px < ex ? -1 : 0);
-    int dy = (py > ey) ? 1 : (py < ey ? -1 : 0);
+    EnemyResolution resolution = mIA->GetEnemyResolution(mIAGridData);
 
-    int nextX = ex;
-    int nextY = ey;
-
-    if (std::abs(px - ex) > std::abs(py - ey)) {
-        nextX += dx;
-    } else {
-        nextY += dy;
+    // ---------- DEBUG PRINT BONITO ----------
+    SDL_Log("========== IA GRID DATA ==========");
+    for (int y = 0; y < mIAGridData.size(); y++)
+    {
+        std::stringstream ss;
+        for (int x = 0; x < mIAGridData[y].size(); x++)
+        {
+            ss << mIAGridData[y][x] << " ";
+        }
+        SDL_Log("%s", ss.str().c_str());
     }
+    SDL_Log("==================================");
 
-    nextX = std::clamp(nextX, 0, mGrid->GetCols() - 1);
-    nextY = std::clamp(nextY, 0, mGrid->GetRows() - 1);
+    // ---------- PARSE ACTION ----------
+    mEnemyTurn.moveX        = resolution.moveTo.x;
+    mEnemyTurn.moveY        = resolution.moveTo.y;
+    mEnemyTurn.hasAction    = resolution.hasAction;
+    mEnemyTurn.skillSlot    = resolution.skillSlot;
+    mEnemyTurn.targetX      = resolution.targetTile.x;
+    mEnemyTurn.targetY      = resolution.targetTile.y;
 
-    Actor* obstacle = mGrid->GetUnitAt(nextX, nextY);
-    if (obstacle != nullptr && obstacle != mEnemy) {
-        // Se estiver bloqueado, cancela o movimento e fica onde está
-        nextX = ex;
-        nextY = ey;
-    }
-
-    mEnemyTurn.moveX = nextX;
-    mEnemyTurn.moveY = nextY;
-
-    mEnemyTurn.hasAction = true;
-    mEnemyTurn.skillSlot = PartSlot::RightArm;
-
-    // TODO: Tem que levar em conta a skill
-    mEnemyTurn.targetX = px;
-    mEnemyTurn.targetY = py;
-
+    // logs e notificação na UI
+    SDL_Log("Inimigo planejou ir para (%d, %d) e atacar (%d, %d)", mEnemyTurn.moveX, mEnemyTurn.moveY, mEnemyTurn.targetX, mEnemyTurn.targetY);
     std::ostringstream enemyPlan;
-    enemyPlan << "Inimigo planejou ir para (" << mEnemyTurn.moveX << ", " << mEnemyTurn.moveY
-              << ") e atacar (" << mEnemyTurn.targetX << ", " << mEnemyTurn.targetY << ")";
+    enemyPlan << "Usou: " << resolution.skillUsed;
     NotifyEnemy(enemyPlan.str());
 }
 
@@ -1265,7 +1367,3 @@ void Level::LoadLevel(const LevelConfig& config)
 
     SDL_Log("Level carregado: %d x %d", rows, cols);
 }
-
-
-
-

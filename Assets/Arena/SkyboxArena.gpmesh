@@ -3,7 +3,7 @@
   "vertexformat": "PosNormTex",
   "shader": "BasicMesh",
   "textures": [
-    "../Assets/Textures/SkyboxArena.png"
+    "../Assets/Textures/SkyboxDefault.png"
   ],
   "specularPower": 100.0,
   "vertices": [
