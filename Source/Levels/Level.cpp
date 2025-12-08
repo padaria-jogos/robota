@@ -215,7 +215,8 @@ void Level::HandleExplorationPhase()
             }
         }
 
-        NotifyPlayer("Robo selecionado! Escolha o destino.");
+        SDL_Log("Ação do jogador: Selecionado %s. Aguardando movimento...", mPlayer->GetName().c_str());
+        NotifyPlayer("Escolha a posição de destino");
     }
     else
     {
@@ -292,8 +293,11 @@ void Level::HandleSkillSelectionPhase(PartSlot slot)
     
     if (mPlayer->HasStatusEffect(StatusEffect::Stunned)) {
         NotifyPlayer("Preso no mel! Ataque o próprio tile para se libertar.");
-    } else {
-        NotifyPlayer("Habilidade escolhida, selecione o alvo.");
+    }
+    else
+    {
+        SDL_Log("Ação do jogador: selecionou habilidade. Aguardando mira...");
+        NotifyPlayer("Selecione o alvo");
     }
 
 
@@ -633,22 +637,15 @@ void Level::CalculateEnemyAction()
     if (!mIA)
         InitializeIA();
 
+    SDL_Log("Calculando ação do inimigo...");
+
     // Reset
     mEnemyTurn = TurnAction();
 
     // ---------- CALCULAR AÇÃO DO INIMIGO ----------
     UpdateIAGridData();
 
-    RobotStats playerStats;
-    RobotStats enemyStats;
-    UpdateIARobotStats(&playerStats, &enemyStats);
-    mIA->UpdatePlayerStats(playerStats);
-    mIA->UpdateEnemyStats(enemyStats);
-
-    EnemyResolution resolution = mIA->GetEnemyResolution(mIAGridData);
-
-    // ---------- DEBUG PRINT BONITO ----------
-    SDL_Log("========== IA GRID DATA ==========");
+    SDL_Log("---------- IA GRID DATA ----------");
     for (int y = 0; y < mIAGridData.size(); y++)
     {
         std::stringstream ss;
@@ -658,7 +655,15 @@ void Level::CalculateEnemyAction()
         }
         SDL_Log("%s", ss.str().c_str());
     }
-    SDL_Log("==================================");
+    SDL_Log("----------------------------------");
+
+    RobotStats playerStats;
+    RobotStats enemyStats;
+    UpdateIARobotStats(&playerStats, &enemyStats);
+    mIA->UpdatePlayerStats(playerStats);
+    mIA->UpdateEnemyStats(enemyStats);
+
+    EnemyResolution resolution = mIA->GetEnemyResolution(mIAGridData);
 
     // ---------- PARSE ACTION ----------
     mEnemyTurn.moveX        = resolution.moveTo.x;
@@ -849,7 +854,8 @@ void Level::ExecuteNextStep() {
     mStepIndex++;
 }
 
-void Level::StartResolution() {
+void Level::StartResolution()
+{
     CalculateEnemyAction();
 
     if (mPlayerTurn.moveX != -1) {
@@ -874,7 +880,7 @@ void Level::StartResolution() {
 
 void Level::ProcessTileEffects()
 {
-    NotifyBoth("=== Processando efeitos dos tiles ===");
+    SDL_Log("Processando efeitos dos tiles...");
     
     // Processa efeitos para o Player
     if (mPlayer && !mPlayer->IsDead()) {
@@ -993,12 +999,12 @@ void Level::FinishResolution() {
     mPlayerTurn = TurnAction();
     mEnemyTurn = TurnAction();
 
-    NotifyBoth("TURNO ENCERRADO.");
+    NotifyBoth("TURNO ENCERRADO.\n\n");
 }
 
 void Level::NotifyPlayer(const std::string& message) const
 {
-    SDL_Log("%s", message.c_str());
+    // SDL_Log("%s", message.c_str());
     if (mHud)
     {
         mHud->AddPlayerMessage(message);

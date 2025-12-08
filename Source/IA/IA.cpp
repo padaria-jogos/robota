@@ -8,7 +8,7 @@ IA::IA(RobotStats playerStats, RobotStats enemyStats)
 {
     auto PrintRobotStats = [&] (const RobotStats& r)
     {
-        SDL_Log("=== IA LOG: ROBOT %s ===", r.name.c_str());
+        SDL_Log("----- IA LOG: Robot %s -----", r.name.c_str());
         SDL_Log("Pos: (%.0f, %.0f)", r.position.x, r.position.y);
 
         auto printP = [&](const char* n, const PartStats& p){

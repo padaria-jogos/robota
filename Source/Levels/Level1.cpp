@@ -65,7 +65,7 @@ Level1::Level1(Game* game, HUD *hud) : Level(game, hud)
     // ---------- IA ----------
     InitializeIA();
 
-    SDL_Log("========== LEVEL 1 INICIADO ========== ");
+    SDL_Log("\n\n========== LEVEL 1 INICIADO ========== ");
 }
 
 void Level1::ConfigureCutscene()
