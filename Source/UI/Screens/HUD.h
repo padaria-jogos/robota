@@ -16,15 +16,29 @@ public:
 
     void TrackRobots(const Robot* playerRobot, const Robot* enemyRobot);
     void Update(float deltaTime) override;
+    void SetVisible(bool visible);
+    bool IsVisible() const { return mMenuVisible; }
 
     void AddPlayerMessage(const std::string& message);
     void AddEnemyMessage(const std::string& message);
 
 private:
+    enum class PanelOrientation
+    {
+        TextToRight,
+        TextToLeft
+    };
+
     struct RobotWidget
     {
         UIText* nameLabel;
         UIText* messageLabel;
+        UIText* statusTitle;
+        UIText* nameTitle;
+        UIImage* statusPanel;
+        UIImage* namePanel;
+        UIRect* logPanel;
+        UIImage* margin;
         UIImage* head;
         UIImage* torso;
         UIImage* leftArm;
@@ -33,9 +47,10 @@ private:
         UIImage* rightLeg;
         std::deque<std::string> messages;
         std::string label;
+        PanelOrientation orientation;
     };
 
-    RobotWidget CreateRobotWidget(const Vector2& anchor, const std::string& displayName, const Vector2& nameOffset);
+    RobotWidget CreateRobotWidget(const Vector2& anchor, const std::string& displayName, const std::string& nameSectionTitle, PanelOrientation orientation);
     void UpdateRobotWidget(const Robot* robot, RobotWidget& widget);
     void UpdatePartVisual(const RobotPart& part, UIImage* image, const std::string& suffix);
     void AppendMessage(RobotWidget& widget, const std::string& message);
@@ -47,4 +62,6 @@ private:
 
     RobotWidget mPlayerWidget;
     RobotWidget mEnemyWidget;
+
+    bool mMenuVisible;
 };

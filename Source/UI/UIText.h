@@ -21,6 +21,7 @@ public:
     void SetText(const std::string& name);
     void SetTextColor(const Vector3 &color);
     void SetBackgroundColor(const Vector4 &color) { mBackgroundColor = color; }
+    void SetMargin(const Vector2 &margin) { mMargin = margin; }
 
 protected:
     std::string mText;

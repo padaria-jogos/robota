@@ -11,25 +11,33 @@ MainMenu::MainMenu(class Game* game, const std::string& fontName)
     // add game logo
     AddImage("../Assets/Logo.png", Vector2(0.0f, 100.0f), 0.4f, 0.0f, 1);
 
+    const float buttonsY = -220.0f;
+    const float buttonSpacing = 260.0f;
+
     // btn start
-    AddButton("New Game", [this]() {
+    UIButton* startButton = AddButton("New Game", [this]() {
         // close main menu and start the game
         SDL_Log("Starting Game");
         this->Close();
         mGame->SetScene(GameScene::Level1);
-    }, Vector2(0.0f, -150.0f), 1.0f, 0.0f, 24, 1024, 10);
+    }, Vector2(-buttonSpacing * 0.5f, buttonsY), 1.0f, 0.0f, 24, 1024, 10);
 
-    mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
-    mButtons.back()->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    startButton->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
+    startButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    startButton->SetBackgroundScale(0.5f);
+    startButton->SetMargin(Vector2(0.0f, 0.0f));
 
     // btn quit
-    AddButton("Quit", [this]() {
+    UIButton* quitButton = AddButton("Quit", [this]() {
         // close the game
         mGame->Quit();
-    }, Vector2(0.0f, -200.0f), 1.0f, 0.0f, 24, 1024, 20);
+    }, Vector2(buttonSpacing * 0.5f, buttonsY), 1.0f, 0.0f, 24, 1024, 20);
 
-    mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
-    mButtons.back()->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    quitButton->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
+    quitButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    quitButton->SetBackgroundScale(0.5f);
+    quitButton->SetMargin(Vector2(0.0f, 0.0f));
+    quitButton->SetBackgroundTextures("../Assets/HUD/Rbuttons.png", "../Assets/HUD/holdRbuttons.png");
 }
 
 void MainMenu::HandleKeyPress(int key)
@@ -40,7 +48,8 @@ void MainMenu::HandleKeyPress(int key)
     // navega de acordo com o input
     switch (key)
     {
-        case SDLK_UP:
+        case SDLK_LEFT:
+        case SDLK_a:
         {
             // remove highlight
             mButtons[mSelectedButtonIndex]->SetHighlighted(false);
@@ -55,7 +64,8 @@ void MainMenu::HandleKeyPress(int key)
         }
         break;
 
-        case SDLK_DOWN:
+        case SDLK_RIGHT:
+        case SDLK_d:
         {
             // remove highlight
             mButtons[mSelectedButtonIndex]->SetHighlighted(false);

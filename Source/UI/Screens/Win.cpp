@@ -3,10 +3,16 @@
 //
 
 #include "Win.h"
+#include "HUD.h"
 #include "Game.h"
 
 Win::Win(class Game* game) : UIScreen(game, "../Assets/Fonts/Arial.ttf")
 {
+    if (game->GetHUD())
+    {
+        game->GetHUD()->SetVisible(false);
+    }
+
     AddText("Você venceu!", Vector2(0.0f, 220.0f), 3.0f);
 
     AddText("Você pode roubar uma peça do adversario e upgradar seu robo! Mas a demo acaba aqui :(", Vector2(0.0f, 50.0f), 0.75f);

@@ -13,7 +13,7 @@ ActionSelection::ActionSelection(class Game* game)
     // AddImage("../Assets/UIBackground.png", Vector2(0.0f, 0.0f), 0.7f, 0.0f, 1);
 
     // btn esquerdo
-    AddButton("Braço Esquerdo", [this]() {
+    UIButton* leftArmButton = AddButton("Braço Esquerdo", [this]() {
         auto* level = mGame->GetLevel();
         if (level) {
             level->SetSelectedSlot(PartSlot::LeftArm);
@@ -21,11 +21,12 @@ ActionSelection::ActionSelection(class Game* game)
         }
     }, Vector2(-300.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 10);
 
-    mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
-    mButtons.back()->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    leftArmButton->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
+    leftArmButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    leftArmButton->SetBackgroundTextures("../Assets/HUD/Ybuttons.png", "../Assets/HUD/holdYbuttons.png");
 
     // btn direito
-    AddButton("Braço Direito", [this]() {
+    UIButton* rightArmButton = AddButton("Braço Direito", [this]() {
         auto* level = mGame->GetLevel();
         if (level) {
             level->SetSelectedSlot(PartSlot::RightArm);
@@ -33,19 +34,21 @@ ActionSelection::ActionSelection(class Game* game)
         }
     }, Vector2(0.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 20);
 
-    mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
-    mButtons.back()->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    rightArmButton->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
+    rightArmButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    rightArmButton->SetBackgroundTextures("../Assets/HUD/Pbuttons.png", "../Assets/HUD/holdPbuttons.png");
 
     // btn desistir
-    AddButton("Pular turno", [this]() {
+    UIButton* skipButton = AddButton("Pular turno", [this]() {
         auto* level = mGame->GetLevel();
         if (level) {
             level->HandleWait();
         }
     }, Vector2(300.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 20);
 
-    mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
-    mButtons.back()->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    skipButton->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
+    skipButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    skipButton->SetBackgroundTextures("../Assets/HUD/Rbuttons.png", "../Assets/HUD/holdRbuttons.png");
 }
 
 void ActionSelection::HandleKeyPress(int key)

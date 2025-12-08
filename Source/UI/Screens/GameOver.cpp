@@ -3,11 +3,17 @@
 //
 
 #include "GameOver.h"
+#include "HUD.h"
 #include "../../Game.h"
 
 GameOver::GameOver(class Game* game, const std::string& fontName)
         :UIScreen(game, fontName)
 {
+    if (game->GetHUD())
+    {
+        game->GetHUD()->SetVisible(false);
+    }
+
     AddText("Game Over", Vector2(0.0f, 0.0f), 2.0f);
 
     AddText("Press Enter", Vector2(0.0f, 200.0f), 1.0f);
