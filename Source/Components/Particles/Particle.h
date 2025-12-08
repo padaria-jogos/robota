@@ -19,6 +19,8 @@ public:
 
     bool IsDead() const { return mIsDead; }
 
+    float GetLifeTime() const { return mLifeTime; }
+
 private:
     float mLifeTime;
     bool mIsDead;

@@ -178,13 +178,37 @@ void ParticleManager::EmitFireParticles(FireInstance& fire, float deltaTime)
     fire.emissionTimer += deltaTime;
     
     float emissionInterval = 1.0f / fire.config.particlesPerSecond;
-    
+
+    static int debugFrameCount = 0;
+    debugFrameCount++;
+    if (debugFrameCount % 30 == 0) {  // A cada meio segundo
+        SDL_Log("🔥 [DEBUG] Tile (%d, %d) | Timer: %.4f | Interval: %.4f | Delta: %.4f",
+                fire.gridX, fire.gridY,
+                fire.emissionTimer,
+                emissionInterval,
+                deltaTime);
+    }
+
+    int emittedThisFrame = 0;
+    int maxIterations = 0;
+
     while (fire.emissionTimer >= emissionInterval)
     {
+        maxIterations++;
+        if (maxIterations > 100) {
+            SDL_Log("❌ [EmitFire] Loop infinito detectado em (%d, %d)!", fire.gridX, fire.gridY);
+            fire.emissionTimer = 0.0f;
+            break;
+        }
+
         fire.emissionTimer -= emissionInterval;
         
         BasicParticle* particle = GetAvailableParticle();
-        if (!particle) break;
+        if (!particle) {
+            SDL_Log("❌ [EmitFire] Pool esgotado no tile (%d, %d) após %d partículas",
+                                fire.gridX, fire.gridY, emittedThisFrame);
+            break;
+        }
         
         // Posição com offset aleatório
         Vector3 emitPos = fire.worldPosition;
@@ -212,6 +236,13 @@ void ParticleManager::EmitFireParticles(FireInstance& fire, float deltaTime)
         
         particle->Awake(emitPos, Vector3::Zero, fire.config.particleLifetime);
         particle->Emit(direction, speed);
+
+        emittedThisFrame++;
+    }
+
+    if (emittedThisFrame > 0) {
+        SDL_Log("🔥 [EmitFire] Tile (%d, %d) emitiu %d partículas | Timer restante: %.4f", 
+                fire.gridX, fire.gridY, emittedThisFrame, fire.emissionTimer);
     }
 }
 

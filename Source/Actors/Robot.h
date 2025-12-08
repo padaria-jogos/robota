@@ -128,7 +128,18 @@ class Robot : public Actor{
         bool HasStatusEffect(StatusEffect effect) const;
         StatusEffect GetCurrentStatus() const { return mStatusEffect; }
 
+        void SetLastEffectTile(int x, int y) {
+                mLastEffectTileX = x;
+                mLastEffectTileY = y;
+            }
 
+        int GetLastEffectTileX() const { return mLastEffectTileX; }
+        int GetLastEffectTileY() const { return mLastEffectTileY; }
+
+        void ClearLastEffectTile() {
+                mLastEffectTileX = -1;
+                mLastEffectTileY = -1;
+            }
 
     private:
         std::string mName;
@@ -158,9 +169,11 @@ class Robot : public Actor{
         // Animation
         float mAnimOffset;
 
-
         void CheckDeath();
         Vector3 GetPartMountPosition(PartSlot slot);
 
+        // Rastreia qual tile tem efeitos ativos
+        int mLastEffectTileX = -1;
+        int mLastEffectTileY = -1;
 };
 

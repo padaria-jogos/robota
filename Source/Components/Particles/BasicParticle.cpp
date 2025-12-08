@@ -73,6 +73,11 @@ void BasicParticle::OnUpdate(float deltaTime)
 {
     Particle::OnUpdate(deltaTime);
 
+    if (IsDead()) {
+        mMeshComponent->SetVisible(false);
+        return;
+    }
+
     // Estica partícula baseado na velocidade (efeito de gota caindo)
     if (mStretchWithVelocity && mRigidBody) {
         Vector3 velocity = mRigidBody->GetVelocity();
@@ -98,12 +103,22 @@ void BasicParticle::OnUpdate(float deltaTime)
         Vector3 dampedVel = currentVel * (1.0f - mViscosity * deltaTime);
         mRigidBody->SetVelocity(dampedVel);
     }
-    
-    // Fade out opcional
-    if (mFadeOut && mInitialLifetime > 0.0f) {
-        float remainingLife = 1.0f; // Particle base class deveria expor isso
-        // Como Particle não expõe, podemos calcular baseado no tempo
-        // Ou adicionar getter em Particle.h
+
+    if (mFadeOut && mMeshComponent) {
+        float currentLife = GetLifeTime();
+        float initialLife = mInitialLifetime;
+        
+        if (initialLife > 0.0f) {
+            // Calcula alpha baseado no lifetime restante (0.0 = morto, 1.0 = novo)
+            float alpha = Math::Clamp(currentLife / initialLife, 0.0f, 1.0f);
+            
+            // Fade mais agressivo nos últimos 30% da vida
+            if (alpha < 0.3f) {
+                alpha = alpha / 0.3f;  // Remapeia 0-0.3 para 0-1
+            }
+            
+            mMeshComponent->SetAlpha(alpha);
+        }
     }
 }
 

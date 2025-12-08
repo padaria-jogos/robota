@@ -123,10 +123,11 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
 
     // Verificar o que tem na grid
     GridMap* grid = mGame->GetLevel()->GetGrid();
+    bool attackingSelf = (targetX == mGridX && targetY == mGridY);
     Actor* target = grid->GetUnitAt(targetX, targetY);
 
     // Lançar projétil
-    if (skillType == SkillType::Missile) {
+    if (skillType == SkillType::Missile && !attackingSelf) {
         Vector3 startPos = GetPosition();
         Vector3 targetPos = grid->GetWorldPosition(targetX, targetY);
         targetPos.z = startPos.z;  // Mesma altura
@@ -145,6 +146,11 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
 
     if (!target) {
         SDL_Log("Miss");
+        return;
+    }
+
+    if (attackingSelf) {
+        SDL_Log("Atacando próprio tile (mel), pulando efeitos visuais");
         return;
     }
 
@@ -184,11 +190,11 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
             // Explosão para ataques de projétil/míssil
             ExplosionConfig expConfig;
             expConfig.color = Vector3(1.0f, 0.5f, 0.0f);
-            expConfig.particleCount = 40;
-            expConfig.minSpeed = 250.0f;
-            expConfig.maxSpeed = 500.0f;
-            expConfig.lifetime = 1.5f;
-            expConfig.particleScale = 40.0f;
+            expConfig.particleCount = 100;
+            expConfig.minSpeed = 200.0f;
+            expConfig.maxSpeed = 400.0f;
+            expConfig.lifetime = 1.0f;
+            expConfig.particleScale = 30.0f;
             expConfig.gravity = 0.0f;
             
             mGame->GetLevel()->GetParticleManager()->CreateExplosionAtGrid(
@@ -223,10 +229,10 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
             ExplosionConfig expConfig;
             expConfig.color = Vector3(0.8f, 0.5f, 0.1f);
             expConfig.particleCount = 100;
-            expConfig.minSpeed = 300.0f;
-            expConfig.maxSpeed = 800.0f;
-            expConfig.lifetime = 2.0f;
-            expConfig.particleScale = 60.0f;
+            expConfig.minSpeed = 200.0f;
+            expConfig.maxSpeed = 400.0f;
+            expConfig.lifetime = 1.0f;
+            expConfig.particleScale = 30.0f;
             expConfig.gravity = 0.0f;
             
             mGame->GetLevel()->GetParticleManager()->CreateExplosionAtGrid(
@@ -238,9 +244,11 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
         destructible->SetState(ActorState::Destroy);
         grid->SetUnitAt(nullptr, targetX, targetY);
         grid->SetTerrainType(targetX, targetY, TerrainType::Floor);
-        return;
+        
+        // Limpa qualquer efeito de partículas que estava no tile
+        mGame->GetLevel()->GetParticleManager()->StopHoneyDripAtGrid(targetX, targetY);
+        mGame->GetLevel()->GetParticleManager()->StopFireAtGrid(targetX, targetY);
     }
-
 }
 
 void Robot::EquipPart(PartSlot slot, const RobotPart& part)
