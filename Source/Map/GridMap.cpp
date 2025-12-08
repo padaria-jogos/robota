@@ -3,6 +3,8 @@
 //
 
 #include "GridMap.h"
+
+#include <algorithm>
 #include <queue>
 #include <iostream>
 
@@ -17,6 +19,12 @@ GridMap::GridMap(Game* game, int rows, int cols, float cellSize)
 
     // Nenhum robô no começo
     mUnitsGrid.resize(mRows * mCols, nullptr);
+    
+    // Inicializa tipos de terreno como Floor
+    mTerrainTypes.resize(mRows * mCols, TerrainType::Floor);
+    
+    // Inicializa referências de blocks como nullptr
+    mFloorBlocks.resize(mRows * mCols, nullptr);
 
     // definir os tiles em cada bloco
     for (int i = 0; i < mRows; i++) {
@@ -36,22 +44,10 @@ GridMap::GridMap(Game* game, int rows, int cols, float cellSize)
         }
     }
 
-    // teste
-    SetSelectedTile(1, 1);
-
-    // verificar quais tiles devem ser pintados
-    for (auto &p : GetWalkableTiles(1, 1, 1))
-    {
-        std::cout << p.x << "," << p.y << " ";
+    // Seleciona tile inicial apenas se o grid não estiver vazio
+    if (mRows > 0 && mCols > 0) {
+        SetSelectedTile(0, 0);
     }
-    std::cout << std::endl;
-
-    // ataque
-    for (auto &p : GetAttackableTiles(1, 1, 1, 1))
-    {
-        std::cout << p.x << "," << p.y << " ";
-    }
-    std::cout << std::endl;
 }
 
 Vector3 GridMap::GetWorldPosition(int gridX, int gridY) const
@@ -131,9 +127,8 @@ std::vector<TileNode> GridMap::GetWalkableTiles(int startX, int startY, int maxR
 
                 if (!visited[idx])
                 {
-                    // TODO: reimplementar no futuro
                     // É caminhável? (Não tem obstáculo/inimigo)
-                    if (GetUnitAt(nx, ny) == nullptr)
+                    if (GetUnitAt(nx, ny) == nullptr && IsWalkable(nx, ny))
                     {
                         visited[idx] = true;
                         frontier.push({nx, ny, current.distance + 1});
@@ -144,6 +139,76 @@ std::vector<TileNode> GridMap::GetWalkableTiles(int startX, int startY, int maxR
     }
     return results;
 }
+
+std::vector<Vector2> GridMap::CalculatePath(int startX, int startY, int endX, int endY) {
+    std::unordered_map<int, int> cameFrom; // Guardar o caminho
+    std::queue<int> frontier;
+
+    int startIdx = startY * mCols + startX;
+    int endIdx = endY * mCols + endX;
+
+    frontier.push(startIdx);
+    cameFrom[startIdx] = startIdx;
+
+    bool found = false;
+
+    while (!frontier.empty()) {
+        int currentIdx = frontier.front();
+        frontier.pop();
+
+        if (currentIdx == endIdx) {
+            found = true;
+            break;
+        }
+
+        int curX = currentIdx % mCols;
+        int curY = currentIdx / mCols;
+
+        const int dirs[4][2] = { {0, 1}, {0, -1}, {-1, 0}, {1, 0} };
+
+        for (auto& d : dirs) {
+            int nx = curX + d[0];
+            int ny = curY + d[1];
+
+            if (nx >= 0 && nx < mCols && ny >= 0 && ny < mRows) {
+                int idx = ny * mCols + nx;
+                if (cameFrom.find(idx) == cameFrom.end()) {
+                    // Tile deve ser caminhável OU ser o destino (se o destino também for caminhável)
+                    bool isWalkable = IsWalkable(nx, ny);
+                    bool hasNoUnit = (GetUnitAt(nx, ny) == nullptr);
+                    bool isDestination = (idx == endIdx);
+
+                    // Permite passar por tiles com unidades apenas se for o destino
+                    // Mas não permite passar por paredes :p
+                    if (isWalkable && (hasNoUnit || isDestination))
+                    {
+                        frontier.push(idx);
+                        cameFrom[idx] = currentIdx; // Cheguei no idx vindo do currentIdx
+                    }
+                }
+            }
+        }
+
+    }
+
+    std::vector<Vector2> path;
+    if (!found) {
+        return path;
+    }
+
+    int curr = endIdx;
+    while (curr != startIdx)
+    {
+        float px = static_cast<float>(curr % mCols);
+        float py = static_cast<float>(curr / mCols);
+        path.push_back(Vector2(px, py));
+        curr = cameFrom[curr];
+    }
+    std::reverse(path.begin(), path.end());
+    return path;
+}
+
+
 
 std::vector<TileNode> GridMap::GetAttackableTiles(int startX, int startY, int minRange, int maxRange)
 {
@@ -172,13 +237,16 @@ std::vector<TileNode> GridMap::GetAttackableTiles(int startX, int startY, int mi
 
 void GridMap::ClearTileStates()
 {
+    // Apenas limpa os overlays visuais temporários (Path e Attack)
     for (auto* tile : mTiles) {
-        tile->SetTileType(TileType::Default);
+        TileType currentType = tile->GetType();
+        if (currentType == TileType::Path || currentType == TileType::Attack) {
+            tile->SetTileType(TileType::Default);
+        }
     }
 }
 
 
-// TODO: testar depois
 Tile* GridMap::GetTileAt(int x, int y)
 {
     if (x >= 0 && x < mCols && y >= 0 && y < mRows) {
@@ -216,7 +284,62 @@ void GridMap::SetUnitAt(Actor* actor, int x, int y)
     }
 }
 
+bool GridMap::IsWalkable(int x, int y) const
+{
+    if (x < 0 || x >= mCols || y < 0 || y >= mRows) {
+        return false;
+    }
+    
+    // Verifica o tipo de terreno
+    int idx = y * mCols + x;
+    TerrainType terrain = mTerrainTypes[idx];
+    
+    // Apenas paredes são intransponíveis
+    // Mel, fogo e outros hazards são caminháveis, mas aplicam efeitos depois
+    return terrain != TerrainType::Wall;
+}
+
+void GridMap::SetTerrainType(int x, int y, TerrainType type)
+{
+    if (x >= 0 && x < mCols && y >= 0 && y < mRows) {
+        int idx = y * mCols + x;
+        mTerrainTypes[idx] = type;
+    }
+}
+
+TerrainType GridMap::GetTerrainType(int x, int y) const
+{
+    if (x >= 0 && x < mCols && y >= 0 && y < mRows) {
+        int idx = y * mCols + x;
+        return mTerrainTypes[idx];
+    }
+    return TerrainType::Floor;
+}
+
+void GridMap::SetFloorBlock(int x, int y, Actor* block)
+{
+    if (x >= 0 && x < mCols && y >= 0 && y < mRows) {
+        int idx = y * mCols + x;
+        mFloorBlocks[idx] = block;
+    }
+}
+
+Actor* GridMap::GetFloorBlock(int x, int y) const
+{
+    if (x >= 0 && x < mCols && y >= 0 && y < mRows) {
+        int idx = y * mCols + x;
+        return mFloorBlocks[idx];
+    }
+    return nullptr;
+}
+
 GridMap::~GridMap()
 {
+    // Deletar todos os Tiles antes de limpar o vetor
+    for (auto* tile : mTiles) {
+        if (tile) {
+            delete tile;
+        }
+    }
     mTiles.clear();
 }

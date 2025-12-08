@@ -42,6 +42,9 @@ public:
     // Get state of UI screen
 	UIState GetState() const { return mState; }
 
+    // Verifica se esta UI é modal (tem botões para interagir)
+    bool IsModal() const { return !mButtons.empty(); }
+
     // Game getter
     class Game* GetGame() { return mGame; }
 

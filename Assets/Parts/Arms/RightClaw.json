@@ -1,0 +1,10 @@
+{
+  "name": "Rosevif Claw",
+  "slot": "RightArm",
+  "meshPath": "../Assets/Robots/Rosevif/RosevifRightArm.gpmesh",
+  "maxHP": 10,
+  "skill": "Punch",
+  "damage": 50,
+  "range": 1,
+  "description": "Garras extremamente afiadas. Ataque corpo a corpo."
+}

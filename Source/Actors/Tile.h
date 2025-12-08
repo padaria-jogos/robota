@@ -8,9 +8,9 @@
 #include "Actors/Actor.h"
 
 enum class TileType {
-    Default,    // Padrão
-    Path,       // Azul (Movimento possível)
-    Attack      // Vermelho (Ataque possível)
+    Default,    // Tile padrão
+    Path,       // Overlay azul (indica movimento possível)
+    Attack      // Overlay vermelho (indica ataque possível)
 };
 
 class Tile : public Actor {

@@ -20,4 +20,7 @@ public:
 
     void OnUpdate(float deltaTime) override;
     void ProcessInput(SDL_Event &event);
+
+protected:
+    void ConfigureCutscene();
 };

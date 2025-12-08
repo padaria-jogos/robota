@@ -9,12 +9,15 @@
 
 Tile::Tile(Game* game)
     : Actor(game)
-    , mIsSelected(false)
     , mType(TileType::Default)
+    , mIsSelected(false)
 {
     mMeshComp = new MeshComponent(this);
     Mesh* mesh = game->GetRenderer()->GetMesh("../Assets/Tile.gpmesh");
     mMeshComp->SetMesh(mesh);
+    
+    // Tiles são unlit (sem efeitos de iluminação)
+    mMeshComp->SetUnlit(true);
 
     UpdateTexture();
 }
@@ -37,7 +40,7 @@ void Tile::SetSelected(bool selected)
 
 void Tile::UpdateTexture()
 {
-    std::string textureName = "";
+    std::string textureName;
     if (mIsSelected)
     {
         switch (mType) {

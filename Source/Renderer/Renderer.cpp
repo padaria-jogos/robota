@@ -2,6 +2,7 @@
 #include "Renderer.h"
 #include "Shader.h"
 #include "../Components/Drawing/MeshComponent.h"
+#include "../Components/Lighting/PointLightComponent.h"
 #include "../UI/UIElement.h"
 #include <algorithm>
 
@@ -12,6 +13,7 @@ Renderer::Renderer(SDL_Window *window)
 , mWindow(window)
 , mScreenWidth(1024.0f)
 , mScreenHeight(768.0f)
+, mCameraPos(Vector3::Zero)
 {
 
 }
@@ -92,6 +94,20 @@ void Renderer::RemoveUIElement(UIElement *comp)
     mUIComps.erase(iter);
 }
 
+void Renderer::AddPointLight(PointLightComponent* light)
+{
+    mPointLights.emplace_back(light);
+}
+
+void Renderer::RemovePointLight(PointLightComponent* light)
+{
+    auto iter = std::find(mPointLights.begin(), mPointLights.end(), light);
+    if (iter != mPointLights.end())
+    {
+        mPointLights.erase(iter);
+    }
+}
+
 void Renderer::UnloadData()
 {
     // Destroy textures
@@ -153,6 +169,50 @@ void Renderer::Draw()
 
     // Update view-projection matrix
     mMeshShader->SetMatrixUniform("uViewProj", mView * mProjection);
+    
+    // Three-Point Lighting Setup
+    // Luzes fixas no mundo (não seguem a câmera)
+    
+    // Key Light: Acima da arena (como sol)
+    Vector3 keyLightPos = Vector3(0.0f, -1000.0f, 3000.0f);
+    mMeshShader->SetVectorUniform("uKeyLightPos", keyLightPos);
+    
+    // Fill Light: Lateral direita e alto
+    Vector3 fillLightPos = Vector3(-1500.0f, -500.0f, 2500.0f);
+    mMeshShader->SetVectorUniform("uFillLightPos", fillLightPos);
+    
+    // Rim Light: Atras esquerda e alto
+    Vector3 rimLightPos = Vector3(1500.0f, 500.0f, 2800.0f);
+    mMeshShader->SetVectorUniform("uRimLightPos", rimLightPos);
+    
+    // Posição da câmera para efeito especular metálico
+    mMeshShader->SetVectorUniform("uCameraPos", mCameraPos);
+    
+    // Intensidade das luzes do mundo
+    mMeshShader->SetFloatUniform("uWorldLightIntensity", mWorldLightIntensity);
+    
+    mMeshShader->SetIntUniform("uCelLevels", 3);  // 3 faixas de luz
+    
+    // Luzes dinamicas
+    int numLights = Math::Min(static_cast<int>(mPointLights.size()), 8);
+    mMeshShader->SetIntUniform("uNumPointLights", numLights);
+    
+    for (int i = 0; i < numLights; i++)
+    {
+        auto light = mPointLights[i];
+        if (light->IsEnabled())
+        {
+            std::string posName = "uPointLightPositions[" + std::to_string(i) + "]";
+            std::string colorName = "uPointLightColors[" + std::to_string(i) + "]";
+            std::string intensityName = "uPointLightIntensities[" + std::to_string(i) + "]";
+            std::string radiusName = "uPointLightRadii[" + std::to_string(i) + "]";
+            
+            mMeshShader->SetVectorUniform(posName.c_str(), light->GetPosition());
+            mMeshShader->SetVectorUniform(colorName.c_str(), light->GetColor());
+            mMeshShader->SetFloatUniform(intensityName.c_str(), light->GetIntensity());
+            mMeshShader->SetFloatUniform(radiusName.c_str(), light->GetRadius());
+        }
+    }
 
     // Draw mesh components
     for (auto mc : mMeshComps)

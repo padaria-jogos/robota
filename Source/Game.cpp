@@ -19,7 +19,9 @@
 
 #include "UI/Screens/MainMenu.h"
 #include "Scenes/MainMenuScene.h"
+#include "UI/Screens/HUD.h"
 #include "Levels/Level1.h"
+#include "Levels/Level2.h"
 
 Game::Game()
         :mWindow(nullptr)
@@ -79,6 +81,9 @@ bool Game::Initialize()
     mRenderer = new Renderer(mWindow);
     mRenderer->Initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
+    // Audio
+    mAudio = new AudioSystem();
+
     // start at main menu
     SetScene(GameScene::MainMenu);
     mTicksCount = SDL_GetTicks();
@@ -112,14 +117,14 @@ void Game::SetScene(GameScene nextScene)
     {
         case GameScene::MainMenu:
         {
-            // new MainMenu(this, "../Assets/Fonts/Arial.ttf");
-            new MainMenuScene(this);
+            new MainMenu(this, "../Assets/Fonts/Arial.ttf");
         }
         break;
 
         case GameScene::Level1:
         {
             delete mLevel;
+            mHUD = new HUD(this, "../Assets/Fonts/Arial.ttf");
             mLevel = new Level1(this, mHUD); // se der problema definir destrutor level sem virtual e remover o do level1
         }
     }
@@ -162,13 +167,33 @@ void Game::ProcessInput()
                 Quit();
                 break;
             case SDL_KEYDOWN:
-                // Handle key press for UI screens
+                // Rotação da câmera com Q e E (processa ANTES de tudo)
+                // if (event.key.keysym.sym == SDLK_q)
+                // {
+                //     mCamera->RotateLeft();
+                //     break;  // Não processa mais nada
+                // }
+                // else if (event.key.keysym.sym == SDLK_e)
+                // {
+                //     mCamera->RotateRight();
+                //     break;  // Não processa mais nada
+                // }
+
+                // handle key press camera
+                if (mCamera)
+                    mCamera->HandleKeyPress(event.key.keysym.sym);
+
+                // Processa input nas UIs
                 if (!mUIStack.empty()) {
                     mUIStack.back()->HandleKeyPress(event.key.keysym.sym);
                 }
 
-                // Handle key press for level
-                if (mLevel)
+                // Processa input no level
+                // Mas pula se for ESPAÇO e houver UI modal (evita processamento duplicado)
+                bool hasModalUI = !mUIStack.empty() && mUIStack.back()->IsModal();
+                bool isSpaceKey = event.key.keysym.sym == SDLK_SPACE;
+
+                if (mLevel && !(hasModalUI && isSpaceKey))
                 {
                     mLevel->ProcessInput(event);
                 }
@@ -187,6 +212,10 @@ void Game::ProcessInput()
 
 void Game::UpdateGame(float deltaTime)
 {
+    // update camera
+    if (mCamera)
+        mCamera->Update(deltaTime);
+
     // Update all actors and pending actors
     UpdateActors(deltaTime);
 
@@ -197,10 +226,13 @@ void Game::UpdateGame(float deltaTime)
         }
     }
 
+    mAudio->Update(deltaTime);
+
     // Delete any UI that are closed
     auto iter = mUIStack.begin();
     while (iter != mUIStack.end()) {
         if ((*iter)->GetState() == UIScreen::UIState::Closing) {
+            delete *iter;
             iter = mUIStack.erase(iter);
         } else {
             ++iter;

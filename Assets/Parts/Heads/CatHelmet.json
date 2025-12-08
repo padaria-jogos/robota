@@ -1,0 +1,10 @@
+{
+  "name": "Cat Helmet",
+  "slot": "Head",
+  "meshPath": "../Assets/Robots/Rosevif/RosevifHead.gpmesh",
+  "maxHP": 40,
+  "skill": "Repair",
+  "damage": 0,
+  "range": 0,
+  "description": "Capacete de caça de Rosevif. (Visão noturna?)"
+}

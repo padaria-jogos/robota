@@ -1,0 +1,10 @@
+{
+  "name": "Robota",
+  "parts": {
+    "Torso": "../Assets/Parts/Torsos/TrashcanChest.json",
+    "RightArm": "../Assets/Parts/Arms/DustpanArm.json",
+    "LeftArm": "../Assets/Parts/Arms/BroomArm.json",
+    "Legs": "../Assets/Parts/Legs/RobotaLegs.json",
+    "Head": "../Assets/Parts/Heads/RobotaHead.json"
+  }
+}

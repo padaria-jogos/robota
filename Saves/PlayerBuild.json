@@ -1,0 +1,45 @@
+{
+  "name": "Robota",
+  "parts": {
+    "Head": {
+      "damage": 0,
+      "maxHP": 30,
+      "meshPath": "../Assets/Robots/Robota/RobotaHead.gpmesh",
+      "name": "Robota Head",
+      "range": 0,
+      "skill": "Repair"
+    },
+    "LeftArm": {
+      "damage": 50,
+      "maxHP": 10,
+      "meshPath": "../Assets/Robots/Rosevif/RosevifLeftArm.gpmesh",
+      "name": "Rosevif Claw",
+      "range": 1,
+      "skill": "Punch"
+    },
+    "Legs": {
+      "damage": 0,
+      "maxHP": 20,
+      "meshPath": "../Assets/Robots/Robota/RobotaLeg.gpmesh",
+      "name": "Robota Legs",
+      "range": 2,
+      "skill": "None"
+    },
+    "RightArm": {
+      "damage": 1000,
+      "maxHP": 20,
+      "meshPath": "../Assets/Robots/Robota/RobotaRightArm.gpmesh",
+      "name": "Robota Dustpan",
+      "range": 3,
+      "skill": "Missile"
+    },
+    "Torso": {
+      "damage": 0,
+      "maxHP": 50,
+      "meshPath": "../Assets/Robots/Robota/RobotaTorso.gpmesh",
+      "name": "Trashcan Chest",
+      "range": 0,
+      "skill": "None"
+    }
+  }
+}

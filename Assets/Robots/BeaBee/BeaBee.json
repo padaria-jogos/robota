@@ -1,0 +1,10 @@
+{
+  "name": "Bea Bee",
+  "parts": {
+    "Torso": "../Assets/Parts/Torsos/HoneyChest.json",
+    "RightArm": "../Assets/Parts/Arms/HoneyBlast.json",
+    "LeftArm": "../Assets/Parts/Arms/QueensDrill.json",
+    "Legs": "../Assets/Parts/Legs/HoneyBoots.json",
+    "Head": "../Assets/Parts/Heads/QueensCrown.json"
+  }
+}

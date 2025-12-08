@@ -13,6 +13,10 @@ MeshComponent::MeshComponent(Actor* owner)
         , mTextureIndex(0)
         , mIsVisible(true)
         , mTextureOverride(nullptr)
+        , mOffset(Vector3::Zero)
+        , mRotationOffset(Quaternion::Identity)
+        , mMetallic(0.7f)
+        , mUnlit(false)
 {
     mOwner->GetGame()->GetRenderer()->AddMeshComp(this);
 }
@@ -26,8 +30,26 @@ void MeshComponent::Draw(Shader* shader)
 {
     if (mMesh && mIsVisible)
     {
+        //Rotation
+        Matrix4 rotMat = Matrix4::CreateFromQuaternion(mRotationOffset);
+
+        // Translation
+        Matrix4 transMat = Matrix4::CreateTranslation(mOffset);
+
+        Matrix4 localTransform = rotMat * transMat;
+        Matrix4 world = mOwner->GetWorldTransform();
+
+
+        Matrix4 finalWorld = localTransform * world;
+
         // Set the world transform
-        shader->SetMatrixUniform("uWorldTransform", mOwner->GetWorldTransform());
+        shader->SetMatrixUniform("uWorldTransform", finalWorld);
+
+        // Set the metallic property
+        shader->SetFloatUniform("uMetallic", mMetallic);
+        
+        // Set the unlit property
+        shader->SetIntUniform("uUnlit", mUnlit ? 1 : 0);
 
         // Set the active texture
         Texture* t = mTextureOverride;

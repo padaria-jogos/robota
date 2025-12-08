@@ -12,6 +12,7 @@ AudioSystem::AudioSystem(int numChannels)
     Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
     Mix_AllocateChannels(numChannels);
     mChannels.resize(numChannels);
+    mLastHandle++;
 }
 
 // Destroy the AudioSystem
@@ -49,15 +50,54 @@ void AudioSystem::Update(float deltaTime)
 //       "Assets/Sounds/ChompLoop.wav".
 SoundHandle AudioSystem::PlaySound(const std::string& soundName, bool looping)
 {
-    // Get the sound with the given name
-    Mix_Chunk *sound = GetSound(soundName);
-
-    if (sound == nullptr) {
+    Mix_Chunk* sound = GetSound(soundName);
+    if (!sound)
+    {
         SDL_Log("[AudioSystem] PlaySound couldn't find sound for %s", soundName.c_str());
         return SoundHandle::Invalid;
     }
 
-    return mLastHandle;
+    // Find an empty channel
+    int channel = -1;
+    for (int i = 0; i < mChannels.size(); i++)
+    {
+        if (!mChannels[i].IsValid())
+        {
+            channel = i;
+            break;
+        }
+    }
+
+    // If thers not, substitue a non loop
+    if (channel == -1)
+    {
+        for (auto& [handle, info] : mHandleMap)
+        {
+            if (!info.mIsLooping)
+            {
+                channel = info.mChannel;
+                StopSound(handle);
+                break;
+            }
+        }
+    }
+
+    int loops = looping ? -1 : 0;
+    Mix_PlayChannel(channel, sound, loops);
+
+
+    // Create new handle and put in the map
+    SoundHandle handle = mLastHandle++;
+    mChannels[channel] = handle;
+
+    HandleInfo info;
+    info.mChannel = channel;
+    info.mSoundName = soundName;
+    info.mIsLooping = looping;
+    info.mIsPaused = false;
+    mHandleMap[handle] = info;
+
+    return handle;
 }
 
 // Stops the sound if it is currently playing
@@ -69,9 +109,10 @@ void AudioSystem::StopSound(SoundHandle sound)
         return;
     }
 
+    // Crash se deixar invertido
     Mix_HaltChannel(mHandleMap[sound].mChannel);
-    mHandleMap.erase(sound);
     mChannels[mHandleMap[sound].mChannel].Reset();
+    mHandleMap.erase(sound);
 }
 
 // Pauses the sound if it is currently playing

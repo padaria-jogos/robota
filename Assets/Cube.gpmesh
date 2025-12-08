@@ -3,7 +3,7 @@
 	"vertexformat":"PosNormTex",
 	"shader":"Mesh",
 	"textures":[
-		"../Assets/Ground.png"
+		"../Assets/Textures/floor_default.png"
 	],
 	"vertices":[
 		[-0.5,0.5,0.5,-0,-0,1,0,1],
