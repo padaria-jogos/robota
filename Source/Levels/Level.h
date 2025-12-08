@@ -19,6 +19,7 @@
 #include "UI/Screens/HUD.h"
 #include "UI/Screens/ActionSelection.h"
 #include "IA/IA.h"
+#include "ParticleManager.h"
 
 // IDs dos tiles no CSV
 enum TileID {
@@ -76,7 +77,7 @@ class Level
 {
     public:
         Level(Game* game, HUD *hud);
-        virtual ~Level(){}
+        virtual ~Level();
 
         void ProcessInput(const SDL_Event &event);
         virtual void OnUpdate(float deltaTime);
@@ -106,6 +107,8 @@ class Level
         void HandleWait();
 
         SoundHandle mLevelMusic;
+
+        ParticleManager* GetParticleManager() { return mParticleManager; }
 
     protected:
         Game* mGame;
@@ -180,4 +183,6 @@ class Level
         void NotifyPlayer(const std::string& message) const;
         void NotifyEnemy(const std::string& message) const;
         void NotifyBoth(const std::string& message) const;
+
+        ParticleManager* mParticleManager;
 };

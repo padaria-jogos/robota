@@ -46,6 +46,7 @@ Level::Level(class Game *game, HUD *hud) :
     mIA(nullptr)
 {
     mBattleState = BattleState::Exploration;
+    mParticleManager = new ParticleManager(game, 500);
 
     // ---------- SOUND ----------
     mGame->GetAudio()->StopAllSounds();
@@ -760,6 +761,11 @@ void Level::OnUpdate(float deltaTime)
             mActionSelection = nullptr;
         }
     }
+
+    if (mParticleManager)
+    {
+        mParticleManager->Update(deltaTime);
+    }
 }
 
 void Level::ExecuteNextStep() {
@@ -890,15 +896,42 @@ void Level::ProcessTileEffects()
         TerrainType terrainType = mGrid->GetTerrainType(px, py);
         
         if (true) {
-            
             switch (terrainType) {
-                case TerrainType::Honey:
+                case TerrainType::Honey: {
+                    // Efeito visual de mel pingando
+                    HoneyConfig honeyConfig;
+                    honeyConfig.color = Vector3(1.0f, 0.75f, 0.1f);         // Amarelo-dourado vibrante
+                    honeyConfig.particlesPerSecond = 60;                                // Mais partículas = fluxo contínuo
+                    honeyConfig.minSpeed = 30.0f;                                       // Bem devagar
+                    honeyConfig.maxSpeed = 80.0f;
+                    honeyConfig.particleLifetime = 3.0f;                                // Dura o suficiente para acumular
+                    honeyConfig.particleScale = 40.0f;                                  // Menor (gotas, não blocos)
+                    honeyConfig.spreadRadius = 120.0f;                                  // Mais espalhado
+                    honeyConfig.gravity = -80.0f;                                       // Cai devagar
+                    honeyConfig.viscosity = 0.9f;                                      // Bem viscoso
+
+                    mParticleManager->StartHoneyDripAtGrid(px, py, mGrid, honeyConfig);
+
                     // Aplica stun (não pode se mover no próximo turno)
                     mPlayer->ApplyStatusEffect(StatusEffect::Stunned);
                     NotifyPlayer("Pisou no mel! Não pode se mover no próximo turno!");
                     break;
-                    
-                case TerrainType::Fire:
+                }
+
+                case TerrainType::Fire: {
+                    // Efeito visual de fogo
+                    FireConfig fireConfig;
+                    fireConfig.baseColor = Vector3(1.0f, 0.3f, 0.0f);      // Laranja
+                    fireConfig.tipColor = Vector3(1.0f, 1.0f, 0.0f);       // Amarelo
+                    fireConfig.particlesPerSecond = 70;
+                    fireConfig.minSpeed = 100.0f;
+                    fireConfig.maxSpeed = 300.0f;
+                    fireConfig.particleLifetime = 1.0f;
+                    fireConfig.particleScale = 80.0f;
+                    fireConfig.spreadRadius = 100.0f;
+
+                    mParticleManager->StartFireAtGrid(px, py, mGrid, fireConfig);
+
                     // Causa dano
                     {
                         int fireDamage = 10;
@@ -907,9 +940,12 @@ void Level::ProcessTileEffects()
                         HandleUnitDeath(mPlayer);
                     }
                     break;
-                    
+                }
+
                 default:
                     //TODO: Remover efeitos
+                    mParticleManager->StopHoneyDripAtGrid(px, py);
+                    mParticleManager->StopAllFires();
                     break;
             }
         }
@@ -923,23 +959,40 @@ void Level::ProcessTileEffects()
         TerrainType terrainType = mGrid->GetTerrainType(ex, ey);
         
         if (true) {
-            
             switch (terrainType) {
-                case TerrainType::Honey:
+                case TerrainType::Honey: {
+                    HoneyConfig honeyConfig;
+                    honeyConfig.color = Vector3(1.0f, 0.8f, 0.2f);
+                    honeyConfig.particlesPerSecond = 20;
+                    honeyConfig.viscosity = 0.8f;
+
+                    mParticleManager->StartHoneyDripAtGrid(ex, ey, mGrid, honeyConfig);
+
                     mEnemy->ApplyStatusEffect(StatusEffect::Stunned);
                     NotifyEnemy("Inimigo pisou no mel! Não pode se mover!");
                     break;
-                    
+                }
+
                 case TerrainType::Fire:
-                    {
-                        int fireDamage = 10;
-                        mEnemy->TakeDamage(fireDamage, PartSlot::Legs);
-                        NotifyEnemy("Inimigo queimou nas chamas! Recebeu " + std::to_string(fireDamage) + " de dano!");
-                        HandleUnitDeath(mEnemy);
+                {
+                    // Efeito visual de fogo
+                    FireConfig fireConfig;
+                    fireConfig.baseColor = Vector3(1.0f, 0.3f, 0.0f);
+                    fireConfig.tipColor = Vector3(1.0f, 0.9f, 0.2f);
+                    fireConfig.particlesPerSecond = 35;
+
+                    mParticleManager->StartFireAtGrid(ex, ey, mGrid, fireConfig);
+
+                    int fireDamage = 10;
+                    mEnemy->TakeDamage(fireDamage, PartSlot::Legs);
+                    NotifyEnemy("Inimigo queimou nas chamas! Recebeu " + std::to_string(fireDamage) + " de dano!");
+                    HandleUnitDeath(mEnemy);
                     }
                     break;
                     
                 default:
+                    mParticleManager->StopHoneyDripAtGrid(ex, ey);
+                    mParticleManager->StopFireAtGrid(ex, ey);
                     break;
             }
         }
@@ -991,7 +1044,11 @@ void Level::FinishResolution() {
         if (mPlayer) HandleUnitDeath(mPlayer);
         if (mEnemy)  HandleUnitDeath(mEnemy);
     }
-    
+
+    // Limpa todos os efeitos antes de processar novos
+    mParticleManager->StopAllFires();
+    mParticleManager->StopAllHoneyDrips();
+
     // Processa efeitos dos tiles (mel, fogo, etc)
     ProcessTileEffects();
 
@@ -1377,4 +1434,10 @@ void Level::LoadLevel(const LevelConfig& config)
     }
 
     SDL_Log("Level carregado: %d x %d", rows, cols);
+}
+
+Level::~Level() {
+    // Limpa ParticleManager
+    delete mParticleManager;
+    mParticleManager = nullptr;
 }

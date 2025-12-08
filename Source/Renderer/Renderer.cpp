@@ -146,6 +146,11 @@ void Renderer::Shutdown()
     mMeshShader->Unload();
     delete mMeshShader;
 
+    if (mParticleShader) {
+        mParticleShader->Unload();
+        delete mParticleShader;
+    }
+
     SDL_GL_DeleteContext(mContext);
 	SDL_DestroyWindow(mWindow);
 }
@@ -273,6 +278,15 @@ bool Renderer::LoadShaders()
     mView = Matrix4::Identity;
     mProjection = Matrix4::CreateOrtho(mScreenWidth, mScreenHeight, 1000.0f, -1000.0f);
     mMeshShader->SetMatrixUniform("uViewProj", mView * mProjection);
+
+    // Carrega shader de partículas
+    mParticleShader = new Shader();
+    if (!mParticleShader->Load("../Shaders/Particle"))
+    {
+        SDL_Log("Warning: Failed to load Particle shader");
+        mParticleShader = nullptr;
+    }
+
     return true;
 }
 
