@@ -16,6 +16,7 @@ struct PartStats
     int damage;
     int range;
     std::string skill;
+    std::string name;
 };
 
 struct RobotStats
@@ -48,13 +49,19 @@ public:
     IA(RobotStats playerStats, RobotStats enemyStats);
 
     EnemyResolution GetEnemyResolution(std::vector<std::vector<int>> mMapData);
-    void UpdatePlayerPosition(Vector2 position) {mPlayerStats.position = position;}
-    void UpdateEnemyPosition(Vector2 position) {mEnemyStats.position = position;}
+    void UpdatePlayerStats(RobotStats &playerStats) {mPlayerStats = playerStats;}
+    void UpdateEnemyStats(RobotStats &enemyStats) {mEnemyStats = enemyStats;}
 
 private:
     RobotStats mPlayerStats;
     RobotStats mEnemyStats;
     std::vector<std::vector<int>> mMapData;
+
+    // helpers
+    bool IsInRange(Vector2& origin, const Vector2& target, int minRange, int maxRange);
+    bool CanHitPlayer(const RobotStats& enemy, const RobotStats& player, PartStats weapon);
+    // std::vector<Vector2> FindTilesInRange(Vector2& origin, int minRange, int maxRange, std::vector<std::vector<int>>& grid);
+    std::vector<Vector2> GetReachableTiles(Vector2& start, int moveRange, std::vector<std::vector<int>>& grid);
 
     // logicas específicas
     void NaiveResolution(EnemyResolution* action);

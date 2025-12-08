@@ -551,6 +551,7 @@ void Level::UpdateIARobotStats(RobotStats *playerStats, RobotStats *enemyStats)
             ps.damage    = p.damage;
             ps.range     = p.range;
             ps.skill     = ConvertSkill(p.skill);
+            ps.name      = p.name;
         };
 
         FillPart(robot->GetPart(PartSlot::Head),      outStats->head);
@@ -637,8 +638,12 @@ void Level::CalculateEnemyAction()
 
     // ---------- CALCULAR AÇÃO DO INIMIGO ----------
     UpdateIAGridData();
-    mIA->UpdatePlayerPosition(Vector2(mPlayer->GetGridX(), mPlayer->GetGridY()));
-    mIA->UpdateEnemyPosition(Vector2(mEnemy->GetGridX(), mEnemy->GetGridY()));
+
+    RobotStats playerStats;
+    RobotStats enemyStats;
+    UpdateIARobotStats(&playerStats, &enemyStats);
+    mIA->UpdatePlayerStats(playerStats);
+    mIA->UpdateEnemyStats(enemyStats);
 
     EnemyResolution resolution = mIA->GetEnemyResolution(mIAGridData);
 
