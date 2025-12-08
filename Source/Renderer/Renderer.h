@@ -9,6 +9,8 @@
 #include "Mesh.h"
 #include "Font.h"
 
+class Shader;
+
 enum class RendererMode
 {
     TRIANGLES,
@@ -42,6 +44,9 @@ public:
     class Texture* GetTexture(const std::string& fileName);
     class Font* GetFont(const std::string& fileName);
     class Mesh* GetMesh(const std::string& fileName);
+	Shader* GetParticleShader() { return mParticleShader; }
+	Matrix4 GetViewMatrix() const { return mView; }
+	Matrix4 GetProjectionMatrix() const { return mProjection; }
 
     void SetViewMatrix(const Matrix4& view) { mView = view; }
     void SetProjectionMatrix(const Matrix4& proj) { mProjection = proj; }
@@ -59,6 +64,8 @@ private:
 	class Shader* mSpriteShader;
     // Mesh shader
     class Shader* mMeshShader;
+	// Particle shader
+	Shader* mParticleShader;
 
     // Sprite vertex array
     class VertexArray *mSpriteVerts;

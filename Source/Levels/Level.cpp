@@ -46,6 +46,7 @@ Level::Level(class Game *game, HUD *hud) :
     mIA(nullptr)
 {
     mBattleState = BattleState::Exploration;
+    mParticleManager = new ParticleManager(game, 2000);
 
     // ---------- SOUND ----------
     mGame->GetAudio()->StopAllSounds();
@@ -319,6 +320,10 @@ void Level::HandleTargetingPhase()
                 // Atacou o próprio tile com mel
                 TerrainType terrainType = mGrid->GetTerrainType(px, py);
                 if (terrainType == TerrainType::Honey) {
+                    // Remove efeito do mel
+                    mParticleManager->StopHoneyDripAtGrid(px, py);
+                    mParticleManager->StopFireAtGrid(px, py);
+
                     // Remove o mel do tile (muda o tipo base)
                     mGrid->SetTerrainType(px, py, TerrainType::Floor);
                     
@@ -328,9 +333,11 @@ void Level::HandleTargetingPhase()
                         auto* floorBlock = dynamic_cast<Block*>(floorActor);
                         floorBlock->SetTexture(mLevelConfig.floorTexture);
                     }
-                    
+
                     // Remove o stun
                     mPlayer->RemoveStatusEffect(StatusEffect::Stunned);
+                    mPlayer->ClearLastEffectTile();
+
                     NotifyPlayer("Você se libertou do mel!");
                     
                     mGrid->ClearTileStates();
@@ -760,6 +767,11 @@ void Level::OnUpdate(float deltaTime)
             mActionSelection = nullptr;
         }
     }
+
+    if (mParticleManager)
+    {
+        mParticleManager->Update(deltaTime);
+    }
 }
 
 void Level::ExecuteNextStep() {
@@ -881,24 +893,64 @@ void Level::StartResolution()
 void Level::ProcessTileEffects()
 {
     SDL_Log("Processando efeitos dos tiles...");
-    
+
     // Processa efeitos para o Player
     if (mPlayer && !mPlayer->IsDead()) {
         int px = mPlayer->GetGridX();
         int py = mPlayer->GetGridY();
 
         TerrainType terrainType = mGrid->GetTerrainType(px, py);
-        
+
+        int lastX = mPlayer->GetLastEffectTileX();
+        int lastY = mPlayer->GetLastEffectTileY();
+
+        if (lastX != -1 && lastY != -1 && (lastX != px || lastY != py)) {
+            // Saiu de um tile com efeito
+            SDL_Log("Player saiu do tile (%d,%d), limpando efeitos", lastX, lastY);
+            mParticleManager->StopHoneyDripAtGrid(lastX, lastY);
+            mParticleManager->StopFireAtGrid(lastX, lastY);
+            mPlayer->ClearLastEffectTile();
+        }
+
         if (true) {
-            
             switch (terrainType) {
-                case TerrainType::Honey:
+                case TerrainType::Honey: {
+                    // Efeito visual de mel pingando
+                    HoneyConfig honeyConfig;
+                    honeyConfig.color = Vector3(1.0f, 0.75f, 0.1f);         // Amarelo-dourado vibrante
+                    honeyConfig.particlesPerSecond = 60;                                // Mais partículas = fluxo contínuo
+                    honeyConfig.minSpeed = 30.0f;                                       // Bem devagar
+                    honeyConfig.maxSpeed = 80.0f;
+                    honeyConfig.particleLifetime = 1.5f;                                // Dura o suficiente para acumular
+                    honeyConfig.particleScale = 40.0f;                                  // Menor (gotas, não blocos)
+                    honeyConfig.spreadRadius = 120.0f;                                  // Mais espalhado
+                    honeyConfig.gravity = -80.0f;                                       // Cai devagar
+                    honeyConfig.viscosity = 0.9f;                                       // Bem viscoso
+
+                    mParticleManager->StartHoneyDripAtGrid(px, py, mGrid, honeyConfig);
+                    mPlayer->SetLastEffectTile(px, py);
+
                     // Aplica stun (não pode se mover no próximo turno)
                     mPlayer->ApplyStatusEffect(StatusEffect::Stunned);
                     NotifyPlayer("Pisou no mel! Não pode se mover no próximo turno!");
                     break;
-                    
-                case TerrainType::Fire:
+                }
+
+                case TerrainType::Fire: {
+                    // Efeito visual de fogo
+                    FireConfig fireConfig;
+                    fireConfig.baseColor = Vector3(1.0f, 0.3f, 0.0f);      // Laranja
+                    fireConfig.tipColor = Vector3(1.0f, 1.0f, 0.0f);       // Amarelo
+                    fireConfig.particlesPerSecond = 60;
+                    fireConfig.minSpeed = 200.0f;
+                    fireConfig.maxSpeed = 300.0f;
+                    fireConfig.particleLifetime = 0.75f;
+                    fireConfig.particleScale = 60.0f;
+                    fireConfig.spreadRadius = 70.0f;
+
+                    mParticleManager->StartFireAtGrid(px, py, mGrid, fireConfig);
+                    mPlayer->SetLastEffectTile(px, py);
+
                     // Causa dano
                     {
                         int fireDamage = 10;
@@ -907,9 +959,11 @@ void Level::ProcessTileEffects()
                         HandleUnitDeath(mPlayer);
                     }
                     break;
-                    
+                }
+
                 default:
-                    //TODO: Remover efeitos
+                    mParticleManager->StopHoneyDripAtGrid(px, py);
+                    mParticleManager->StopFireAtGrid(px, py);
                     break;
             }
         }
@@ -921,25 +975,54 @@ void Level::ProcessTileEffects()
         int ey = mEnemy->GetGridY();
 
         TerrainType terrainType = mGrid->GetTerrainType(ex, ey);
-        
+
+        int lastX = mEnemy->GetLastEffectTileX();
+        int lastY = mEnemy->GetLastEffectTileY();
+
+        if (lastX != -1 && lastY != -1 && (lastX != ex || lastY != ey)) {
+            SDL_Log("Enemy saiu do tile (%d,%d), limpando efeitos", lastX, lastY);
+            mParticleManager->StopHoneyDripAtGrid(lastX, lastY);
+            mParticleManager->StopFireAtGrid(lastX, lastY);
+            mEnemy->ClearLastEffectTile();
+        }
+
         if (true) {
-            
             switch (terrainType) {
-                case TerrainType::Honey:
+                case TerrainType::Honey: {
+                    HoneyConfig honeyConfig;
+                    honeyConfig.color = Vector3(1.0f, 0.8f, 0.2f);
+                    honeyConfig.particlesPerSecond = 20;
+                    honeyConfig.viscosity = 0.8f;
+
+                    mParticleManager->StartHoneyDripAtGrid(ex, ey, mGrid, honeyConfig);
+                    mEnemy->SetLastEffectTile(ex, ey);
+
                     mEnemy->ApplyStatusEffect(StatusEffect::Stunned);
                     NotifyEnemy("Inimigo pisou no mel! Não pode se mover!");
                     break;
-                    
+                }
+
                 case TerrainType::Fire:
-                    {
-                        int fireDamage = 10;
-                        mEnemy->TakeDamage(fireDamage, PartSlot::Legs);
-                        NotifyEnemy("Inimigo queimou nas chamas! Recebeu " + std::to_string(fireDamage) + " de dano!");
-                        HandleUnitDeath(mEnemy);
-                    }
+                {
+                    // Efeito visual de fogo
+                    FireConfig fireConfig;
+                    fireConfig.baseColor = Vector3(1.0f, 0.3f, 0.0f);
+                    fireConfig.tipColor = Vector3(1.0f, 0.9f, 0.2f);
+                    fireConfig.particlesPerSecond = 35;
+
+                    mParticleManager->StartFireAtGrid(ex, ey, mGrid, fireConfig);
+                    mEnemy->SetLastEffectTile(ex, ey);
+
+                    int fireDamage = 10;
+                    mEnemy->TakeDamage(fireDamage, PartSlot::Legs);
+                    NotifyEnemy("Inimigo queimou nas chamas! Recebeu " + std::to_string(fireDamage) + " de dano!");
+                    HandleUnitDeath(mEnemy);
+                }
                     break;
                     
                 default:
+                    mParticleManager->StopHoneyDripAtGrid(ex, ey);
+                    mParticleManager->StopFireAtGrid(ex, ey);
                     break;
             }
         }
@@ -991,7 +1074,7 @@ void Level::FinishResolution() {
         if (mPlayer) HandleUnitDeath(mPlayer);
         if (mEnemy)  HandleUnitDeath(mEnemy);
     }
-    
+
     // Processa efeitos dos tiles (mel, fogo, etc)
     ProcessTileEffects();
 
@@ -1377,4 +1460,10 @@ void Level::LoadLevel(const LevelConfig& config)
     }
 
     SDL_Log("Level carregado: %d x %d", rows, cols);
+}
+
+Level::~Level() {
+    // Limpa ParticleManager
+    delete mParticleManager;
+    mParticleManager = nullptr;
 }

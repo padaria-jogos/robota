@@ -117,17 +117,47 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
     if (!CanUseSkill(slotUsed)) return;
     int damageDealt = mParts[(int)slotUsed].damage;
     std::string partName = mParts[(int)slotUsed].name;
+    SkillType skillType = mParts[(int)slotUsed].skill;
 
     SDL_Log("ATACANDO TILE (%d, %d) com %s!", targetX, targetY, partName.c_str());
 
     // Verificar o que tem na grid
     GridMap* grid = mGame->GetLevel()->GetGrid();
+    bool attackingSelf = (targetX == mGridX && targetY == mGridY);
     Actor* target = grid->GetUnitAt(targetX, targetY);
-    
+
+    // Lançar projétil
+    if (skillType == SkillType::Missile && !attackingSelf) {
+        Vector3 startPos = GetPosition();
+        Vector3 targetPos = grid->GetWorldPosition(targetX, targetY);
+        targetPos.z = startPos.z;  // Mesma altura
+
+        Vector3 direction = Vector3::Normalize(targetPos - startPos);
+
+        ProjectileConfig projConfig;
+        projConfig.color = (mTeam == Team::Player) ? Vector3(0.2f, 0.5f, 1.0f) : Vector3(1.0f, 0.3f, 0.0f);
+        projConfig.speed = 4000.0f;
+        projConfig.lifetime = 1.0f;
+        projConfig.scale = 30.0f;
+        projConfig.gravity = 0.0f;
+
+        mGame->GetLevel()->GetParticleManager()->EmitProjectile(startPos, direction, projConfig);
+    }
+
     if (!target) {
         SDL_Log("Miss");
         return;
     }
+
+    if (attackingSelf) {
+        SDL_Log("Atacando próprio tile (mel), pulando efeitos visuais");
+        return;
+    }
+
+    // Calcula direção do ataque (de mim para o alvo)
+    Vector3 attackDir = Vector3::Normalize(
+        grid->GetWorldPosition(targetX, targetY) - GetPosition()
+    );
     
     // Verifica se é um Robot
     Robot* victim = dynamic_cast<Robot*>(target);
@@ -138,6 +168,40 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
         PartSlot targetSlot = (PartSlot)randomPart;
         
         SDL_Log("%s ATACOU %s visando %s!", GetName().c_str(), victim->GetName().c_str(), GetSlotName(targetSlot).c_str());
+
+        // Efeito baseado no ataque
+        if (skillType == SkillType::Punch) {
+            // Slash para ataque melee
+            SlashConfig slashConfig;
+            slashConfig.color = (mTeam == Team::Player) ? 
+                Vector3(0.3f, 0.8f, 1.0f) :    // Azul ciano para player
+                Vector3(1.0f, 0.3f, 0.3f);     // Vermelho para inimigo
+            slashConfig.particleCount = 40;
+            slashConfig.speed = 1000.0f;
+            slashConfig.lifetime = 0.25f;
+            slashConfig.particleScale = 30.0f;
+            slashConfig.arcAngle = 90.0f;
+            slashConfig.arcRadius = 120.0f;
+            
+            mGame->GetLevel()->GetParticleManager()->CreateSlashEffectAtGrid(
+                targetX, targetY, grid, attackDir, slashConfig
+            );
+        } else {
+            // Explosão para ataques de projétil/míssil
+            ExplosionConfig expConfig;
+            expConfig.color = Vector3(1.0f, 0.5f, 0.0f);
+            expConfig.particleCount = 100;
+            expConfig.minSpeed = 200.0f;
+            expConfig.maxSpeed = 400.0f;
+            expConfig.lifetime = 1.0f;
+            expConfig.particleScale = 30.0f;
+            expConfig.gravity = 0.0f;
+            
+            mGame->GetLevel()->GetParticleManager()->CreateExplosionAtGrid(
+                targetX, targetY, grid, expConfig
+            );
+        }
+
         victim->TakeDamage(damageDealt, targetSlot);
         return;
     }
@@ -147,13 +211,44 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
     if (destructible)
     {
         SDL_Log("%s DESTRUIU um objeto!", GetName().c_str());
+
+        // Slash para melee, explosão para resto
+        if (skillType == SkillType::Punch) {
+            SlashConfig slashConfig;
+            slashConfig.color = Vector3(0.9f, 0.9f, 0.9f);
+            slashConfig.particleCount = 50;
+            slashConfig.speed = 1200.0f;
+            slashConfig.lifetime = 0.3f;
+            slashConfig.particleScale = 35.0f;
+            slashConfig.arcAngle = 110.0f;
+            
+            mGame->GetLevel()->GetParticleManager()->CreateSlashEffectAtGrid(
+                targetX, targetY, grid, attackDir, slashConfig
+            );
+        } else {
+            ExplosionConfig expConfig;
+            expConfig.color = Vector3(0.8f, 0.5f, 0.1f);
+            expConfig.particleCount = 100;
+            expConfig.minSpeed = 200.0f;
+            expConfig.maxSpeed = 400.0f;
+            expConfig.lifetime = 1.0f;
+            expConfig.particleScale = 30.0f;
+            expConfig.gravity = 0.0f;
+            
+            mGame->GetLevel()->GetParticleManager()->CreateExplosionAtGrid(
+                targetX, targetY, grid, expConfig
+            );
+        }
+
         destructible->OnDestroy();
         destructible->SetState(ActorState::Destroy);
         grid->SetUnitAt(nullptr, targetX, targetY);
         grid->SetTerrainType(targetX, targetY, TerrainType::Floor);
-        return;
+        
+        // Limpa qualquer efeito de partículas que estava no tile
+        mGame->GetLevel()->GetParticleManager()->StopHoneyDripAtGrid(targetX, targetY);
+        mGame->GetLevel()->GetParticleManager()->StopFireAtGrid(targetX, targetY);
     }
-
 }
 
 void Robot::EquipPart(PartSlot slot, const RobotPart& part)
