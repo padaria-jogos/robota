@@ -18,6 +18,7 @@
 enum class GameScene
 {
     MainMenu,
+    Level0,
     Level1
 };
 

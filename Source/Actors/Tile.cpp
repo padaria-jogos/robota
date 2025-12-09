@@ -79,5 +79,11 @@ void Tile::UpdateTexture()
     }
 }
 
+void Tile::SetVisible(bool visible)
+{
+    if (mMeshComp)
+        mMeshComp->SetVisible(visible);
+}
+
 
 

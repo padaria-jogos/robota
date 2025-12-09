@@ -20,6 +20,7 @@
 #include "UI/Screens/MainMenu.h"
 #include "Scenes/MainMenuScene.h"
 #include "UI/Screens/HUD.h"
+#include "Levels/Level0.h"
 #include "Levels/Level1.h"
 #include "Levels/Level2.h"
 
@@ -121,12 +122,22 @@ void Game::SetScene(GameScene nextScene)
         }
         break;
 
+        case GameScene::Level0:
+        {
+            SDL_Log("entrando no level 0");
+            delete mLevel;
+            mHUD = new HUD(this, "../Assets/Fonts/Arial.ttf");
+            mLevel = new Level0(this, mHUD); // se der problema definir destrutor level sem virtual e remover o do level1
+        }
+            break;
+
         case GameScene::Level1:
         {
             delete mLevel;
             mHUD = new HUD(this, "../Assets/Fonts/Arial.ttf");
             mLevel = new Level1(this, mHUD); // se der problema definir destrutor level sem virtual e remover o do level1
         }
+            break;
     }
 }
 

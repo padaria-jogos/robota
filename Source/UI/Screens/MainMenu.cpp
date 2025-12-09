@@ -17,7 +17,7 @@ MainMenu::MainMenu(class Game* game, const std::string& fontName)
         // close main menu and start the game
         SDL_Log("Starting Game");
         this->Close();
-        mGame->SetScene(GameScene::Level1);
+        mGame->SetScene(GameScene::Level0);
     }, Vector2(0.0f, -150.0f), 1.0f, 0.0f, 24, 1024, 100);  // draw order grande para a imagem ficar por baixo
 
     mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
