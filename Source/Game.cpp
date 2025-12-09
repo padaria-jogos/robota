@@ -117,7 +117,7 @@ void Game::SetScene(GameScene nextScene)
     {
         case GameScene::MainMenu:
         {
-            new MainMenu(this, "../Assets/Fonts/Arial.ttf");
+            new MainMenuScene(this);
         }
         break;
 
