@@ -176,45 +176,32 @@ void ParticleManager::Update(float deltaTime)
 void ParticleManager::EmitFireParticles(FireInstance& fire, float deltaTime)
 {
     fire.emissionTimer += deltaTime;
-    
+
     float emissionInterval = 1.0f / fire.config.particlesPerSecond;
 
-    static int debugFrameCount = 0;
-    debugFrameCount++;
-    if (debugFrameCount % 30 == 0) {  // A cada meio segundo
-        SDL_Log("🔥 [DEBUG] Tile (%d, %d) | Timer: %.4f | Interval: %.4f | Delta: %.4f",
-                fire.gridX, fire.gridY,
-                fire.emissionTimer,
-                emissionInterval,
-                deltaTime);
+    // Limita acúmulo excessivo do timer (previne explosão de partículas)
+    float maxAccumulation = emissionInterval * 5.0f; // no máximo 5 intervalos acumulados
+    if (fire.emissionTimer > maxAccumulation) {
+        fire.emissionTimer = maxAccumulation;
     }
 
     int emittedThisFrame = 0;
-    int maxIterations = 0;
+    const int maxParticlesPerFrame = 10; // limite de segurança
 
-    while (fire.emissionTimer >= emissionInterval)
+    while (fire.emissionTimer >= emissionInterval && emittedThisFrame < maxParticlesPerFrame)
     {
-        maxIterations++;
-        if (maxIterations > 100) {
-            SDL_Log("❌ [EmitFire] Loop infinito detectado em (%d, %d)!", fire.gridX, fire.gridY);
-            fire.emissionTimer = 0.0f;
-            break;
-        }
-
         fire.emissionTimer -= emissionInterval;
-        
+
         BasicParticle* particle = GetAvailableParticle();
         if (!particle) {
-            SDL_Log("❌ [EmitFire] Pool esgotado no tile (%d, %d) após %d partículas",
-                                fire.gridX, fire.gridY, emittedThisFrame);
             break;
         }
-        
+
         // Posição com offset aleatório
         Vector3 emitPos = fire.worldPosition;
         emitPos.x += Random::GetFloatRange(-fire.config.spreadRadius, fire.config.spreadRadius);
         emitPos.y += Random::GetFloatRange(-fire.config.spreadRadius, fire.config.spreadRadius);
-        
+
         // Direção para cima com variação
         Vector3 direction(
             Random::GetFloatRange(-0.8f, 0.5f),
@@ -222,27 +209,22 @@ void ParticleManager::EmitFireParticles(FireInstance& fire, float deltaTime)
             Random::GetFloatRange(0.8f, 1.0f)
         );
         direction.Normalize();
-        
+
         // Cor varia entre base e ponta
         float colorMix = Random::GetFloatRange(0.0f, 1.0f);
         Vector3 particleColor = Vector3::Lerp(fire.config.baseColor, fire.config.tipColor, colorMix);
-        
+
         float speed = Random::GetFloatRange(fire.config.minSpeed, fire.config.maxSpeed);
-        
+
         particle->SetColor(particleColor);
         particle->SetScale(Vector3(fire.config.particleScale, fire.config.particleScale, fire.config.particleScale));
         particle->SetGravity(0.0f);
         particle->SetFadeOut(true);
-        
+
         particle->Awake(emitPos, Vector3::Zero, fire.config.particleLifetime);
         particle->Emit(direction, speed);
 
         emittedThisFrame++;
-    }
-
-    if (emittedThisFrame > 0) {
-        SDL_Log("🔥 [EmitFire] Tile (%d, %d) emitiu %d partículas | Timer restante: %.4f", 
-                fire.gridX, fire.gridY, emittedThisFrame, fire.emissionTimer);
     }
 }
 
@@ -311,14 +293,21 @@ void ParticleManager::EmitHoneyParticles(HoneyInstance& honey, float deltaTime)
     
     float emissionInterval = 1.0f / honey.config.particlesPerSecond;
     
+    // Limita acúmulo excessivo do timer (previne explosão de partículas)
+    float maxAccumulation = emissionInterval * 5.0f; // no máximo 5 intervalos acumulados
+    if (honey.emissionTimer > maxAccumulation) {
+        honey.emissionTimer = maxAccumulation;
+    }
+    
     int emittedThisFrame = 0;
-    while (honey.emissionTimer >= emissionInterval)
+    const int maxParticlesPerFrame = 10; // limite de segurança
+    
+    while (honey.emissionTimer >= emissionInterval && emittedThisFrame < maxParticlesPerFrame)
     {
         honey.emissionTimer -= emissionInterval;
 
         BasicParticle* particle = GetAvailableParticle();
         if (!particle) {
-            SDL_Log("Pool esgotado ao emitir mel");
             break;
         }
 
@@ -352,26 +341,21 @@ void ParticleManager::EmitHoneyParticles(HoneyInstance& honey, float deltaTime)
         float sizeVariation = Random::GetFloatRange(0.7f, 1.3f);
         float finalScale = honey.config.particleScale * sizeVariation;
 
+        // Salva a escala base ANTES de aplicar stretch
+        Vector3 baseScale(finalScale, finalScale, finalScale * 1.5f);
+
         particle->SetColor(particleColor);
-        particle->SetScale(Vector3(finalScale, finalScale, finalScale * 1.5f));
+        particle->SetBaseScale(baseScale);   // Define a escala base
+        particle->SetScale(baseScale);       // Define a escala atual
         particle->SetGravity(honey.config.gravity);
         particle->SetViscosity(honey.config.viscosity);
         particle->SetFadeOut(false);
-
         particle->SetStretchWithVelocity(true);
+
         particle->Awake(emitPos, Vector3::Zero, honey.config.particleLifetime);
         particle->Emit(direction, speed);
 
         emittedThisFrame++;
-    }
-
-    // Log debug a cada segundo
-    static float debugTimer = 0.0f;
-    debugTimer += deltaTime;
-    if (debugTimer >= 1.0f && emittedThisFrame > 0) {
-        SDL_Log("Mel em (%d, %d) emitiu %d partículas",
-                honey.gridX, honey.gridY, emittedThisFrame);
-        debugTimer = 0.0f;
     }
 }
 

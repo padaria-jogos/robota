@@ -41,6 +41,12 @@ void BasicParticle::Kill()
     mMeshComponent->SetVisible(false);
     mRigidBody->SetVelocity(Vector3::Zero);
     mRigidBody->SetAcceleration(Vector3::Zero);
+
+    // Reset completo da partícula
+    mStretchWithVelocity = false;
+    SetScale(Vector3(10.0f, 10.0f, 10.0f)); // Escala padrão
+    mViscosity = 0.0f;
+    mGravity = 0.0f;
 }
 
 void BasicParticle::Awake(const Vector3& position, const Vector3& rotation, float lifetime)
@@ -49,6 +55,12 @@ void BasicParticle::Awake(const Vector3& position, const Vector3& rotation, floa
 
     mInitialLifetime = lifetime;
     mMeshComponent->SetVisible(true);
+
+    // Garantir reset ao despertar
+    mStretchWithVelocity = false;
+    mViscosity = 0.0f;
+    mGravity = 0.0f;
+    mRigidBody->SetAcceleration(Vector3::Zero);
 }
 
 void BasicParticle::Emit(const Vector3& direction, float speed)
@@ -87,13 +99,15 @@ void BasicParticle::OnUpdate(float deltaTime)
             // Quanto mais rápido, mais esticado
             float stretchFactor = Math::Clamp(speed / 100.0f, 1.0f, 3.0f);
 
-            Vector3 baseScale(
-                mMeshComponent->GetOwner()->GetScale().x,
-                mMeshComponent->GetOwner()->GetScale().y,
-                mMeshComponent->GetOwner()->GetScale().z * stretchFactor
+            Vector3 stretchedScale(
+                mBaseScale.x,
+                mBaseScale.y,
+                mBaseScale.z * stretchFactor
             );
 
-            SetScale(baseScale);
+            SetScale(stretchedScale);
+        } else {
+            SetScale(mBaseScale);
         }
     }
 
