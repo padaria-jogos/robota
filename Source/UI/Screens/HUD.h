@@ -34,7 +34,6 @@ private:
         UIText* nameLabel;
         UIText* messageLabel;
         UIText* statusTitle;
-        UIText* nameTitle;
         UIImage* statusPanel;
         UIImage* namePanel;
         UIRect* logPanel;
@@ -50,7 +49,7 @@ private:
         PanelOrientation orientation;
     };
 
-    RobotWidget CreateRobotWidget(const Vector2& anchor, const std::string& displayName, const std::string& nameSectionTitle, PanelOrientation orientation);
+    RobotWidget CreateRobotWidget(const Vector2& anchor, const std::string& displayName, PanelOrientation orientation);
     void UpdateRobotWidget(const Robot* robot, RobotWidget& widget);
     void UpdatePartVisual(const RobotPart& part, UIImage* image, const std::string& suffix);
     void AppendMessage(RobotWidget& widget, const std::string& message);

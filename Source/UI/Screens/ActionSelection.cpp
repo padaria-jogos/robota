@@ -63,7 +63,7 @@ ActionSelection::ActionSelection(class Game* game)
     leftArmButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
     leftArmButton->SetScale(kRectButtonScale);
     leftArmButton->SetBackgroundScale(1.0f);
-    leftArmButton->SetBackgroundTextures("../Assets/HUD/Ybuttons.png", "../Assets/HUD/holdYbuttons.png");
+    leftArmButton->SetBackgroundTextures("../Assets/HUD/Vbuttons.png", "../Assets/HUD/holdVbuttons.png");
     leftArmButton->SetMargin(kRectTextMargin);
 
     // btn direito

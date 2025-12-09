@@ -37,12 +37,11 @@ namespace
     const Vector2 kArmOffset(0.0f, 0.0f);
     const Vector2 kLegOffset(0.0f, 0.0f);
     constexpr float kHorizontalGap = 20.0f;
-    constexpr float kNamePanelVerticalOffset = 0.0f;
-    constexpr float kNameLabelOffsetY = 55.0f;
-    constexpr float kLogLabelOffsetY = -5.0f;
+    constexpr float kNamePanelVerticalOffset = 30.0f;
+    constexpr float kNameLabelOffsetY = 60.0f;
+    constexpr float kLogLabelOffsetY = 0.0f;
     constexpr Vector2 kLogMargin(12.0f, 12.0f);
     constexpr float kStatusTitleInset = 20.0f;
-    constexpr float kNameTitleInset = 18.0f;
     constexpr float kLogTextInset = 22.0f;
     constexpr unsigned kNameWrapLength = 220u;
     constexpr unsigned kLogWrapLength = 210u;
@@ -59,8 +58,8 @@ HUD::HUD(class Game* game, const std::string& fontName)
     , mEnemyRobot(nullptr)
     , mMenuVisible(true)
 {
-    mPlayerWidget = CreateRobotWidget(kPlayerAnchor, "J Robota", "My Name", PanelOrientation::TextToRight);
-    mEnemyWidget = CreateRobotWidget(kEnemyAnchor, "Bea Bee", "Enemy Name", PanelOrientation::TextToLeft);
+    mPlayerWidget = CreateRobotWidget(kPlayerAnchor, "J Robota", PanelOrientation::TextToRight);
+    mEnemyWidget = CreateRobotWidget(kEnemyAnchor, "Bea Bee", PanelOrientation::TextToLeft);
 }
 
 void HUD::TrackRobots(const Robot* playerRobot, const Robot* enemyRobot)
@@ -116,7 +115,7 @@ void HUD::AddEnemyMessage(const std::string& message)
     AppendMessage(mEnemyWidget, message);
 }
 
-HUD::RobotWidget HUD::CreateRobotWidget(const Vector2& anchor, const std::string& displayName, const std::string& nameSectionTitle, PanelOrientation orientation)
+HUD::RobotWidget HUD::CreateRobotWidget(const Vector2& anchor, const std::string& displayName, PanelOrientation orientation)
 {
     RobotWidget widget{};
 
@@ -150,13 +149,10 @@ HUD::RobotWidget HUD::CreateRobotWidget(const Vector2& anchor, const std::string
     const std::string namePanelTexture = isPlayer ? "../Assets/HUD/boxPlayerLog.png" : "../Assets/HUD/boxEnemyLog.png";
     widget.namePanel = AddImage(namePanelTexture, nameCenter, kNameSpriteScale, 0.0f, kPanelDrawOrder);
 
-    widget.nameTitle = AddText(nameSectionTitle, nameCenter + Vector2(0.0f, kNamePanelSize.y * 0.5f - kNameTitleInset), 0.45f, 0.0f, 26, 320, kTextDrawOrder);
-    widget.nameTitle->SetBackgroundColor(Vector4(0.0f, 0.0f, 0.0f, 0.0f));
-    widget.nameTitle->SetMargin(Vector2::Zero);
-
     widget.nameLabel = AddText("", nameCenter + Vector2(0.0f, kNameLabelOffsetY), 0.62f, 0.0f, 34, kNameWrapLength, kTextDrawOrder + 1);
     widget.nameLabel->SetBackgroundColor(Vector4(0.0f, 0.0f, 0.0f, 0.0f));
     widget.nameLabel->SetMargin(Vector2::Zero);
+    widget.nameLabel->SetText("-- " + widget.label + " --");
 
     widget.logPanel = nullptr;
 

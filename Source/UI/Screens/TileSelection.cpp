@@ -9,7 +9,7 @@ namespace
 {
     constexpr float kSelectButtonRowY = -295.0f;
     constexpr float kSelectButtonScale = 0.36f;
-    constexpr int kSelectButtonPointSize = 20;
+    constexpr int kSelectButtonPointSize = 12;
     constexpr unsigned kSelectWrapLength = 360u;
 }
 
