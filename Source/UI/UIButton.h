@@ -9,6 +9,8 @@
 #include "UIText.h"
 #include "../Math.h"
 
+class Texture;
+
 class UIButton : public UIText
 {
 public:
@@ -22,6 +24,11 @@ public:
     void SetHighlighted(bool sel) { mHighlighted = sel; }
     bool GetHighlighted() const { return mHighlighted; }
 
+    void SetBackgroundScale(float scale) { mBackgroundScale = scale; }
+    float GetBackgroundScale() const { return mBackgroundScale; }
+    void SetBackgroundTextures(const std::string& normalPath, const std::string& holdPath);
+    void SetMarginTextures(const std::string& normalPath, const std::string& holdPath);
+
     // Returns true if the point is within the button's bounds
     bool ContainsPoint(const Vector2& pt) const;
 
@@ -34,4 +41,10 @@ private:
 
     // Check if the button is highlighted
     bool mHighlighted;
+
+    Texture* mNormalTexture;
+    Texture* mHoldTexture;
+    Texture* mMarginTexture;
+    Texture* mMarginHoldTexture;
+    float mBackgroundScale;
 };

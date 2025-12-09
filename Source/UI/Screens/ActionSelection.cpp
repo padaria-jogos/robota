@@ -4,6 +4,26 @@
 
 #include "ActionSelection.h"
 #include "../../Levels/Level.h"
+#include "../../Camera.h"
+
+namespace
+{
+    constexpr float kButtonRowY = -285.0f;
+    constexpr float kRectButtonScale = 0.30f;
+    constexpr float kSquareButtonScale = 0.30f;
+    constexpr int kButtonPointSize = 32;
+    constexpr unsigned kRectWrapLength = 360u;
+    constexpr unsigned kSquareWrapLength = 120u;
+    const Vector2 kRectTextMargin(30.0f, 8.0f);
+    const Vector2 kSquareTextMargin(16.0f, 8.0f);
+
+    constexpr float kButtonColumnSpacing = 150.0f; 
+
+    const Vector2 kCameraButtonOffset(-1.5f * kButtonColumnSpacing, kButtonRowY);
+    const Vector2 kLeftArmButtonOffset(-0.5f * kButtonColumnSpacing, kButtonRowY);
+    const Vector2 kRightArmButtonOffset(0.5f * kButtonColumnSpacing, kButtonRowY);
+    const Vector2 kBackButtonOffset(1.5f * kButtonColumnSpacing, kButtonRowY);
+}
 
 ActionSelection::ActionSelection(class Game* game)
         :UIScreen(game, "../Assets/Fonts/Arial.ttf"),
@@ -12,40 +32,94 @@ ActionSelection::ActionSelection(class Game* game)
     // add game logo
     // AddImage("../Assets/UIBackground.png", Vector2(0.0f, 0.0f), 0.7f, 0.0f, 1);
 
+    UIButton* cameraButton = AddButton("", [this]() {
+        auto* camera = mGame->GetCamera();
+        if (camera)
+        {
+            camera->HandleKeyPress(SDLK_c);
+        }
+    }, kCameraButtonOffset, 1.0f, 0.0f, kButtonPointSize, kSquareWrapLength, 10);
+
+    cameraButton->SetText("Câmera");
+    cameraButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    cameraButton->SetScale(kSquareButtonScale);
+    cameraButton->SetBackgroundScale(1.0f);
+    cameraButton->SetBackgroundTextures("../Assets/HUD/cambuttons.png", "../Assets/HUD/camHoldbuttons.png");
+    cameraButton->SetMarginTextures("../Assets/HUD/marginBtnQuad.png", "../Assets/HUD/marginBtnhQuad.png");
+    cameraButton->SetMargin(kSquareTextMargin);
+
     // btn esquerdo
-    AddButton("Braço Esquerdo", [this]() {
+    UIButton* leftArmButton = AddButton("Braço Esquerdo", [this]() {
         auto* level = mGame->GetLevel();
         if (level) {
             level->SetSelectedSlot(PartSlot::LeftArm);
             level->HandleAction();
         }
-    }, Vector2(-300.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 10);
+    }, kLeftArmButtonOffset, 1.0f, 0.0f, kButtonPointSize, kRectWrapLength, 10);
 
-    mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
-    mButtons.back()->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    leftArmButton->SetText("Braço Esquerdo\nRobota Braço");
+    leftArmButton->SetAlignment(UITextAlignment::Center);
+    leftArmButton->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
+    leftArmButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    leftArmButton->SetScale(kRectButtonScale);
+    leftArmButton->SetBackgroundScale(1.0f);
+    leftArmButton->SetBackgroundTextures("../Assets/HUD/Vbuttons.png", "../Assets/HUD/holdVbuttons.png");
+    leftArmButton->SetMargin(kRectTextMargin);
 
     // btn direito
-    AddButton("Braço Direito", [this]() {
+    UIButton* rightArmButton = AddButton("Braço Direito", [this]() {
         auto* level = mGame->GetLevel();
         if (level) {
             level->SetSelectedSlot(PartSlot::RightArm);
             level->HandleAction();
         }
-    }, Vector2(0.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 20);
+    }, kRightArmButtonOffset, 1.0f, 0.0f, kButtonPointSize, kRectWrapLength, 20);
 
-    mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
-    mButtons.back()->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    rightArmButton->SetText("Braço Direito\nRobota Braço");
+    rightArmButton->SetAlignment(UITextAlignment::Center);
+    rightArmButton->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
+    rightArmButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    rightArmButton->SetScale(kRectButtonScale);
+    rightArmButton->SetBackgroundScale(1.0f);
+    rightArmButton->SetBackgroundTextures("../Assets/HUD/Pbuttons.png", "../Assets/HUD/holdPbuttons.png");
+    rightArmButton->SetMargin(kRectTextMargin);
 
-    // btn desistir
-    AddButton("Pular turno", [this]() {
+    // btn voltar
+    UIButton* backButton = AddButton("", [this]() {
         auto* level = mGame->GetLevel();
-        if (level) {
-            level->HandleWait();
+        if (level)
+        {
+            level->HandleCancel();
         }
-    }, Vector2(300.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 20);
+    }, kBackButtonOffset, 1.0f, 0.0f, kButtonPointSize, kSquareWrapLength, 10);
 
-    mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
-    mButtons.back()->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    backButton->SetText("Voltar");
+    backButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    backButton->SetScale(kSquareButtonScale);
+    backButton->SetBackgroundScale(1.0f);
+    backButton->SetBackgroundTextures("../Assets/HUD/voltbuttons.png", "../Assets/HUD/voltHoldbuttons.png");
+    backButton->SetMarginTextures("../Assets/HUD/marginBtnQuad.png", "../Assets/HUD/marginBtnhQuad.png");
+    backButton->SetMargin(kSquareTextMargin);
+
+    for (auto* button : mButtons)
+    {
+        button->SetHighlighted(false);
+    }
+
+    mSelectedButtonIndex = 0;
+    for (int i = 0; i < static_cast<int>(mButtons.size()); ++i)
+    {
+        if (mButtons[i] == leftArmButton)
+        {
+            mSelectedButtonIndex = i;
+            break;
+        }
+    }
+
+    if (mSelectedButtonIndex >= 0 && mSelectedButtonIndex < static_cast<int>(mButtons.size()))
+    {
+        mButtons[mSelectedButtonIndex]->SetHighlighted(true);
+    }
 }
 
 void ActionSelection::HandleKeyPress(int key)

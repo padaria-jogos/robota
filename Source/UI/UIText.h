@@ -9,6 +9,12 @@
 #include "../Math.h"
 #include "UIImage.h"
 
+enum class UITextAlignment
+{
+    Left,
+    Center
+};
+
 class UIText : public UIImage {
 public:
     UIText(class Game* game, const std::string& text, class Font* font, const Vector2 &offset, float scale = 1.0f, float angle = 0.0f,
@@ -21,6 +27,9 @@ public:
     void SetText(const std::string& name);
     void SetTextColor(const Vector3 &color);
     void SetBackgroundColor(const Vector4 &color) { mBackgroundColor = color; }
+    void SetMargin(const Vector2 &margin) { mMargin = margin; }
+    void SetAlignment(UITextAlignment alignment);
+    UITextAlignment GetAlignment() const { return mAlignment; }
 
 protected:
     std::string mText;
@@ -33,4 +42,8 @@ protected:
 
     Vector3 mTextColor;
     Vector4 mBackgroundColor;
+
+    UITextAlignment mAlignment;
+
+    void RebuildTexture();
 };
