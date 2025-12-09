@@ -1,0 +1,12 @@
+{
+  "csv": "../Assets/Arena/Arena0/Arena0.csv",
+  "theme": {
+    "floor": "../Assets/Textures/floor_default.png",
+    "wall": "../Assets/Textures/wall_default.png"
+  },
+  "destructibles": [
+    "../Assets/Boxes/TrashCan1.gpmesh",
+    "../Assets/Boxes/Barrel.gpmesh"
+  ],
+  "music": "../Assets/Sounds/Backpullver-Shamanez-Overnight.wav"
+}

@@ -18,7 +18,10 @@
 #include "Camera.h"
 
 #include "UI/Screens/MainMenu.h"
+#include "Scenes/MainMenuScene.h"
+#include "Scenes/Garage.h"
 #include "UI/Screens/HUD.h"
+#include "Levels/Level0.h"
 #include "Levels/Level1.h"
 #include "Levels/Level2.h"
 
@@ -116,9 +119,23 @@ void Game::SetScene(GameScene nextScene)
     {
         case GameScene::MainMenu:
         {
-            new MainMenu(this, "../Assets/Fonts/Arial.ttf");
+            new MainMenuScene(this);
         }
         break;
+
+        case GameScene::Garage:
+        {
+            new Garage(this);
+        }
+        break;
+
+        case GameScene::Level0:
+        {
+            delete mLevel;
+            mHUD = new HUD(this, "../Assets/Fonts/Arial.ttf");
+            mLevel = new Level0(this, mHUD); // se der problema definir destrutor level sem virtual e remover o do level1
+        }
+            break;
 
         case GameScene::Level1:
         {
@@ -126,6 +143,7 @@ void Game::SetScene(GameScene nextScene)
             mHUD = new HUD(this, "../Assets/Fonts/Arial.ttf");
             mLevel = new Level1(this, mHUD); // se der problema definir destrutor level sem virtual e remover o do level1
         }
+            break;
     }
 }
 
@@ -181,7 +199,7 @@ void Game::ProcessInput()
                 // handle key press camera
                 if (mCamera)
                     mCamera->HandleKeyPress(event.key.keysym.sym);
-                
+
                 // Processa input nas UIs
                 if (!mUIStack.empty()) {
                     mUIStack.back()->HandleKeyPress(event.key.keysym.sym);
@@ -191,7 +209,7 @@ void Game::ProcessInput()
                 // Mas pula se for ESPAÇO e houver UI modal (evita processamento duplicado)
                 bool hasModalUI = !mUIStack.empty() && mUIStack.back()->IsModal();
                 bool isSpaceKey = event.key.keysym.sym == SDLK_SPACE;
-                
+
                 if (mLevel && !(hasModalUI && isSpaceKey))
                 {
                     mLevel->ProcessInput(event);

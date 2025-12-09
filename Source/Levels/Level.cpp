@@ -1381,9 +1381,12 @@ void Level::LoadLevel(const LevelConfig& config)
             {
                 case TILE_VOID:
                 case TILE_EMPTY:
-                    if (tile) {
+                    if (tile)
+                    {
+                        tile->SetVisible(false);
                         tile->SetState(ActorState::Paused);
                     }
+                    mGrid->SetTerrainType(gridX, gridY, TerrainType::Wall);
                     break;
 
                 case TILE_FLOOR:

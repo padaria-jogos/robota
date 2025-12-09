@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="12" height="12" tilewidth="16" tileheight="16" infinite="0" nextlayerid="2" nextobjectid="1">
+ <editorsettings>
+  <export target="Arena0.csv" format="csv"/>
+ </editorsettings>
+ <tileset firstgid="1" source="../Arena1/ArenaTexture.tsx"/>
+ <layer id="1" name="Tile Layer 1" width="12" height="12">
+  <data encoding="csv">
+0,0,0,1,1,1,1,1,1,0,1,1,
+0,0,0,1,1,1,1,1,1,1,1,1,
+0,0,0,1,1,1,9,2,1,1,0,0,
+0,0,3,2,12,2,2,9,9,1,1,0,
+0,0,3,9,2,3,2,3,2,1,1,0,
+1,9,9,2,9,3,2,2,9,2,0,0,
+1,2,9,2,2,3,9,2,2,2,0,0,
+0,2,2,3,2,3,2,3,3,0,0,0,
+0,1,2,9,2,2,2,9,3,1,0,0,
+0,0,2,2,2,9,6,9,9,1,1,1,
+0,0,0,2,2,2,9,9,1,1,1,0,
+0,1,1,1,1,1,1,1,1,0,0,0
+</data>
+ </layer>
+</map>

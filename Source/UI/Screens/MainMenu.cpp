@@ -9,6 +9,7 @@ MainMenu::MainMenu(class Game* game, const std::string& fontName)
         :UIScreen(game, fontName)
 {
     // add game logo
+    // AddImage("../Assets/MenuBackground.png", Vector2(0.0f, 0.0f), 1.0f, 0.0f, 0);
     AddImage("../Assets/Logo.png", Vector2(0.0f, 100.0f), 0.4f, 0.0f, 1);
 
     // btn start
@@ -16,8 +17,8 @@ MainMenu::MainMenu(class Game* game, const std::string& fontName)
         // close main menu and start the game
         SDL_Log("Starting Game");
         this->Close();
-        mGame->SetScene(GameScene::Level1);
-    }, Vector2(0.0f, -150.0f), 1.0f, 0.0f, 24, 1024, 10);
+        mGame->SetScene(GameScene::Level0);
+    }, Vector2(0.0f, -150.0f), 1.0f, 0.0f, 24, 1024, 100);  // draw order grande para a imagem ficar por baixo
 
     mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
     mButtons.back()->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
@@ -26,7 +27,7 @@ MainMenu::MainMenu(class Game* game, const std::string& fontName)
     AddButton("Quit", [this]() {
         // close the game
         mGame->Quit();
-    }, Vector2(0.0f, -200.0f), 1.0f, 0.0f, 24, 1024, 20);
+    }, Vector2(0.0f, -200.0f), 1.0f, 0.0f, 24, 1024, 101);
 
     mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
     mButtons.back()->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));

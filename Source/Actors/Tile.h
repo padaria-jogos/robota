@@ -18,6 +18,7 @@ class Tile : public Actor {
         Tile(class Game* game);
         void SetTileType(TileType type);
         void SetSelected(bool selected);
+        void SetVisible(bool visible);
         TileType GetType() const{ return mType; };
 
     private:
