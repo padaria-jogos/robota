@@ -18,6 +18,7 @@
 enum class GameScene
 {
     MainMenu,
+    Garage,
     Level0,
     Level1
 };
