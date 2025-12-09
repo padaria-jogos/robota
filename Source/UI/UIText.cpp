@@ -16,6 +16,7 @@ UIText::UIText(class Game* game, const std::string& text, class Font* font, cons
    ,mTextColor(Color::White)
    ,mBackgroundColor(0.0f,0.0f,0.0f,1.0f)
    ,mMargin(Vector2(50.0f, 10.f))
+    ,mAlignment(UITextAlignment::Left)
 {
     SetText(text);
 }
@@ -27,20 +28,28 @@ UIText::~UIText()
 
 void UIText::SetText(const std::string &text)
 {
-    // Clear out previous title texture if it exists
-    if (mTexture)
-    {
-        mTexture->Unload();
-        delete mTexture;
-        mTexture = nullptr;
-    }
-
-    // Create texture for title
     mText = text;
-    mTexture = mFont->RenderText(mText, mTextColor, mPointSize, mWrapLength);
+    RebuildTexture();
 }
 
 void UIText::SetTextColor(const Vector3 &color)
+{
+    mTextColor = color;
+    RebuildTexture();
+}
+
+void UIText::SetAlignment(UITextAlignment alignment)
+{
+    if (mAlignment == alignment)
+    {
+        return;
+    }
+
+    mAlignment = alignment;
+    RebuildTexture();
+}
+
+void UIText::RebuildTexture()
 {
     // Clear out previous title texture if it exists
     if (mTexture)
@@ -50,8 +59,13 @@ void UIText::SetTextColor(const Vector3 &color)
         mTexture = nullptr;
     }
 
-    mTextColor = color;
-    mTexture = mFont->RenderText(mText, mTextColor, mPointSize, mWrapLength);
+    if (!mFont)
+    {
+        return;
+    }
+
+    const bool centerWrappedLines = (mAlignment == UITextAlignment::Center);
+    mTexture = mFont->RenderText(mText, mTextColor, mPointSize, mWrapLength, centerWrappedLines);
 }
 
 void UIText::Draw(class Shader* shader)

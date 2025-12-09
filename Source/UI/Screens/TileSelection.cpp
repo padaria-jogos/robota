@@ -5,6 +5,14 @@
 #include "TileSelection.h"
 #include "../../Levels/Level.h"
 
+namespace
+{
+    constexpr float kSelectButtonRowY = -295.0f;
+    constexpr float kSelectButtonScale = 0.36f;
+    constexpr int kSelectButtonPointSize = 20;
+    constexpr unsigned kSelectWrapLength = 360u;
+}
+
 TileSelection::TileSelection(class Game* game)
         :UIScreen(game, "../Assets/Fonts/Arial.ttf"),
         mGame(game)
@@ -12,16 +20,24 @@ TileSelection::TileSelection(class Game* game)
     // add game logo
     // AddImage("../Assets/UIBackground.png", Vector2(0.0f, 0.0f), 0.7f, 0.0f, 1);
 
-    // btn start
-    AddButton("Selecionar Tile", [this]() {
+    UIButton* selectButton = AddButton("Selecionar Robô/Mira", [this]() {
         auto* level = mGame->GetLevel();
         if (level) {
             level->HandleAction();
         }
-    }, Vector2(0.0f, -300.0f), 1.0f, 0.0f, 24, 1024, 10);
+    }, Vector2(0.0f, kSelectButtonRowY), 1.0f, 0.0f, kSelectButtonPointSize, kSelectWrapLength, 10);
 
-    mButtons.back()->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
-    mButtons.back()->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    selectButton->SetBackgroundScale(kSelectButtonScale);
+    selectButton->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
+    selectButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+
+    for (auto* button : mButtons)
+    {
+        button->SetHighlighted(false);
+    }
+
+    selectButton->SetHighlighted(true);
+    mSelectedButtonIndex = 0;
 }
 
 void TileSelection::HandleKeyPress(int key)

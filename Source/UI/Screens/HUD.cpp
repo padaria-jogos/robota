@@ -39,7 +39,7 @@ namespace
     constexpr float kHorizontalGap = 20.0f;
     constexpr float kNamePanelVerticalOffset = 0.0f;
     constexpr float kNameLabelOffsetY = 55.0f;
-    constexpr float kLogLabelOffsetY = -35.0f;
+    constexpr float kLogLabelOffsetY = -5.0f;
     constexpr Vector2 kLogMargin(12.0f, 12.0f);
     constexpr float kStatusTitleInset = 20.0f;
     constexpr float kNameTitleInset = 18.0f;

@@ -16,7 +16,7 @@ public:
 
 	// Given string and this font, draw to a texture
 	class Texture* RenderText(const std::string& text, const Vector3& color = Color::White,
-							  int pointSize = 30, unsigned wrapLength = 900);
+					  int pointSize = 30, unsigned wrapLength = 900, bool centerWrappedLines = false);
 
 private:
 	// Map of point sizes to font data
