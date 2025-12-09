@@ -154,9 +154,9 @@ void ParticleManager::Update(float deltaTime)
     static float debugTimer = 0.0f;
     debugTimer += deltaTime;
     if (debugTimer >= 2.0f) {
-        SDL_Log("Fogos ativos: %zu | Méis ativos: %zu",
-                mActiveFires.size(),
-                mActiveHoneyDrips.size());
+        // SDL_Log("Fogos ativos: %zu | Méis ativos: %zu",
+        //         mActiveFires.size(),
+        //         mActiveHoneyDrips.size());
         debugTimer = 0.0f;
     }
 
