@@ -1,0 +1,10 @@
+{
+  "name": "Zeke Head",
+  "slot": "Head",
+  "meshPath": "../Assets/Robots/Zeke/ZekeHead.gpmesh",
+  "maxHP": 50,
+  "skill": "Repair",
+  "damage": 0,
+  "range": 0,
+  "description": "Cabeça do Rei das arenas. Acreditam que o chapéu está parafusado na cabeça."
+}

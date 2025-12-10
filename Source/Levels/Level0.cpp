@@ -8,16 +8,16 @@ Level0::Level0(Game* game, HUD *hud) : Level(game, hud)
 {
     // ---------- CAMERA ----------
     // default camera
-    Vector3 eye(0.0f, -3500.0f, 1500.0f);
-    Vector3 target(50.0f, 0.0f, 0.0f);
+    Vector3 eye(-1.1f, 3548.0f, 1540.8f);
+    Vector3 target(-11.7f, 191.7f, -258.5f);
     Vector3 up(0.0f, 0.0f, 1.0f);
     mCamera = new Camera(game, eye, target, up, 70.0f, 10.0f, 10000.0f);
 
     // aditional camera poses
-    mCamera->AddCameraPose({ Vector3(3500.0f, 0.0f, 1500.0f),   Vector3(50.0f, 0.0f, 0.0f), Vector3::UnitZ });
-    mCamera->AddCameraPose({ Vector3(0.0f, 3500.0f, 1500.0f),   Vector3(-11.1f, -0.3f, 0.0f), Vector3::UnitZ });
-    mCamera->AddCameraPose({ Vector3(-3500.0f, 0.0f, 1500.0f),  Vector3(50.0f, 0.0f, 0.0f), Vector3::UnitZ });
-    mCamera->AddCameraPose({ Vector3(30.0f, -1140.0f, 5000.0f), Vector3(23.3f, 65.7f, 1078.6f), Vector3::UnitZ });
+    mCamera->AddCameraPose({ Vector3(-2977.4f, -59.1f, 1507.4f),   Vector3(362.9f, -117.4f, -414.0f), Vector3::UnitZ });
+    mCamera->AddCameraPose({ Vector3(24.6f, -3371.6f, 1672.3f),   Vector3(70.6f, -150.0f, -356.7f), Vector3::UnitZ });
+    mCamera->AddCameraPose({ Vector3(2855.2f, 50.0f, 1833.6f), Vector3(-207.1f, 103.5f, -350.9f), Vector3::UnitZ });
+    mCamera->AddCameraPose({ Vector3(-29.9f, 660.5f, 5754.1f), Vector3(-31.4f, 183.5f, 1975.8f), Vector3::UnitZ });
 
     mGame->SetCamera(mCamera);
 
@@ -39,22 +39,17 @@ Level0::Level0(Game* game, HUD *hud) : Level(game, hud)
     // ---------- ROBOTS ----------
     // Teste Setup do Player
     mPlayer->LoadFromJson("../Assets/Robots/Robota/Robota.json");
-    
-    // Trocamos
-    mPlayer->EquipPartFromJson("../Assets/Parts/Arms/LeftClaw.json");
-    
-    // Salvar build atual do player
-    mPlayer->SaveToJson("../Saves/PlayerBuild.json");
-    
-    // Recarregar build
-    mPlayer->LoadFromJson("../Saves/PlayerBuild.json");
+    mPlayer->SaveToJson("../Saves/PlayerBuild.json"); // Salvar build atual do player
+    mPlayer->LoadFromJson("../Saves/PlayerBuild.json"); // Recarregar build
+    mPlayer->SetRotation(Vector3(0.0f, 0.0f, Math::ToRadians(-180.0f)));
     
     // Setup do Enemy - carrega do JSON
-    mEnemy->LoadFromJson("../Assets/Robots/BeaBee/BeaBee.json");
+    mEnemy->LoadFromJson("../Assets/Robots/EvilRobota/EvilRobota.json");
+    mEnemy->SetRotation(Vector3(0.0f, 0.0f, Math::ToRadians(90.0f)));
 
     // ---------- ARENA ----------
     mSkybox = new Skybox(mGame);
-    mSkybox->SetTexture("../Assets/Textures/SkyboxLevel1.png");
+    mSkybox->SetTexture("../Assets/Textures/SkyboxLevel0.png");
     mSkybox->SetSize(15000.0f);
 
     // Carrega a Arena 0

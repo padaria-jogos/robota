@@ -19,7 +19,7 @@ MainMenu::MainMenu(class Game* game, const std::string& fontName)
         // close main menu and start the game
         SDL_Log("Starting Game");
         this->Close();
-        mGame->SetScene(GameScene::Level1);
+        mGame->SetScene(GameScene::Level0);
     }, Vector2(-buttonSpacing * 0.5f, buttonsY), 1.0f, 0.0f, 24, 1024, 10);
 
     startButton->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));

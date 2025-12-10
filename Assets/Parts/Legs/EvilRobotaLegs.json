@@ -1,0 +1,10 @@
+{
+  "name": "Robota Legs",
+  "slot": "Legs",
+  "meshPath": "../Assets/Robots/EvilRobota/EvilRobotaLeg.gpmesh",
+  "maxHP": 20,
+  "skill": "None",
+  "damage": 0,
+  "range": 2,
+  "description": "Rodinhas enferrujadas. Dá pro gasto."
+}

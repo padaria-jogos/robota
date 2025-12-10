@@ -1,0 +1,11 @@
+{
+  "name": "Robota Head",
+  "slot": "Head",
+  "meshPath": "../Assets/Robots/EvilRobota/EvilRobotaHead.gpmesh",
+  "maxHP": 30,
+  "skill": "Repair",
+  "damage": 0,
+  "range": 0,
+  "rarity": "Common",
+  "description": "Cabeça padrão com capacidade de auto-reparo básico."
+}
