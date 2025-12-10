@@ -297,7 +297,13 @@ std::vector<std::vector<int>> IA::MapEfficiency(std::vector<std::vector<int>> ma
             if (i >  minRow && i <  maxRow &&
                 j >  minCol && j <  maxCol) eff = eff + 2*mBloodThirst; //preference for moving to other robot
             if (i >= minRow && i <= maxRow &&
-                j >= minCol && j <= maxCol) eff = eff + mBloodThirst; //preference for moving to other robot
+                j >= minCol && j <= maxCol) eff = eff +   mBloodThirst; //preference for moving to other robot
+            if (std::abs(i-px) + std::abs(j-py) <=2)
+                if (mEnemyStats.name == "Rosevif")
+                    eff = eff + 10*mBloodThirst;
+
+
+
 
             mapEfficiency[i][j] += eff;
 
@@ -452,6 +458,7 @@ EnemyResolution IA::GetEnemyResolution(std::vector<std::vector<int>> mapData)
 {
     mMapData = mapData;
     mMapEfficiency = MapEfficiency(mapData);
+    if (mEnemyStats.name == "Rosevif") mBloodThirst = 12;
     Vector2 movement = ChooseMove();
 
     Vector2 target = ChooseTarget(movement);
@@ -466,7 +473,7 @@ EnemyResolution IA::GetEnemyResolution(std::vector<std::vector<int>> mapData)
         NaiveResolution(&action);
         return action;
     }
-    
+
     action.moveTo     = movement;
     action.targetTile = target;
     action.hasAction  = willAtk;
