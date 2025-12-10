@@ -10,10 +10,10 @@
       "skill": "Repair"
     },
     "LeftArm": {
-      "damage": 50,
+      "damage": 75,
       "maxHP": 10,
-      "meshPath": "../Assets/Robots/Rosevif/RosevifLeftArm.gpmesh",
-      "name": "Rosevif Claw",
+      "meshPath": "../Assets/Robots/EvilRobota/EvilRobotaLeftArm.gpmesh",
+      "name": "Robota Broom",
       "range": 1,
       "skill": "Punch"
     },
@@ -26,7 +26,7 @@
       "skill": "None"
     },
     "RightArm": {
-      "damage": 25,
+      "damage": 250,
       "maxHP": 20,
       "meshPath": "../Assets/Robots/Robota/RobotaRightArm.gpmesh",
       "name": "Robota Dustpan",
@@ -35,8 +35,8 @@
     },
     "Torso": {
       "damage": 0,
-      "maxHP": 50,
-      "meshPath": "../Assets/Robots/Robota/RobotaTorso.gpmesh",
+      "maxHP": 100,
+      "meshPath": "../Assets/Robots/EvilRobota/EvilRobotaTorso.gpmesh",
       "name": "Trashcan Chest",
       "range": 0,
       "skill": "None"
