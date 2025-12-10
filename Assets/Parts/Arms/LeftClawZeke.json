@@ -1,0 +1,10 @@
+{
+  "name": "Rosevif Claw",
+  "slot": "LeftArm",
+  "meshPath": "../Assets/Robots/Zeke/ZekeLeftArm.gpmesh",
+  "maxHP": 10,
+  "skill": "Punch",
+  "damage": 50,
+  "range": 2,
+  "description": "Garras extremamente afiadas. Ataque corpo a corpo."
+}

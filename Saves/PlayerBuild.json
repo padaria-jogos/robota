@@ -10,18 +10,18 @@
       "skill": "Repair"
     },
     "LeftArm": {
-      "damage": 75,
+      "damage": 50,
       "maxHP": 10,
-      "meshPath": "../Assets/Robots/EvilRobota/EvilRobotaLeftArm.gpmesh",
-      "name": "Robota Broom",
+      "meshPath": "../Assets/Robots/BeaBee/BeaBeeLeftArm.gpmesh",
+      "name": "Queen's Drill",
       "range": 1,
       "skill": "Punch"
     },
     "Legs": {
       "damage": 0,
-      "maxHP": 20,
-      "meshPath": "../Assets/Robots/Robota/RobotaLeg.gpmesh",
-      "name": "Robota Legs",
+      "maxHP": 30,
+      "meshPath": "../Assets/Robots/BeaBee/BeaBeeLeftLeg.gpmesh",
+      "name": "Honey Boots",
       "range": 2,
       "skill": "None"
     },
@@ -35,8 +35,8 @@
     },
     "Torso": {
       "damage": 0,
-      "maxHP": 100,
-      "meshPath": "../Assets/Robots/EvilRobota/EvilRobotaTorso.gpmesh",
+      "maxHP": 50,
+      "meshPath": "../Assets/Robots/Robota/RobotaTorso.gpmesh",
       "name": "Trashcan Chest",
       "range": 0,
       "skill": "None"

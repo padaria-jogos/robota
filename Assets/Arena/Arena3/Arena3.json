@@ -1,0 +1,14 @@
+{
+    "csv": "../Assets/Arena/Arena3/Arena3.csv",
+    "theme": {
+        "floor": "../Assets/Textures/floor_grass.png",
+        "wall": "../Assets/Textures/wall_grass.png",
+        "honey": "../Assets/Textures/sticky_floor_default.png",
+        "fire": "../Assets/Textures/floor_fire.png"
+    },
+    "destructibles": [
+        "../Assets/Boxes/Grass.gpmesh",
+        "../Assets/Boxes/Tree.gpmesh"
+    ],
+    "music": "../Assets/Sounds/honey_theme.wav"
+}

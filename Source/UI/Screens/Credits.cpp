@@ -1,9 +1,9 @@
 //
-// Created by mateus on 30/11/2025.
+// Created by mateus on 10/12/2025.
 //
 
-#include "Win.h"
-#include "../../Camera.h"
+#include "Credits.h"
+#include "../../Game.h"
 
 namespace
 {
@@ -27,28 +27,19 @@ namespace
 
 }
 
-Win::Win(Game* game)
+Credits::Credits(Game* game)
         :UIScreen(game, "../Assets/Fonts/Arial.ttf"),
         mGame(game)
 {
     // add game logo
-    AddImage("../Assets/HUD/Levels/boxWin.png", Vector2(0.0f, 0.0f), 0.7f, 0.0f, 1);
+    AddImage("../Assets/HUD/boxCredits.png", Vector2(0.0f, 0.0f), 0.7f, 0.0f, 1);
 
     AddImage("../Assets/HUD/Buttons/Level/btnBackgroundSmall.png", Vector2(0.0f, -380.0f), 1.0f, 0.0f, 1);
 
     // btn esquerdo
     UIButton* leftArmButton = AddButton("Braço Esquerdo", [this]() {
-        delete mGame->GetLevel();
-        mGame->SetLevel(nullptr);
-        if (mGame->GetLastLevelCompleted() == 3)
-        {
-            SDL_Log("Credits");
-            mGame->SetScene(GameScene::Credits);
-        }
-        else
-        {
-            mGame->SetScene(GameScene::Garage);
-        }
+        this->Close();
+        mGame->SetScene(GameScene::MainMenu);
     }, kLeftArmButtonOffset, 1.0f, 0.0f, kButtonPointSize, kRectWrapLength, 1000);
 
     leftArmButton->SetText("");
@@ -57,7 +48,7 @@ Win::Win(Game* game)
     leftArmButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
     leftArmButton->SetScale(kRectButtonScale);
     leftArmButton->SetBackgroundScale(1.0f);
-    leftArmButton->SetBackgroundTextures("../Assets/HUD/Buttons/Level/btnContinueGreen.png", "../Assets/HUD/Buttons/Level/btnContinueGreenHold.png");
+    leftArmButton->SetBackgroundTextures("../Assets/HUD/Buttons/Level/btnContinueRed.png", "../Assets/HUD/Buttons/Level/btnContinueRedHold.png");
     leftArmButton->SetMargin(kRectTextMargin);
 
 
@@ -82,7 +73,7 @@ Win::Win(Game* game)
     }
 }
 
-void Win::HandleKeyPress(int key)
+void Credits::HandleKeyPress(int key)
 {
     if (mButtons.empty())
         return;

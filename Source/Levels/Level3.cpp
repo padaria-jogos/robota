@@ -1,11 +1,11 @@
 //
-// Created by mateus on 20/11/2025.
+// Created by mateus on 10/12/2025.
 //
 
-#include "Level2.h"
+#include "Level3.h"
 // #include "Map/GridMap.h"
 
-Level2::Level2(Game* game, HUD *hud) : Level(game, hud)
+Level3::Level3(Game* game, HUD *hud) : Level(game, hud)
 {
     // ---------- CAMERA ----------
     // default camera
@@ -35,18 +35,18 @@ Level2::Level2(Game* game, HUD *hud) : Level(game, hud)
     mPlayer->LoadFromJson("../Saves/PlayerBuild.json");
     
     // Setup do Enemy - carrega do JSON
-    mEnemy->LoadFromJson("../Assets/Robots/Rosevif/Rosevif.json");
+    mEnemy->LoadFromJson("../Assets/Robots/Zeke/Zeke.json");
 
     // ---------- ARENA ----------
     mSkybox = new Skybox(mGame);
-    mSkybox->SetTexture("../Assets/Textures/SkyboxLevel2.png");
+    mSkybox->SetTexture("../Assets/Textures/SkyboxLevel3.png");
 
     // Carrega a Arena 2
     LevelConfig config;
-    if (LoadLevelConfig("../Assets/Arena/Arena2/Arena2.json", config)) {
+    if (LoadLevelConfig("../Assets/Arena/Arena3/Arena3.json", config)) {
         LoadLevel(config);
     } else {
-        SDL_Log("ERRO: Falha ao carregar Arena2!");
+        SDL_Log("ERRO: Falha ao carregar Arena 3!");
     }
 
     // ---------- CURSOR ----------
@@ -59,18 +59,18 @@ Level2::Level2(Game* game, HUD *hud) : Level(game, hud)
     InitializeIA();
 
     // define level para garagem
-    mGame->SetLastLevelCompleted(2);
+    mGame->SetLastLevelCompleted(3);
 
     // cutscene
     // mCamera->StartCutscene();
 
-    SDL_Log("\n\n========== LEVEL 2 INICIADO ========== ");
+    SDL_Log("\n\n========== LEVEL 3 INICIADO ========== ");
 
     NotifyPlayer("Terminal de controle RBT ativado!\n\nSelecione sua unidade.");
     NotifyEnemy("Acesso remoto ativado! Bea Bee utiliza um protocolo de segurança ultrapassado.");
 }
 
-void Level2::ConfigureCutscene()
+void Level3::ConfigureCutscene()
 {
     std::vector<TransictionKeyframe> cutscenesKeyFrames;
 
@@ -143,13 +143,12 @@ void Level2::ConfigureCutscene()
     mCamera->SetCutsceneKeyframes(cutscenesKeyFrames);
 }
 
-void Level2::OnUpdate(float deltaTime)
+void Level3::OnUpdate(float deltaTime)
 {
     Level::OnUpdate(deltaTime);
 }
 
-void Level2::ProcessInput(SDL_Event &event)
+void Level3::ProcessInput(SDL_Event &event)
 {
 
 }
-

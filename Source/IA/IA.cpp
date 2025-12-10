@@ -351,8 +351,12 @@ Vector2 IA::ChooseMove(bool isEnemy) { //defaults true
     //Vector2 reversepos = Vector2(pos.y, pos.x);
     std::vector<Vector2> reachables = GetReachableTiles(pos, legRange, mMapData);
 
+    // auto inBounds = [&](int x, int y) {
+    //     return x >= 0 && x < rows && y >= 0 && y < cols;
+    // };
+
     auto inBounds = [&](int x, int y) {
-        return x >= 0 && x < rows && y >= 0 && y < cols;
+        return x >= 0 && x < cols && y >= 0 && y < rows;
     };
 
     for (auto tile : reachables) {
@@ -428,11 +432,15 @@ Vector2 IA::ChooseTarget(Vector2 pos) {
                         return target;
                     }
                     // next best thing: nearby destructible barrels.
-                    if (mMapData[ny][nx] == 2) {
-                        int newproximity = std::abs(ex - nx) + std::abs(ey - ny);
-                        if (newproximity < proximity) {
-                            proximity = newproximity;
-                            target = Vector2(nx, ny);
+                    if (ny >= 0 && ny < rows && nx >= 0 && nx < cols)   // correção para a segfault
+                    {
+                        if (mMapData[ny][nx] == 2)
+                        {
+                            int newproximity = std::abs(ex - nx) + std::abs(ey - ny);
+                            if (newproximity < proximity) {
+                                proximity = newproximity;
+                                target = Vector2(nx, ny);
+                            }
                         }
                     }
                 }

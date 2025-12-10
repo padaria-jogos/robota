@@ -1,0 +1,10 @@
+{
+  "name": "Honey Blast",
+  "slot": "RightArm",
+  "meshPath": "../Assets/Robots/Zeke/ZekeRightArm.gpmesh",
+  "maxHP": 10,
+  "skill": "Missile",
+  "damage": 20,
+  "range": 3,
+  "description": "Lança projéteis de mel a longa distância deixando o chão pegajoso."
+}

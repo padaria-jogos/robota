@@ -1,0 +1,10 @@
+{
+  "name": "Zeke",
+  "parts": {
+    "Torso": "../Assets/Parts/Torsos/ZekeChest.json",
+    "RightArm": "../Assets/Parts/Arms/HoneyBlastZeke.json",
+    "LeftArm": "../Assets/Parts/Arms/LeftClawZeke.json",
+    "Legs": "../Assets/Parts/Legs/ZekeLegs.json",
+    "Head": "../Assets/Parts/Heads/ZekeHead.json"
+  }
+}

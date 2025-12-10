@@ -21,9 +21,11 @@
 #include "Scenes/MainMenuScene.h"
 #include "Scenes/GarageScene.h"
 #include "UI/Screens/HUD.h"
+#include "UI/Screens/Credits.h"
 #include "Levels/Level0.h"
 #include "Levels/Level1.h"
 #include "Levels/Level2.h"
+#include "Levels/Level3.h"
 
 Game::Game()
         :mWindow(nullptr)
@@ -144,14 +146,29 @@ void Game::SetScene(GameScene nextScene)
             mHUD = new HUD(this, "../Assets/Fonts/Jersey10.ttf");
             mLevel = new Level1(this, mHUD); // se der problema definir destrutor level sem virtual e remover o do level1
         }
-            break;
+        break;
         case GameScene::Level2:
         {
             delete mLevel;
             mHUD = new HUD(this, "../Assets/Fonts/Jersey10.ttf");
             mLevel = new Level2(this, mHUD); // se der problema definir destrutor level sem virtual e remover o do level1
         }
-            break;
+        break;
+
+        case GameScene::Level3:
+        {
+            delete mLevel;
+            mHUD = new HUD(this, "../Assets/Fonts/Jersey10.ttf");
+            mLevel = new Level3(this, mHUD); // se der problema definir destrutor level sem virtual e remover o do level1
+        }
+        break;
+
+        case GameScene::Credits:
+        {
+            delete mLevel;
+            new Credits(this); // se der problema definir destrutor level sem virtual e remover o do level1
+        }
+        break;
     }
 }
 

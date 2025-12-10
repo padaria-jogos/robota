@@ -19,7 +19,7 @@ MainMenu::MainMenu(class Game* game, const std::string& fontName)
         // close main menu and start the game
         SDL_Log("Starting Game");
         this->Close();
-        mGame->SetScene(GameScene::Level2);
+        mGame->SetScene(GameScene::Level0);
     }, Vector2(-buttonSpacing * 0.5f, buttonsY), 1.0f, 0.0f, 24, 1024, 10);
 
     startButton->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
@@ -89,6 +89,31 @@ void MainMenu::HandleKeyPress(int key)
             mButtons[mSelectedButtonIndex]->OnClick();
         }
         break;
+
+        case SDLK_F1:
+        {
+            SDL_Log("Starting Level 1");
+            this->Close();
+            mGame->SetScene(GameScene::Level1);
+        }
+        break;
+
+        case SDLK_F2:
+        {
+            SDL_Log("Starting Level 2");
+            this->Close();
+            mGame->SetScene(GameScene::Level2);
+        }
+        break;
+
+        case SDLK_F3:
+        {
+            SDL_Log("Starting Level 3");
+            this->Close();
+            mGame->SetScene(GameScene::Level3);
+        }
+        break;
+
 
         default:
             break;
