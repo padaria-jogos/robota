@@ -55,6 +55,10 @@ Level::Level(class Game *game, HUD *hud) :
     // ---------- SOUND ----------
     mGame->GetAudio()->StopAllSounds();
     mLevelMusic = mGame->GetAudio()->PlaySound("Backpullver-Shamanez-Overnight.wav", true);
+    if (mLevelMusic.IsValid())
+    {
+        mGame->GetAudio()->SetSoundVolume(mLevelMusic, 0.35f);
+    }
 
     // ---------- CURSOR ----------
     mCursor = new GridCursor(game);
@@ -101,7 +105,17 @@ void Level::MoveCursor(int xOffset, int yOffset)
     if (newY < 0) newY = 0;
     else if (newY >= mGrid->GetRows()) newY = mGrid->GetRows() - 1;
 
+    bool cursorMoved = newX != currentX || newY != currentY;
     MoveInGrid(mCursor, newX, newY);
+
+    if (cursorMoved)
+    {
+        auto* audio = mGame->GetAudio();
+        if (audio)
+        {
+            audio->PlaySound("vgmenuhighlight.wav");
+        }
+    }
 }
 
 // helper for ProcessInput positioning

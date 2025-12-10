@@ -100,11 +100,9 @@ public:
     // Cache all sounds under Assets/Sounds
     void CacheAllSounds();
 
-    // Used to preload the sound data of a sound
-    // NOTE: The soundName is without the "Assets/Sounds/" part of the file
-    //       For example, pass in "ChompLoop.wav" rather than
-    //       "Assets/Sounds/ChompLoop.wav".
     void CacheSound(const std::string& soundName);
+    void SetSoundVolume(SoundHandle sound, float volume);
+    void DuckSound(SoundHandle sound, float targetVolume, float durationSeconds);
 
 private:
     // If the sound is already loaded, returns Mix_Chunk from the map.
@@ -141,4 +139,13 @@ private:
 
     // Used for debug input in ProcessInput
     bool mLastDebugKey = false;
+
+    struct DuckInfo
+    {
+        SoundHandle mHandle;
+        int mOriginalVolume = 128;
+        float mTimer = 0.0f;
+    };
+
+    std::vector<DuckInfo> mDuckInfos;
 };

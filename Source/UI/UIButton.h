@@ -21,7 +21,7 @@ public:
 
     void Draw(class Shader* shader) override;
 
-    void SetHighlighted(bool sel) { mHighlighted = sel; }
+    void SetHighlighted(bool sel);
     bool GetHighlighted() const { return mHighlighted; }
 
     void SetBackgroundScale(float scale) { mBackgroundScale = scale; }

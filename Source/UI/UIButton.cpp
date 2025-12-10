@@ -6,6 +6,7 @@
 #include "../Renderer/Texture.h"
 #include "../Renderer/Renderer.h"
 #include "../Game.h"
+#include "../Levels/Level.h"
 
 UIButton::UIButton(class Game* game, std::function<void()> onClick, const std::string& text, class Font* font,
                    const Vector2 &offset, float scale, float angle, int pointSize, const unsigned wrapLength, int drawOrder)
@@ -70,6 +71,36 @@ void UIButton::SetMarginTextures(const std::string& normalPath, const std::strin
 UIButton::~UIButton()
 {
 
+}
+
+void UIButton::SetHighlighted(bool sel)
+{
+    if (mHighlighted == sel)
+    {
+        return;
+    }
+
+    mHighlighted = sel;
+
+    if (mHighlighted)
+    {
+        auto* game = GetGame();
+        auto* audio = game ? game->GetAudio() : nullptr;
+        auto* level = game ? game->GetLevel() : nullptr;
+        if (audio)
+        {
+            SoundHandle buttonHandle = audio->PlaySound("zipclick.wav");
+            if (buttonHandle.IsValid())
+            {
+                audio->SetSoundVolume(buttonHandle, 1.0f);
+            }
+
+            if (level && level->mLevelMusic.IsValid())
+            {
+                audio->DuckSound(level->mLevelMusic, 0.12f, 0.75f);
+            }
+        }
+    }
 }
 
 
