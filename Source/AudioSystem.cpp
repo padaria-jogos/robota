@@ -1,6 +1,7 @@
 #include "AudioSystem.h"
 #include "SDL.h"
 #include "SDL_mixer.h"
+#include "Math.h"
 #include <filesystem>
 
 SoundHandle SoundHandle::Invalid;
@@ -38,6 +39,28 @@ void AudioSystem::Update(float deltaTime)
                 mHandleMap.erase(mChannels[i]);
                 mChannels[i].Reset();
             }
+        }
+    }
+
+    for(auto it = mDuckInfos.begin(); it != mDuckInfos.end();)
+    {
+        it->mTimer -= deltaTime;
+        const bool timerExpired = it->mTimer <= 0.0f;
+        auto handleIter = mHandleMap.find(it->mHandle);
+        const bool handleValid = handleIter != mHandleMap.end();
+
+        if(timerExpired || !handleValid)
+        {
+            if(handleValid)
+            {
+                int channel = handleIter->second.mChannel;
+                Mix_Volume(channel, it->mOriginalVolume);
+            }
+            it = mDuckInfos.erase(it);
+        }
+        else
+        {
+            ++it;
         }
     }
 }
@@ -98,6 +121,62 @@ SoundHandle AudioSystem::PlaySound(const std::string& soundName, bool looping)
     mHandleMap[handle] = info;
 
     return handle;
+}
+
+void AudioSystem::SetSoundVolume(SoundHandle sound, float volume)
+{
+    auto iter = mHandleMap.find(sound);
+    if(iter == mHandleMap.end())
+    {
+        return;
+    }
+
+    int channel = iter->second.mChannel;
+    int clamped = static_cast<int>(Math::Clamp(volume, 0.0f, 1.0f) * MIX_MAX_VOLUME);
+    Mix_Volume(channel, clamped);
+}
+
+void AudioSystem::DuckSound(SoundHandle sound, float targetVolume, float durationSeconds)
+{
+    if(durationSeconds <= 0.0f)
+    {
+        return;
+    }
+
+    auto iter = mHandleMap.find(sound);
+    if(iter == mHandleMap.end())
+    {
+        return;
+    }
+
+    int channel = iter->second.mChannel;
+    int currentVolume = Mix_Volume(channel, -1);
+    int target = static_cast<int>(Math::Clamp(targetVolume, 0.0f, 1.0f) * MIX_MAX_VOLUME);
+    Mix_Volume(channel, target);
+
+    DuckInfo* foundInfo = nullptr;
+    for(auto& info : mDuckInfos)
+    {
+        if(info.mHandle == sound)
+        {
+            foundInfo = &info;
+            break;
+        }
+    }
+
+    if(foundInfo)
+    {
+        foundInfo->mOriginalVolume = currentVolume;
+        foundInfo->mTimer = durationSeconds;
+    }
+    else
+    {
+        DuckInfo info;
+        info.mHandle = sound;
+        info.mOriginalVolume = currentVolume;
+        info.mTimer = durationSeconds;
+        mDuckInfos.emplace_back(info);
+    }
 }
 
 // Stops the sound if it is currently playing
