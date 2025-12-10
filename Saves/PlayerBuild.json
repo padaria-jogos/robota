@@ -10,10 +10,10 @@
       "skill": "Repair"
     },
     "LeftArm": {
-      "damage": 25,
+      "damage": 50,
       "maxHP": 10,
-      "meshPath": "../Assets/Robots/Robota/RobotaLeftArm.gpmesh",
-      "name": "Robota Broom",
+      "meshPath": "../Assets/Robots/Rosevif/RosevifLeftArm.gpmesh",
+      "name": "Rosevif Claw",
       "range": 1,
       "skill": "Punch"
     },
