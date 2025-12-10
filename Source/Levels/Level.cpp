@@ -120,7 +120,7 @@ void Level::ProcessInput(const SDL_Event &event)
     if (mCamera->IsFreeCameraMode())
         return;
 
-    if (mBattleState == BattleState::GaveUp)
+    if (mBattleState == BattleState::GaveUp || mBattleState == BattleState::GameOver)
         return;
 
     // get the direction relative to the camera
@@ -294,7 +294,14 @@ void Level::HandleMovementPhase()
 void Level::HandleSkillSelectionPhase(PartSlot slot)
 {
     const RobotPart& part = mPlayer->GetPart(slot);
-    if (part.isBroken)
+    const RobotPart& otherPart = slot == PartSlot::LeftArm ? mPlayer->GetPart(PartSlot::RightArm) : mPlayer->GetPart(PartSlot::LeftArm);
+    if (part.isBroken && otherPart.isBroken)
+    {
+        NotifyPlayer("Todos os braços quebrados, não é possível atacar!");
+        HandleWait();
+        return;
+    }
+    else if (part.isBroken)
     {
         std::string msg = "ERRO: A parte '" + part.name + "' esta QUEBRADA! Escolha outra.";
         NotifyPlayer(msg);
@@ -747,15 +754,19 @@ void Level::OnUpdate(float deltaTime)
     if (mBattleState != BattleState::GameOver)
     {
         if (!mPlayer) {
-            // mGame->Quit();
-            new GameOver(mGame, "../Assets/Fonts/Arial.ttf");
+            mHud->Close();
+            mCamera->TransitionToSkyPose();
+            new GameOver(mGame);
             NotifyPlayer("Robota derrotado! Fim.");
             mBattleState = BattleState::GameOver;
         }
 
-        if (!mEnemy) {
-            NotifyEnemy("Inimigo derrotado! Robota venceu o nivel!");
+        if (!mEnemy)
+        {
+            mHud->Close();
+            mCamera->TransitionToSkyPose();
             new Win(mGame);
+            NotifyEnemy("Inimigo derrotado! Robota venceu o nivel!");
             mBattleState = BattleState::GameOver;
         }
     }
@@ -1147,7 +1158,8 @@ void Level::FinishResolution() {
     mEnemyTurn = TurnAction();
 
     // volta com cursor para posição do player
-    MoveInGrid(mCursor, mPlayer->GetGridX(), mPlayer->GetGridY());
+    if (mPlayer)
+        MoveInGrid(mCursor, mPlayer->GetGridX(), mPlayer->GetGridY());
 
     NotifyBoth("TURNO ENCERRADO.");
 }

@@ -4,7 +4,7 @@
   "meshPath": "../Assets/Robots/Robota/RobotaRightArm.gpmesh",
   "maxHP": 20,
   "skill": "Missile",
-  "damage": 25,
+  "damage": 250,
   "range": 2,
   "description": "Lança projéteis de lixo reciclado a longa distância."
 }
