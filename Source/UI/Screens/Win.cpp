@@ -38,10 +38,9 @@ Win::Win(Game* game)
 
     // btn esquerdo
     UIButton* leftArmButton = AddButton("Braço Esquerdo", [this]() {
-        auto* level = mGame->GetLevel();
-        if (level) {
-            level->HandleAction();
-        }
+        delete mGame->GetLevel();
+        mGame->SetLevel(nullptr);
+        mGame->SetScene(GameScene::Garage);
     }, kLeftArmButtonOffset, 1.0f, 0.0f, kButtonPointSize, kRectWrapLength, 1000);
 
     leftArmButton->SetText("");

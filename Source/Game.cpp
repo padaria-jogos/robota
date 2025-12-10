@@ -19,7 +19,7 @@
 
 #include "UI/Screens/MainMenu.h"
 #include "Scenes/MainMenuScene.h"
-#include "Scenes/Garage.h"
+#include "Scenes/GarageScene.h"
 #include "UI/Screens/HUD.h"
 #include "Levels/Level0.h"
 #include "Levels/Level1.h"
@@ -36,6 +36,7 @@ Game::Game()
         ,mAudio(nullptr)
         ,mHUD(nullptr)
         ,mLevel(nullptr)
+        ,mLastLevelCompleted(-1)
 {
 
 }
@@ -125,7 +126,7 @@ void Game::SetScene(GameScene nextScene)
 
         case GameScene::Garage:
         {
-            new Garage(this);
+            new GarageScene(this);
         }
         break;
 

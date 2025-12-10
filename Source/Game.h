@@ -59,6 +59,9 @@ public:
     void SetCamera(class Camera* camera) { mCamera = camera; }
     void SetLevel(class Level* level) { mLevel = level; }
 
+    void SetLastLevelCompleted(int level) { mLastLevelCompleted = level; }
+    int GetLastLevelCompleted() const { return mLastLevelCompleted; }
+
     // Constants
     static const int WINDOW_WIDTH   = 1024;
     static const int WINDOW_HEIGHT  = 768;
@@ -106,5 +109,7 @@ private:
     // List of obstacle patterns
     // std::vector<class BlockObstacle*> mObstacles;
 
+    // garage
+    int mLastLevelCompleted;
 
 };

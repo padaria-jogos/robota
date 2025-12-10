@@ -10,9 +10,9 @@
       "skill": "Repair"
     },
     "LeftArm": {
-      "damage": 25,
+      "damage": 75,
       "maxHP": 10,
-      "meshPath": "../Assets/Robots/Robota/RobotaLeftArm.gpmesh",
+      "meshPath": "../Assets/Robots/EvilRobota/EvilRobotaLeftArm.gpmesh",
       "name": "Robota Broom",
       "range": 1,
       "skill": "Punch"
@@ -35,8 +35,8 @@
     },
     "Torso": {
       "damage": 0,
-      "maxHP": 50,
-      "meshPath": "../Assets/Robots/Robota/RobotaTorso.gpmesh",
+      "maxHP": 100,
+      "meshPath": "../Assets/Robots/EvilRobota/EvilRobotaTorso.gpmesh",
       "name": "Trashcan Chest",
       "range": 0,
       "skill": "None"

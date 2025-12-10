@@ -756,6 +756,7 @@ void Level::OnUpdate(float deltaTime)
         if (!mPlayer) {
             mHud->Close();
             mCamera->TransitionToSkyPose();
+            mGame->SetLastLevelCompleted(-1);
             new GameOver(mGame);
             NotifyPlayer("Robota derrotado! Fim.");
             mBattleState = BattleState::GameOver;
@@ -765,6 +766,7 @@ void Level::OnUpdate(float deltaTime)
         {
             mHud->Close();
             mCamera->TransitionToSkyPose();
+            mGame->SetLastLevelCompleted(mGame->GetLastLevelCompleted() + 1);
             new Win(mGame);
             NotifyEnemy("Inimigo derrotado! Robota venceu o nivel!");
             mBattleState = BattleState::GameOver;

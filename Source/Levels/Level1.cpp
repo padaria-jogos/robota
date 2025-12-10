@@ -29,15 +29,6 @@ Level1::Level1(Game* game, HUD *hud) : Level(game, hud)
     SetWorldLightIntensity(1.0f);
 
     // ---------- ROBOTS ----------
-    // Teste Setup do Player
-    mPlayer->LoadFromJson("../Assets/Robots/Robota/Robota.json");
-    
-    // Trocamos
-    mPlayer->EquipPartFromJson("../Assets/Parts/Arms/LeftClaw.json");
-    
-    // Salvar build atual do player
-    mPlayer->SaveToJson("../Saves/PlayerBuild.json");
-    
     // Recarregar build
     mPlayer->LoadFromJson("../Saves/PlayerBuild.json");
     

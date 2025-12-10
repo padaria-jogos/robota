@@ -6,12 +6,14 @@
 
 #include "Scene.h"
 #include "Camera.h"
+#include "Actors/Robot.h"
+#include "UI/Screens/GarageScreen.h"
 
-class Garage : public Scene
+class GarageScene : public Scene
 {
 public:
-    Garage(Game* game);
-    ~Garage();
+    GarageScene(Game* game);
+    ~GarageScene();
 
 private:
     const Vector3 TILE_SCALE = Vector3(500.0f, 500.0f, 500.0f);
@@ -21,6 +23,8 @@ private:
 
     void CreateScene();
 
+    GarageScreen* mGarageUI;
+    Robot* mRobot = nullptr;
     UIImage* mBackgroundImg;
 
     std::vector<Actor*> mSceneActors;
