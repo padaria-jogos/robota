@@ -2,7 +2,7 @@
     "csv": "../Assets/Arena/Arena2/Arena2.csv",
     "theme": {
         "floor": "../Assets/Textures/floor_asphalt.png",
-        "wall": "../Assets/Textures/wall_default.png",
+        "wall": "../Assets/Textures/wall_cat.png",
         "honey": "../Assets/Textures/sticky_floor_default.png",
         "fire": "../Assets/Textures/floor_fire.png"
     },

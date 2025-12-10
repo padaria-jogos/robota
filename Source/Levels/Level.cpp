@@ -137,6 +137,9 @@ void Level::ProcessInput(const SDL_Event &event)
     if (mCamera->IsFreeCameraMode())
         return;
 
+    if (mCamera->GetIsInCutscene())
+        return;
+
     if (mBattleState == BattleState::GaveUp || mBattleState == BattleState::GameOver || mBattleState == BattleState::Null)
         return;
 
@@ -204,7 +207,17 @@ void Level::HandleGaveUp(int action)
         // ir para a última tela
         delete mGame->GetLevel();
         mGame->SetLevel(nullptr);
-        mGame->SetScene(GameScene::MainMenu);
+
+        if (mGame->GetLastLevelCompleted() <= 0)
+        {
+            mGame->SetScene(GameScene::MainMenu);
+        }
+        else
+        {
+            mGame->SetLastLevelCompleted(mGame->GetLastLevelCompleted() - 1);
+            mGame->SetScene(GameScene::Garage);
+        }
+
     }
 
 }

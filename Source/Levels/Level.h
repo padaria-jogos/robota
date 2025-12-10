@@ -110,6 +110,7 @@ class Level
         SoundHandle mLevelMusic;
 
         ParticleManager* GetParticleManager() { return mParticleManager; }
+        std::string GetEnemyName() {return mEnemy->GetName();}
 
         void HandleGaveUp(int action);
 

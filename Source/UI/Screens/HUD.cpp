@@ -60,7 +60,7 @@ HUD::HUD(class Game* game, const std::string& fontName)
     , mMenuVisible(true)
 {
     mPlayerWidget = CreateRobotWidget(kPlayerAnchor, "J. Robota", PanelOrientation::TextToRight);
-    mEnemyWidget = CreateRobotWidget(kEnemyAnchor, "Bea Bee", PanelOrientation::TextToLeft);
+    mEnemyWidget = CreateRobotWidget(kEnemyAnchor, "", PanelOrientation::TextToLeft);
 }
 
 void HUD::TrackRobots(const Robot* playerRobot, const Robot* enemyRobot)
@@ -75,6 +75,8 @@ void HUD::TrackRobots(const Robot* playerRobot, const Robot* enemyRobot)
 void HUD::Update(float deltaTime)
 {
     UIScreen::Update(deltaTime);
+
+    setEnemyRobotWidgetName(mGame->GetLevel()->GetEnemyName());
 
     UpdateRobotWidget(mPlayerRobot, mPlayerWidget);
     UpdateRobotWidget(mEnemyRobot, mEnemyWidget);

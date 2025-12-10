@@ -56,6 +56,7 @@ private:
     void AppendMessage(RobotWidget& widget, const std::string& message);
     std::string PickColorPrefix(const RobotPart& part) const;
     std::string BuildTexturePath(const std::string& prefix, const std::string& suffix) const;
+    void setEnemyRobotWidgetName(std::string name) {mEnemyWidget.label = name; }
 
     const Robot* mPlayerRobot;
     const Robot* mEnemyRobot;

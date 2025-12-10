@@ -10,18 +10,18 @@
       "skill": "Repair"
     },
     "LeftArm": {
-      "damage": 50,
+      "damage": 25,
       "maxHP": 10,
-      "meshPath": "../Assets/Robots/BeaBee/BeaBeeLeftArm.gpmesh",
-      "name": "Queen's Drill",
+      "meshPath": "../Assets/Robots/Robota/RobotaLeftArm.gpmesh",
+      "name": "Robota Broom",
       "range": 1,
       "skill": "Punch"
     },
     "Legs": {
       "damage": 0,
-      "maxHP": 30,
-      "meshPath": "../Assets/Robots/BeaBee/BeaBeeLeftLeg.gpmesh",
-      "name": "Honey Boots",
+      "maxHP": 20,
+      "meshPath": "../Assets/Robots/Robota/RobotaLeg.gpmesh",
+      "name": "Robota Legs",
       "range": 2,
       "skill": "None"
     },
