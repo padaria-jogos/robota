@@ -51,11 +51,27 @@ public:
     EnemyResolution GetEnemyResolution(std::vector<std::vector<int>> mMapData);
     void UpdatePlayerStats(RobotStats &playerStats) {mPlayerStats = playerStats;}
     void UpdateEnemyStats(RobotStats &enemyStats) {mEnemyStats = enemyStats;}
+    std::vector<std::vector<int>> MapEfficiency(std::vector<std::vector<int>> mapData);
 
 private:
     RobotStats mPlayerStats;
     RobotStats mEnemyStats;
+
+        /*
+     * Define a matriz do mapa para a ia tomar decisões:
+     * 0 = chão livre, caminhável
+     * 1 = parede, bloqueio
+     * 2 = destrutível, bloqueio, porém pode ser destruído
+     * 3 = mel, terreno especial (efeito)
+     * 4 = fogo, terreno especial (efeito)
+     */
     std::vector<std::vector<int>> mMapData;
+    std::vector<std::vector<int>> mMapEfficiency;
+    int mBloodThirst = 4;
+    std::vector<std::vector<int>> transpose(const std::vector<std::vector<int>>& g);
+    Vector2 ChooseMove(bool isEnemy = true);
+    Vector2 ChooseTarget(Vector2 pos);
+    PartSlot ChooseSlot(Vector2 target, Vector2 pos);
 
     // helpers
     bool IsInRange(Vector2& origin, const Vector2& target, int minRange, int maxRange);
