@@ -74,6 +74,8 @@ class Robot : public Actor{
 
         void OnUpdate(float deltaTime) override;
 
+        void SetDead() {mIsDead = true;}
+
         // Interpolar entre as grids
         void StartSmoothMovement(const Vector3& targetWorldPos, float duration = 0.3f);
 

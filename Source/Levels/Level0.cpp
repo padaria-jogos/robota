@@ -69,6 +69,12 @@ Level0::Level0(Game* game, HUD *hud) : Level(game, hud)
     // ---------- IA ----------
     InitializeIA();
 
+    // define level para garagem
+    mGame->SetLastLevelCompleted(0);
+
+    // start cutscene
+    mCamera->StartCutscene();
+
     SDL_Log("\n\n========== LEVEL 0 INICIADO ========== ");
 }
 
@@ -76,43 +82,51 @@ void Level0::ConfigureCutscene()
 {
     std::vector<TransictionKeyframe> cutscenesKeyFrames;
 
-    // Position (1208.9, -1812.7, 458.4) Target (1208.4, -1811.8, 458.1);
-    // Position (447.3, -2108.1, 458.4)  Target (447.3, -2107.1, 458.1)
+    //Position (-761.0, 1450.7, 544.3) Target (2856.0, 1525.3, -644.9)
+    //(-355.4, 759.6, 323.1) Target (2481.5, 3241.5, -219.9)
     cutscenesKeyFrames.push_back({
-        { Vector3(1208.9f, -1812.7f, 458.4f), Vector3(1208.4f, -1811.8f, 458.1f), Vector3::UnitZ },
-        { Vector3(447.3f,  -2108.1f, 458.4f), Vector3(447.3f,  -2107.1f, 458.1f), Vector3::UnitZ },
-        2.0f
-    });
-
-    // stand still
-    cutscenesKeyFrames.push_back({
-        { Vector3(447.3f,  -2108.1f, 458.4f), Vector3(447.3f,  -2107.1f, 458.1f), Vector3::UnitZ },
-        { Vector3(447.3f,  -2108.1f, 458.4f), Vector3(447.3f,  -2107.1f, 458.1f), Vector3::UnitZ },
-        2.0f
-    });
-
-    // Position (-1783.0, -90.1, 505.5) Target (-1782.2, -89.6, 505.3);
-    // Position (-1779.1, 557.5, 499.4) Target (-1778.2, 557.1, 499.2)
-    cutscenesKeyFrames.push_back({
-        { Vector3(-1783.0f, -90.1f, 505.5f), Vector3(-1782.2f, -89.6f, 505.3f), Vector3::UnitZ },
-        { Vector3(-1779.1f, 557.5f, 499.4f), Vector3(-1778.2f, 557.1f, 499.2f), Vector3::UnitZ },
-        2.0f
-    });
-
-    // stand still
-    cutscenesKeyFrames.push_back({
-        { Vector3(-1779.1f, 557.5f, 499.4f), Vector3(-1778.2f, 557.1f, 499.2f), Vector3::UnitZ },
-        { Vector3(-1779.1f, 557.5f, 499.4f), Vector3(-1778.2f, 557.1f, 499.2f), Vector3::UnitZ },
-        2.0f
-    });
-
-    // Position (-972.3, 422.2, 322.7) Target (-972.3, 421.3, 322.6);
-    // Position (0.0, -3500.0, 1500.0) Target (50.0, 0.0, 0.0)
-    cutscenesKeyFrames.push_back({
-        { Vector3(-980.2f, 32.1f, 381.2f), Vector3(-1282.7f, -3605.6f, -131.2f), Vector3::UnitZ },
-        { Vector3(0.0f,   -3500.0f, 1500.0f), Vector3(50.0f, 0.0f, 0.0f), Vector3::UnitZ },
+        { Vector3(-761.0f, 1450.7f, 544.3f),   Vector3(2856.0f, 1525.3f, -644.9f), Vector3::UnitZ },
+        { Vector3(-355.4f, 759.6f, 323.1f),    Vector3(2481.5f, 3241.5f, -219.9f), Vector3::UnitZ },
         3.0f
     });
+
+
+    //(-355.4, 759.6, 323.1) Target (2481.5, 3241.5, -219.9)
+    //(-355.4, 759.6, 323.1) Target (2481.5, 3241.5, -219.9)
+    cutscenesKeyFrames.push_back({
+        { Vector3(-355.4f, 759.6f, 323.1f),    Vector3(2481.5f, 3241.5f, -219.9f), Vector3::UnitZ },
+        { Vector3(-355.4f, 759.6f, 323.1f),    Vector3(2481.5f, 3241.5f, -219.9f), Vector3::UnitZ },
+        2.0f
+    });
+
+
+    // (-1842.6, 827.9, 393.8) Target (-604.1, -2732.2, -149.1)
+    // (-762.9, 85.2, 272.8) Target (-224.1, -3662.2, -138.2)
+    cutscenesKeyFrames.push_back({
+        { Vector3(-1842.6f, 827.9f, 393.8f),   Vector3(-604.1f, -2732.2f, -149.1f), Vector3::UnitZ },
+        { Vector3(-762.9f, 85.2f, 272.8f),     Vector3(-224.1f, -3662.2f, -138.2f), Vector3::UnitZ },
+        3.0f
+    });
+
+
+    // stand still
+    //(-525.8, -990.7, 283.4) Target (-380.9, -4795.4, 203.9)
+    //(-525.8, -990.7, 283.4) Target (-380.9, -4795.4, 203.9)
+    cutscenesKeyFrames.push_back({
+        { Vector3(-525.8f, -990.7f, 283.4f),   Vector3(-380.9f, -4795.4f, 203.9f), Vector3::UnitZ },
+        { Vector3(-525.8f, -990.7f, 283.4f),   Vector3(-380.9f, -4795.4f, 203.9f), Vector3::UnitZ },
+        3.0f
+    });
+
+
+    // (355.3, 1506.8, 300.6) Target (-3335.9, 1430.7, -633.4)
+    // Position (-1.1f, 3548.0f, 1540.8f) Target (-11.7f, 191.7f, -258.5f)
+    cutscenesKeyFrames.push_back({
+        { Vector3(355.3f, 1506.8f, 300.6f),     Vector3(-3335.9f, 1430.7f, -633.4f), Vector3::UnitZ },
+        { Vector3(-1.1f, 3548.0f, 1540.8f),     Vector3(-11.7f, 191.7f, -258.5f),    Vector3::UnitZ },
+        3.0f
+    });
+
 
     mCamera->SetCutsceneKeyframes(cutscenesKeyFrames);
 }

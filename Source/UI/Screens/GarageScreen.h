@@ -23,4 +23,5 @@ private:
 
     std::string part1;
     std::string part2;
+    std::string level = "";
 };

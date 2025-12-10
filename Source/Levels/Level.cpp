@@ -62,6 +62,7 @@ Level::Level(class Game *game, HUD *hud) :
 
     // ---------- CURSOR ----------
     mCursor = new GridCursor(game);
+    mCursor->SetScale(Vector3::Zero);
 
     // ---------- ROBOTS ----------
     mPlayer = new Robot(game, Team::Player);
@@ -73,6 +74,8 @@ Level::Level(class Game *game, HUD *hud) :
     // HUD tracking
     if (mHud)
         mHud->TrackRobots(mPlayer, mEnemy);
+
+    mHud->SetVisible(false);
 }
 
 void Level::SetWorldLightIntensity(float intensity)
@@ -134,7 +137,7 @@ void Level::ProcessInput(const SDL_Event &event)
     if (mCamera->IsFreeCameraMode())
         return;
 
-    if (mBattleState == BattleState::GaveUp || mBattleState == BattleState::GameOver)
+    if (mBattleState == BattleState::GaveUp || mBattleState == BattleState::GameOver || mBattleState == BattleState::Null)
         return;
 
     // get the direction relative to the camera
@@ -172,6 +175,11 @@ void Level::ProcessInput(const SDL_Event &event)
         case SDLK_ESCAPE:
             HandleCancel();
             break;
+
+        case SDLK_F10:
+            // kill enemy
+            if (mEnemy)
+                mEnemy->SetDead();
 
         default:
             break;
@@ -764,6 +772,12 @@ void Level::ResolveTurn() {
 
 void Level::OnUpdate(float deltaTime)
 {
+    if (!mCamera->GetIsInCutscene())
+    {
+        mHud->SetVisible(true);
+        mCursor->SetScale(Vector3(100.0f, 100.0f, 100.0f));
+    }
+
     // verifica condições de fim de jogo
     if (mBattleState != BattleState::GameOver)
     {
@@ -780,7 +794,6 @@ void Level::OnUpdate(float deltaTime)
         {
             mHud->Close();
             mCamera->TransitionToSkyPose();
-            mGame->SetLastLevelCompleted(mGame->GetLastLevelCompleted() + 1);
             new Win(mGame);
             NotifyEnemy("Inimigo derrotado! Robota venceu o nivel!");
             mBattleState = BattleState::GameOver;
@@ -801,7 +814,7 @@ void Level::OnUpdate(float deltaTime)
     // movement selection
     if (mBattleState == BattleState::Exploration)
     {
-        if (mMovementSelection == nullptr)
+        if (mMovementSelection == nullptr && mCamera->GetIsInCutscene() == false)
             mMovementSelection = new MovementSelection(mGame);
     }
     else

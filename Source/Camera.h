@@ -37,6 +37,8 @@ public:
     void SetTargetActor(class Actor* actor);
     void SetCutsceneKeyframes(const std::vector<TransictionKeyframe> keyframes) { mCutsceneKeyframes = keyframes; }
 
+    bool GetIsInCutscene() {return mIsInCutscene; }
+
     bool IsFreeCameraMode() const { return mIsFreeCameraMode; }
     void AddCameraPose(CameraPose cp) { mCameraPoses.push_back(cp); }
     void HandleKeyPress(int key);
