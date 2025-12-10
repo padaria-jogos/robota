@@ -458,11 +458,14 @@ EnemyResolution IA::GetEnemyResolution(std::vector<std::vector<int>> mapData)
     PartSlot slot = ChooseSlot(target, movement);
     bool willAtk = true;
     if (target.x == -1) willAtk = false;
-
     EnemyResolution action;
-    //NaiveResolution(&action);
-    action.moveTo     = movement;
 
+    if (mEnemyStats.name == "EvilRobota") {
+        NaiveResolution(&action);
+        return action;
+    }
+    
+    action.moveTo     = movement;
     action.targetTile = target;
     action.hasAction  = willAtk;
     action.skillSlot  = slot;
