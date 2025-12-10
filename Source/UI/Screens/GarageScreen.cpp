@@ -34,20 +34,20 @@ GarageScreen::GarageScreen(class Game* game, Robot* robot)
     switch (mGame->GetLastLevelCompleted())
     {
         case 0:
-            part1 = "../Assets/Parts/Torsos/EvilTrashcanChest.json";
-            part2 = "../Assets/Parts/Arms/EvilBroomArm.json";
+            part1 = "../Assets/Parts/Arms/EvilBroomArm.json";
+            part2 = "../Assets/Parts/Torsos/EvilTrashcanChest.json";
             level = "Level0";
             mNextGameScene = GameScene::Level1;
             break;
         case 1:
             part1 = "../Assets/Parts/Legs/HoneyBoots.json";
-            part2 = "../Assets/Parts/Arms/QueensDrill.json";
+            part2 = "../Assets/Parts/Arms/HoneyBlast.json";
             level = "Level1";
             mNextGameScene = GameScene::Level2;
             break;
         case 2:
-            part1 = "../Assets/Parts/Torsos/EvilTrashcanChest.json";
-            part2 = "../Assets/Parts/Arms/EvilBroomArm.json";
+            part1 = "../Assets/Parts/Heads/CatHelmet.json";
+            part2 = "../Assets/Parts/Legs/FastBoots.json";
             level = "Level2";
             mNextGameScene = GameScene::Level3;
             break;
@@ -62,8 +62,8 @@ GarageScreen::GarageScreen(class Game* game, Robot* robot)
 
     std::string normalTex1  = "../Assets/HUD/Garage/" + level + "/" + "boxPart1.png";
     std::string enableTex1  = "../Assets/HUD/Garage/" + level + "/" + "boxPartEnable1.png";
-    std::string normalTex2  = "../Assets/HUD/Garage/" + level + "/" + "boxPart1.png";
-    std::string enableTex2  = "../Assets/HUD/Garage/" + level + "/" + "boxPartEnable1.png";
+    std::string normalTex2  = "../Assets/HUD/Garage/" + level + "/" + "boxPart2.png";
+    std::string enableTex2  = "../Assets/HUD/Garage/" + level + "/" + "boxPartEnable2.png";
 
     // add game logo
     // AddImage("../Assets/UIBackground.png", Vector2(0.0f, 0.0f), 0.7f, 0.0f, 1);

@@ -76,7 +76,12 @@ void HUD::Update(float deltaTime)
 {
     UIScreen::Update(deltaTime);
 
-    setEnemyRobotWidgetName(mGame->GetLevel()->GetEnemyName());
+    if (!hasName)
+    {
+        setEnemyRobotWidgetName(mGame->GetLevel()->GetEnemyName());
+        hasName = true;
+    }
+
 
     UpdateRobotWidget(mPlayerRobot, mPlayerWidget);
     UpdateRobotWidget(mEnemyRobot, mEnemyWidget);

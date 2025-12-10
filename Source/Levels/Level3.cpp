@@ -73,7 +73,7 @@ Level3::Level3(Game* game, HUD *hud) : Level(game, hud)
 void Level3::ConfigureCutscene()
 {
     std::vector<TransictionKeyframe> cutscenesKeyFrames;
-    
+
     // (-1418.2, -2872.4, 537.1) Target (442.1, 349.8, -18.8)
     // (-88.7, -617.5, 359.2) Target (1463.5, 2711.2, -454.9)
     cutscenesKeyFrames.push_back({

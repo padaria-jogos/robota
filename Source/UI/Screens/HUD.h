@@ -61,6 +61,8 @@ private:
     const Robot* mPlayerRobot;
     const Robot* mEnemyRobot;
 
+    bool hasName = false;
+
     RobotWidget mPlayerWidget;
     RobotWidget mEnemyWidget;
 

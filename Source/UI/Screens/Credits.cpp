@@ -32,7 +32,7 @@ Credits::Credits(Game* game)
         mGame(game)
 {
     // add game logo
-    AddImage("../Assets/HUD/boxCredits.png", Vector2(0.0f, 0.0f), 0.7f, 0.0f, 1);
+    AddImage("../Assets/HUD/boxCredits.png", Vector2(0.0f, 0.0f), 1.0f, 0.0f, 1);
 
     AddImage("../Assets/HUD/Buttons/Level/btnBackgroundSmall.png", Vector2(0.0f, -380.0f), 1.0f, 0.0f, 1);
 

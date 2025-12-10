@@ -231,7 +231,7 @@ void Camera::HandleKeyPress(int key)
         return;
 
     // toggle free camera mode (F)
-    if (key == SDLK_f)
+    if (key == SDLK_F12)
     {
         mIsFreeCameraMode = mIsFreeCameraMode ? false : true;
 
