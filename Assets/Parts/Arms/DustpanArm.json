@@ -5,6 +5,6 @@
   "maxHP": 20,
   "skill": "Missile",
   "damage": 1000,
-  "range": 3,
+  "range": 2,
   "description": "Lança projéteis de lixo reciclado a longa distância."
 }

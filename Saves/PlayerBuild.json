@@ -30,7 +30,7 @@
       "maxHP": 20,
       "meshPath": "../Assets/Robots/Robota/RobotaRightArm.gpmesh",
       "name": "Robota Dustpan",
-      "range": 3,
+      "range": 2,
       "skill": "Missile"
     },
     "Torso": {
