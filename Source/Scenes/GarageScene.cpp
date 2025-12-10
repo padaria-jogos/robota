@@ -113,7 +113,7 @@ void GarageScene::CreateScene()
     mRobot = new Robot(mGame, Team::Player);
 
     // Carregar partes prontas
-    mRobot->LoadFromJson("../Assets/Robots/Robota/Robota.json");
+    mRobot->LoadFromJson("../Saves/PlayerBuild.json");
 
     // Definir posição fixa
     mRobot->SetPosition(Vector3(800.0f, -800.0f, 400.0f));
