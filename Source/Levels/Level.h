@@ -70,7 +70,8 @@ enum class BattleState {
     MoveSelection,  // Robô selecionado, escolhendo destino
     SkillSelection, // Robô moveu, escolhendo habilidade
     TargetSelection, // Selecionando a grid alvo da habilidade
-    GameOver        // Fim de jogo
+    GameOver,        // Fim de jogo
+    GaveUp           // Jogador escolhendo desistir
 };
 
 class Level
@@ -110,6 +111,8 @@ class Level
 
         ParticleManager* GetParticleManager() { return mParticleManager; }
 
+        void HandleGaveUp(int action);
+
     protected:
         Game* mGame;
         Camera* mCamera;
@@ -122,8 +125,11 @@ class Level
         GridMap* mGrid;
         UIScreen* mActionSelection;
         UIScreen* mTileSelection;
+        UIScreen* mMovementSelection;
+        UIScreen* mGaveUpSelection;
 
         // battle
+        BattleState mBkpBattleState;
         BattleState mBattleState;
         PartSlot mSelectedSlot;
 
@@ -135,6 +141,10 @@ class Level
         void ConfigureCutscene();
 
         void InitializeIA();
+
+        void NotifyPlayer(const std::string& message) const;
+        void NotifyEnemy(const std::string& message) const;
+        void NotifyBoth(const std::string& message) const;
 
     private:
         const Vector3 TILE_SCALE = Vector3(500.0f, 500.0f, 500.0f);
@@ -179,10 +189,6 @@ class Level
         // IA simples para testar o fluxo do jogo
         void CalculateEnemyAction();
         void ResolveTurn();
-
-        void NotifyPlayer(const std::string& message) const;
-        void NotifyEnemy(const std::string& message) const;
-        void NotifyBoth(const std::string& message) const;
 
         ParticleManager* mParticleManager;
 };

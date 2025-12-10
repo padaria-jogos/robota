@@ -4,13 +4,28 @@
 
 #include "TileSelection.h"
 #include "../../Levels/Level.h"
+#include "../../Camera.h"
 
 namespace
 {
-    constexpr float kSelectButtonRowY = -295.0f;
-    constexpr float kSelectButtonScale = 0.36f;
-    constexpr int kSelectButtonPointSize = 12;
-    constexpr unsigned kSelectWrapLength = 360u;
+    constexpr float kButtonRowY = -335.0f;
+    constexpr float kRectButtonScale = 0.30f;
+    constexpr float kSquareButtonScale = 0.30f;
+    constexpr int kButtonPointSize = 32;
+    constexpr unsigned kRectWrapLength = 360u;
+    constexpr unsigned kSquareWrapLength = 120u;
+    const Vector2 kRectTextMargin(30.0f, 8.0f);
+    const Vector2 kSquareTextMargin(16.0f, 8.0f);
+
+    constexpr float kButtonColumnSpacing = 150.0f;
+
+    const float newOffset = 60.0f;
+    const Vector2 kCameraButtonOffset(-1.5f * kButtonColumnSpacing - newOffset, kButtonRowY);
+    const Vector2 kBackButtonOffset(-1.0f * kButtonColumnSpacing - newOffset, kButtonRowY);
+    const Vector2 kLeftArmButtonOffset(0.37f * kButtonColumnSpacing - newOffset, kButtonRowY);
+    const Vector2 kRightArmButtonOffset(1.34f * kButtonColumnSpacing - newOffset, kButtonRowY);
+    const Vector2 kCancelArmButtonOffset(2.28f * kButtonColumnSpacing - newOffset, kButtonRowY);
+
 }
 
 TileSelection::TileSelection(class Game* game)
@@ -20,24 +35,45 @@ TileSelection::TileSelection(class Game* game)
     // add game logo
     // AddImage("../Assets/UIBackground.png", Vector2(0.0f, 0.0f), 0.7f, 0.0f, 1);
 
-    UIButton* selectButton = AddButton("Selecionar Robô/Mira", [this]() {
+    AddImage("../Assets/HUD/Buttons/Level/btnBackgroundSmall.png", Vector2(0.0f, -380.0f), 1.0f, 0.0f, 1);
+
+
+    // btn esquerdo
+    UIButton* leftArmButton = AddButton("Braço Esquerdo", [this]() {
         auto* level = mGame->GetLevel();
         if (level) {
             level->HandleAction();
         }
-    }, Vector2(0.0f, kSelectButtonRowY), 1.0f, 0.0f, kSelectButtonPointSize, kSelectWrapLength, 10);
+    }, kLeftArmButtonOffset, 1.0f, 0.0f, kButtonPointSize, kRectWrapLength, 1000);
 
-    selectButton->SetBackgroundScale(kSelectButtonScale);
-    selectButton->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
-    selectButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    leftArmButton->SetText("");
+    leftArmButton->SetAlignment(UITextAlignment::Center);
+    leftArmButton->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
+    leftArmButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
+    leftArmButton->SetScale(kRectButtonScale);
+    leftArmButton->SetBackgroundScale(1.0f);
+    leftArmButton->SetBackgroundTextures("../Assets/HUD/Buttons/Level/btnConfirma.png", "../Assets/HUD/Buttons/Level/btnConfirmaHold.png");
+    leftArmButton->SetMargin(kRectTextMargin);
 
     for (auto* button : mButtons)
     {
         button->SetHighlighted(false);
     }
 
-    selectButton->SetHighlighted(true);
     mSelectedButtonIndex = 0;
+    for (int i = 0; i < static_cast<int>(mButtons.size()); ++i)
+    {
+        if (mButtons[i] == leftArmButton)
+        {
+            mSelectedButtonIndex = i;
+            break;
+        }
+    }
+
+    if (mSelectedButtonIndex >= 0 && mSelectedButtonIndex < static_cast<int>(mButtons.size()))
+    {
+        mButtons[mSelectedButtonIndex]->SetHighlighted(true);
+    }
 }
 
 void TileSelection::HandleKeyPress(int key)

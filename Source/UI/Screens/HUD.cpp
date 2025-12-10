@@ -4,6 +4,7 @@
 
 #include "HUD.h"
 #include "../../Game.h"
+#include <sstream>
 
 namespace
 {
@@ -38,13 +39,13 @@ namespace
     const Vector2 kLegOffset(0.0f, 0.0f);
     constexpr float kHorizontalGap = 20.0f;
     constexpr float kNamePanelVerticalOffset = 30.0f;
-    constexpr float kNameLabelOffsetY = 60.0f;
-    constexpr float kLogLabelOffsetY = 0.0f;
+    constexpr float kNameLabelOffsetY = 57.0f;
+    constexpr float kLogLabelOffsetY = -5.0f;
     constexpr Vector2 kLogMargin(12.0f, 12.0f);
-    constexpr float kStatusTitleInset = 20.0f;
+    constexpr float kStatusTitleInset = 18.0f;
     constexpr float kLogTextInset = 22.0f;
     constexpr unsigned kNameWrapLength = 220u;
-    constexpr unsigned kLogWrapLength = 210u;
+    constexpr unsigned kLogWrapLength = 150u;
     constexpr int kPanelDrawOrder = 80;
     constexpr int kFrameDrawOrder = 85;
     constexpr int kRobotDrawOrder = 90;
@@ -58,7 +59,7 @@ HUD::HUD(class Game* game, const std::string& fontName)
     , mEnemyRobot(nullptr)
     , mMenuVisible(true)
 {
-    mPlayerWidget = CreateRobotWidget(kPlayerAnchor, "J Robota", PanelOrientation::TextToRight);
+    mPlayerWidget = CreateRobotWidget(kPlayerAnchor, "J. Robota", PanelOrientation::TextToRight);
     mEnemyWidget = CreateRobotWidget(kEnemyAnchor, "Bea Bee", PanelOrientation::TextToLeft);
 }
 
@@ -129,7 +130,7 @@ HUD::RobotWidget HUD::CreateRobotWidget(const Vector2& anchor, const std::string
     const std::string robotPanelTexture = isPlayer ? "../Assets/HUD/boxPlayerRobot.png" : "../Assets/HUD/boxEnemyRobot.png";
     widget.statusPanel = AddImage(robotPanelTexture, anchor, kStatusSpriteScale, 0.0f, kPanelDrawOrder);
 
-    widget.statusTitle = AddText("Status", anchor + Vector2(0.0f, statusHalf.y - kStatusTitleInset), 0.45f, 0.0f, 26, 256, kTextDrawOrder);
+    widget.statusTitle = AddText("Status", anchor + Vector2(0.0f, statusHalf.y - kStatusTitleInset), 1.0f, 0.0f, 26, 256, kTextDrawOrder);
     widget.statusTitle->SetBackgroundColor(Vector4(0.0f, 0.0f, 0.0f, 0.0f));
     widget.statusTitle->SetMargin(Vector2::Zero);
 
@@ -149,17 +150,24 @@ HUD::RobotWidget HUD::CreateRobotWidget(const Vector2& anchor, const std::string
     const std::string namePanelTexture = isPlayer ? "../Assets/HUD/boxPlayerLog.png" : "../Assets/HUD/boxEnemyLog.png";
     widget.namePanel = AddImage(namePanelTexture, nameCenter, kNameSpriteScale, 0.0f, kPanelDrawOrder);
 
-    widget.nameLabel = AddText("", nameCenter + Vector2(0.0f, kNameLabelOffsetY), 0.62f, 0.0f, 34, kNameWrapLength, kTextDrawOrder + 1);
+    widget.nameLabel = AddText("", nameCenter + Vector2(0.0f, kNameLabelOffsetY), 1.0f, 0.0f, 26, kNameWrapLength, kTextDrawOrder + 1);
     widget.nameLabel->SetBackgroundColor(Vector4(0.0f, 0.0f, 0.0f, 0.0f));
     widget.nameLabel->SetMargin(Vector2::Zero);
-    widget.nameLabel->SetText("-- " + widget.label + " --");
+    widget.nameLabel->SetText(widget.label);
 
     widget.logPanel = nullptr;
 
-    widget.messageLabel = AddText("", nameCenter + Vector2(0.0f, kLogLabelOffsetY), 0.52f, 0.0f, 24, kLogWrapLength, kTextDrawOrder + 1);
+    // widget.messageLabel = AddText("", nameCenter + Vector2(7.0f, kLogLabelOffsetY), 1.0f, 0.0f, 16, kLogWrapLength, kTextDrawOrder + 1);
+    // widget.messageLabel->SetText("");
+    // widget.messageLabel->SetBackgroundColor(Vector4(0.0f, 0.0f, 0.0f, 0.0f));
+    // // widget.messageLabel->SetMargin(kLogMargin);
+    // widget.messageLabel->SetMargin(Vector2::Zero);
+    // widget.messageLabel->SetAlignment(UITextAlignment::Left);
+
+    widget.messageLabel = AddText("", nameCenter + Vector2(0.0f, kLogLabelOffsetY), 0.95f, 0.0f, 16, kLogWrapLength, kTextDrawOrder + 1);
     widget.messageLabel->SetText("");
-    widget.messageLabel->SetBackgroundColor(Vector4(0.0f, 0.0f, 0.0f, 0.0f));
-    widget.messageLabel->SetMargin(kLogMargin);
+    widget.messageLabel->SetBackgroundColor(Vector4(0,0,0,0));
+    widget.messageLabel->SetMargin(Vector2::Zero);
 
     return widget;
 }
@@ -172,7 +180,7 @@ void HUD::UpdateRobotWidget(const Robot* robot, RobotWidget& widget)
     }
     if (widget.nameLabel && !widget.label.empty())
     {
-        widget.nameLabel->SetText("-- " + widget.label + " --");
+        widget.nameLabel->SetText(widget.label);
     }
     if (!robot)
     {
@@ -210,28 +218,111 @@ void HUD::UpdatePartVisual(const RobotPart& part, UIImage* image, const std::str
 void HUD::AppendMessage(RobotWidget& widget, const std::string& message)
 {
     if (!widget.messageLabel || message.empty())
-    {
         return;
-    }
 
-    widget.messages.emplace_front(message);
-    while (widget.messages.size() > kMaxMessages)
-    {
-        widget.messages.pop_back();
-    }
+    const int MAX_CHAR_PER_LINE = 26;
+    const int MAX_LINES = 4;
 
-    std::string combined;
-    for (size_t i = 0; i < widget.messages.size(); ++i)
+    // word wrap
+    std::vector<std::string> newLines;
+    std::string working = message;
+    size_t pos = 0;
+
+    while (!working.empty())
     {
-        combined += widget.messages[i];
-        if (i + 1 < widget.messages.size())
+        // quebra manual em \n
+        size_t newlinePos = working.find('\n');
+        std::string segment;
+
+        if (newlinePos != std::string::npos)
         {
-            combined += "\n";
+            segment = working.substr(0, newlinePos);
+            working.erase(0, newlinePos + 1);
         }
+        else
+        {
+            segment = working;
+            working.clear();
+        }
+
+        // agora faz word-wrap no segmento
+        while (!segment.empty())
+        {
+            if (segment.size() <= MAX_CHAR_PER_LINE)
+            {
+                newLines.push_back(segment);
+                break;
+            }
+
+            // procura o último espaço antes do limite
+            size_t breakPos = segment.rfind(' ', MAX_CHAR_PER_LINE);
+
+            if (breakPos == std::string::npos)
+            {
+                // nenhuma quebra possível → força quebra
+                newLines.push_back(segment.substr(0, MAX_CHAR_PER_LINE));
+                segment.erase(0, MAX_CHAR_PER_LINE);
+            }
+            else
+            {
+                // quebra segura antes da palavra
+                newLines.push_back(segment.substr(0, breakPos));
+                segment.erase(0, breakPos + 1); // remove também o espaço
+            }
+        }
+
+        // caso segmento fosse vazio após newline
+        if (segment.empty() && newlinePos != std::string::npos)
+            newLines.push_back("");
+    }
+
+    // empilha no buffer - FIFO
+    for (const auto& ln : newLines)
+    {
+        widget.lineBuffer.push_back(ln);
+        if (widget.lineBuffer.size() > MAX_LINES)
+            widget.lineBuffer.pop_front();
+    }
+
+    // garante o máximo de linhas vazias
+    while (widget.lineBuffer.size() < MAX_LINES)
+        widget.lineBuffer.push_back("");
+
+    // Remove linhas vazias do TOPO se houver linhas não-vazias
+    // e adiciona as mesmas no fim (altura fixa + empurra texto)
+    bool hasNonEmpty = false;
+    for (const auto& ln : widget.lineBuffer)
+        if (!ln.empty())
+            hasNonEmpty = true;
+
+    if (hasNonEmpty)
+    {
+        size_t removed = 0;
+        while (!widget.lineBuffer.empty() && widget.lineBuffer.front().empty())
+        {
+            widget.lineBuffer.pop_front();
+            removed++;
+        }
+        for (size_t i = 0; i < removed; i++)
+            widget.lineBuffer.push_back("");
+    }
+
+    // segurança
+    while (widget.lineBuffer.size() > MAX_LINES)
+        widget.lineBuffer.pop_front();
+
+    // monta texto final com \n
+    std::string combined;
+    for (size_t i = 0; i < widget.lineBuffer.size(); i++)
+    {
+        combined += widget.lineBuffer[i];
+        if (i + 1 < widget.lineBuffer.size())
+            combined += '\n';
     }
 
     widget.messageLabel->SetText(combined);
 }
+
 
 std::string HUD::PickColorPrefix(const RobotPart& part) const
 {

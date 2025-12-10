@@ -132,7 +132,7 @@ void Game::SetScene(GameScene nextScene)
         case GameScene::Level0:
         {
             delete mLevel;
-            mHUD = new HUD(this, "../Assets/Fonts/Arial.ttf");
+            mHUD = new HUD(this, "../Assets/Fonts/Jersey10.ttf");
             mLevel = new Level0(this, mHUD); // se der problema definir destrutor level sem virtual e remover o do level1
         }
             break;
@@ -140,7 +140,7 @@ void Game::SetScene(GameScene nextScene)
         case GameScene::Level1:
         {
             delete mLevel;
-            mHUD = new HUD(this, "../Assets/Fonts/Arial.ttf");
+            mHUD = new HUD(this, "../Assets/Fonts/Jersey10.ttf");
             mLevel = new Level1(this, mHUD); // se der problema definir destrutor level sem virtual e remover o do level1
         }
             break;

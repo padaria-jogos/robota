@@ -1,8 +1,8 @@
 //
-// Created by mateus on 30/11/2025.
+// Created by mateus on 09/12/2025.
 //
 
-#include "ActionSelection.h"
+#include "MovementSelection.h"
 #include "../../Levels/Level.h"
 #include "../../Camera.h"
 
@@ -22,13 +22,13 @@ namespace
     const float newOffset = 60.0f;
     const Vector2 kCameraButtonOffset(-1.5f * kButtonColumnSpacing - newOffset, kButtonRowY);
     const Vector2 kBackButtonOffset(-1.0f * kButtonColumnSpacing - newOffset, kButtonRowY);
-    const Vector2 kLeftArmButtonOffset(-0.05f * kButtonColumnSpacing - newOffset, kButtonRowY);
+    const Vector2 kLeftArmButtonOffset(0.385f * kButtonColumnSpacing - newOffset, kButtonRowY);
     const Vector2 kRightArmButtonOffset(1.34f * kButtonColumnSpacing - newOffset, kButtonRowY);
     const Vector2 kCancelArmButtonOffset(2.28f * kButtonColumnSpacing - newOffset, kButtonRowY);
 
 }
 
-ActionSelection::ActionSelection(class Game* game)
+MovementSelection::MovementSelection(class Game* game)
         :UIScreen(game, "../Assets/Fonts/Arial.ttf"),
         mGame(game)
 {
@@ -54,28 +54,10 @@ ActionSelection::ActionSelection(class Game* game)
     // cameraButton->SetMarginTextures("../Assets/HUD/marginBtnQuad.png", "../Assets/HUD/marginBtnhQuad.png");
     cameraButton->SetMargin(kSquareTextMargin);
 
-    // btn voltar
-    UIButton* backButton = AddButton("", [this]() {
-        auto* level = mGame->GetLevel();
-        if (level)
-        {
-            level->HandleCancel();
-        }
-    }, kBackButtonOffset, 1.0f, 0.0f, kButtonPointSize, kSquareWrapLength, 1000);
-
-    backButton->SetText("");
-    backButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
-    backButton->SetScale(kSquareButtonScale);
-    backButton->SetBackgroundScale(1.0f);
-    backButton->SetBackgroundTextures("../Assets/HUD/Buttons/Level/btnBack.png", "../Assets/HUD/Buttons/Level/btnBackHold.png");
-    // backButton->SetMarginTextures("../Assets/HUD/marginBtnQuad.png", "../Assets/HUD/marginBtnhQuad.png");
-    backButton->SetMargin(kSquareTextMargin);
-
     // btn esquerdo
     UIButton* leftArmButton = AddButton("Braço Esquerdo", [this]() {
         auto* level = mGame->GetLevel();
         if (level) {
-            level->SetSelectedSlot(PartSlot::LeftArm);
             level->HandleAction();
         }
     }, kLeftArmButtonOffset, 1.0f, 0.0f, kButtonPointSize, kRectWrapLength, 1000);
@@ -86,26 +68,8 @@ ActionSelection::ActionSelection(class Game* game)
     leftArmButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
     leftArmButton->SetScale(kRectButtonScale);
     leftArmButton->SetBackgroundScale(1.0f);
-    leftArmButton->SetBackgroundTextures("../Assets/HUD/Buttons/Level/btnEsq.png", "../Assets/HUD/Buttons/Level/btnEsqHold.png");
+    leftArmButton->SetBackgroundTextures("../Assets/HUD/Buttons/Level/btnMovimento.png", "../Assets/HUD/Buttons/Level/btnMovimentoHold.png");
     leftArmButton->SetMargin(kRectTextMargin);
-
-    // btn direito
-    UIButton* rightArmButton = AddButton("Braço Direito", [this]() {
-        auto* level = mGame->GetLevel();
-        if (level) {
-            level->SetSelectedSlot(PartSlot::RightArm);
-            level->HandleAction();
-        }
-    }, kRightArmButtonOffset, 1.0f, 0.0f, kButtonPointSize, kRectWrapLength, 2000);
-
-    rightArmButton->SetText("");
-    rightArmButton->SetAlignment(UITextAlignment::Center);
-    rightArmButton->SetBackgroundColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
-    rightArmButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
-    rightArmButton->SetScale(kRectButtonScale);
-    rightArmButton->SetBackgroundScale(1.0f);
-    rightArmButton->SetBackgroundTextures("../Assets/HUD/Buttons/Level/btnDir.png", "../Assets/HUD/Buttons/Level/btnDirHold.png");
-    rightArmButton->SetMargin(kRectTextMargin);
 
     // btn cancel
     // camera button
@@ -146,7 +110,7 @@ ActionSelection::ActionSelection(class Game* game)
     }
 }
 
-void ActionSelection::HandleKeyPress(int key)
+void MovementSelection::HandleKeyPress(int key)
 {
     if (mButtons.empty())
         return;

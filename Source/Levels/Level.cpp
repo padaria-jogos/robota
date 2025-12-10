@@ -17,6 +17,8 @@
 #include "UI/Screens/GameOver.h"
 #include "UI/Screens/TileSelection.h"
 #include "UI/Screens/Win.h"
+#include "UI/Screens/MovementSelection.h"
+#include "UI/Screens/GaveUpSelection.h"
 
 // Constantes de altura Z para posicionamento de objetos
 namespace {
@@ -41,6 +43,8 @@ Level::Level(class Game *game, HUD *hud) :
     mIsResolving(false),
     mStepIndex(0),
     mActionSelection(nullptr),
+    mMovementSelection(nullptr),
+    mGaveUpSelection(nullptr),
     mTileSelection(nullptr),
     mSkybox(nullptr),
     mIA(nullptr)
@@ -78,6 +82,9 @@ void Level::MoveCursor(int xOffset, int yOffset)
     if (mBattleState == BattleState::SkillSelection)
         return;
 
+    if (mBattleState == BattleState::Exploration)
+        return;
+
     // define a nova posição absoluta de acordo com offset
     if (!mGrid || !mCursor) return;
 
@@ -111,6 +118,9 @@ void Level::ProcessInput(const SDL_Event &event)
     // free camera mode overlap inputs, so we skip game inputs when active
     // TODO: por alguma razão, ainda consigo selecionar o robô
     if (mCamera->IsFreeCameraMode())
+        return;
+
+    if (mBattleState == BattleState::GaveUp)
         return;
 
     // get the direction relative to the camera
@@ -154,6 +164,29 @@ void Level::ProcessInput(const SDL_Event &event)
     }
 }
 
+void Level::HandleGaveUp(int action)
+{
+    if (action == 0)
+    {
+        // iniciar tela de confirmação
+        mBkpBattleState = mBattleState;
+        mBattleState = BattleState::GaveUp;
+    }
+    else if (action == 1)
+    {
+        // cancelou
+        mBattleState = mBkpBattleState;
+    }
+    else if (action == 2)
+    {
+        // ir para a última tela
+        delete mGame->GetLevel();
+        mGame->SetLevel(nullptr);
+        mGame->SetScene(GameScene::MainMenu);
+    }
+
+}
+
 void Level::HandleAction()
 {
     if (!mGrid || !mPlayer) return;
@@ -195,7 +228,7 @@ void Level::HandleExplorationPhase()
     {
         // Verifica se está stunned (preso no mel)
         if (mPlayer->HasStatusEffect(StatusEffect::Stunned)) {
-            NotifyPlayer("VOCÊ ESTÁ PRESO NO MEL! Não pode se mover, mas pode atacar.");
+            NotifyPlayer("ROBÔ PRESO! Ataque no tile atual para se libertar!");
             SetBattleState(BattleState::SkillSelection);
             SetSelectedSlot(PartSlot::RightArm);
             return;
@@ -217,11 +250,11 @@ void Level::HandleExplorationPhase()
         }
 
         SDL_Log("Ação do jogador: Selecionado %s. Aguardando movimento...", mPlayer->GetName().c_str());
-        NotifyPlayer("Escolha a posição de destino");
+        NotifyPlayer("\nDefina a posição de destino.");
     }
     else
     {
-        NotifyPlayer("Essa unidade nao e sua.");
+        NotifyPlayer("Não é possível controlar essa unidade.");
     }
 }
 
@@ -251,10 +284,10 @@ void Level::HandleMovementPhase()
         // Setup padrão de parte selecionada
         SetSelectedSlot(GetSelectedSlot());
 
-        NotifyPlayer("Movimento concluido.");
+        NotifyPlayer("Movimento concluído.");
     }
     else {
-        NotifyPlayer("Movimento invalido.");
+        NotifyPlayer("Movimento inválido.");
     }
 }
 
@@ -293,12 +326,12 @@ void Level::HandleSkillSelectionPhase(PartSlot slot)
     SetBattleState(BattleState::TargetSelection);
     
     if (mPlayer->HasStatusEffect(StatusEffect::Stunned)) {
-        NotifyPlayer("Preso no mel! Ataque o próprio tile para se libertar.");
+        NotifyPlayer("ROBÔ PRESO! Ataque no tile atual para se libertar!");
     }
     else
     {
         SDL_Log("Ação do jogador: selecionou habilidade. Aguardando mira...");
-        NotifyPlayer("Selecione o alvo");
+        NotifyPlayer("Selecione o alvo.");
     }
 
 
@@ -338,7 +371,7 @@ void Level::HandleTargetingPhase()
                     mPlayer->RemoveStatusEffect(StatusEffect::Stunned);
                     mPlayer->ClearLastEffectTile();
 
-                    NotifyPlayer("Você se libertou do mel!");
+                    NotifyPlayer("Robô foi liberado.");
                     
                     mGrid->ClearTileStates();
                     SetBattleState(BattleState::Exploration);
@@ -362,7 +395,7 @@ void Level::HandleTargetingPhase()
         RemoveGhost();
         SetBattleState(BattleState::Exploration);
 
-        NotifyPlayer("=== PLANEJAMENTO CONCLUIDO. INICIANDO RESOLUCAO ===");
+        // NotifyPlayer("=== PLANEJAMENTO CONCLUIDO. INICIANDO RESOLUCAO ===");
         StartResolution();
     }else {
         NotifyPlayer("Alvo invalido! Selecione um quadrado dentro da range.");
@@ -391,7 +424,7 @@ void Level::HandleCancel()
     // Se está stunned, não pode cancelar (deve atacar o mel)
     if (mPlayer->HasStatusEffect(StatusEffect::Stunned) && 
         mBattleState == BattleState::SkillSelection) {
-        NotifyPlayer("Você está preso no mel! Precisa atacar para se libertar!");
+        NotifyPlayer("ROBÔ PRESO! Ataque no tile atual para se libertar!");
         return;
     }
     
@@ -402,7 +435,7 @@ void Level::HandleCancel()
             mGrid->ClearTileStates();
             RemoveGhost();
             SetBattleState(BattleState::Exploration);
-            NotifyPlayer("Selecao cancelada.");
+            NotifyPlayer("Selecão cancelada.");
             break;
         }
 
@@ -430,7 +463,7 @@ void Level::HandleCancel()
                 }
             }
 
-            NotifyPlayer("Movimento do fantasma desfeito.");
+            // NotifyPlayer("Movimento do fantasma desfeito.");
             break;
         }
 
@@ -446,7 +479,7 @@ void Level::HandleCancel()
 
             SetBattleState(BattleState::SkillSelection);
 
-            NotifyPlayer("Mira cancelada. Escolha outra habilidade (1 ou 2).");
+            NotifyPlayer("Mira cancelada. Escolha outra habilidade.");
             break;
         }
 
@@ -468,11 +501,11 @@ void Level::HandleWait() {
     RemoveGhost();
 
     SetBattleState(BattleState::Exploration);
-    NotifyPlayer("Jogador escolheu ESPERAR.");
-    NotifyBoth("=== INICIANDO RESOLUCAO ===");
+    NotifyPlayer("Robota não fez nada.");
+    // NotifyBoth("=== INICIANDO RESOLUCAO ===");
     CalculateEnemyAction();
     ResolveTurn();
-    NotifyBoth("=== FIM DO TURNO ===");
+    // NotifyBoth("=== FIM DO TURNO ===");
 }
 
 void Level::MoveInGrid(Actor *actor, int x, int y) const {
@@ -716,12 +749,12 @@ void Level::OnUpdate(float deltaTime)
         if (!mPlayer) {
             // mGame->Quit();
             new GameOver(mGame, "../Assets/Fonts/Arial.ttf");
-            NotifyPlayer("Jogador derrotado! Fim de jogo.");
+            NotifyPlayer("Robota derrotado! Fim.");
             mBattleState = BattleState::GameOver;
         }
 
         if (!mEnemy) {
-            NotifyEnemy("Inimigo derrotado! Jogador vence o nivel!");
+            NotifyEnemy("Inimigo derrotado! Robota venceu o nivel!");
             new Win(mGame);
             mBattleState = BattleState::GameOver;
         }
@@ -738,7 +771,23 @@ void Level::OnUpdate(float deltaTime)
         }
     }
 
-    if (mBattleState == BattleState::Exploration || mBattleState == BattleState::MoveSelection || mBattleState == BattleState::TargetSelection)
+    // movement selection
+    if (mBattleState == BattleState::Exploration)
+    {
+        if (mMovementSelection == nullptr)
+            mMovementSelection = new MovementSelection(mGame);
+    }
+    else
+    {
+        if (mMovementSelection != nullptr)
+        {
+            mMovementSelection->Close();
+            mMovementSelection = nullptr;
+        }
+    }
+
+    // definir tela tileSelection
+    if (mBattleState == BattleState::MoveSelection || mBattleState == BattleState::TargetSelection)
     {
         if (mTileSelection == nullptr)
             mTileSelection = new TileSelection(mGame);
@@ -749,6 +798,21 @@ void Level::OnUpdate(float deltaTime)
         {
             mTileSelection->Close();
             mTileSelection = nullptr;
+        }
+    }
+
+    // abrir janela para desistir
+    if (mBattleState == BattleState::GaveUp)
+    {
+        if (mGaveUpSelection == nullptr)
+            mGaveUpSelection = new GaveUpSelection(mGame);
+    }
+    else
+    {
+        if (mGaveUpSelection != nullptr)
+        {
+            mGaveUpSelection->Close();
+            mGaveUpSelection = nullptr;
         }
     }
 
@@ -932,7 +996,7 @@ void Level::ProcessTileEffects()
 
                     // Aplica stun (não pode se mover no próximo turno)
                     mPlayer->ApplyStatusEffect(StatusEffect::Stunned);
-                    NotifyPlayer("Pisou no mel! Não pode se mover no próximo turno!");
+                    NotifyPlayer("ROBÔ PRESO! Ataque no tile atual para se libertar!");
                     break;
                 }
 
@@ -1082,7 +1146,10 @@ void Level::FinishResolution() {
     mPlayerTurn = TurnAction();
     mEnemyTurn = TurnAction();
 
-    NotifyBoth("TURNO ENCERRADO.\n\n");
+    // volta com cursor para posição do player
+    MoveInGrid(mCursor, mPlayer->GetGridX(), mPlayer->GetGridY());
+
+    NotifyBoth("TURNO ENCERRADO.");
 }
 
 void Level::NotifyPlayer(const std::string& message) const

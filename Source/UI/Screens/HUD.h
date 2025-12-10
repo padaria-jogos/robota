@@ -47,6 +47,7 @@ private:
         std::deque<std::string> messages;
         std::string label;
         PanelOrientation orientation;
+        std::deque<std::string> lineBuffer;   // linhas reais
     };
 
     RobotWidget CreateRobotWidget(const Vector2& anchor, const std::string& displayName, PanelOrientation orientation);

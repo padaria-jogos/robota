@@ -9,13 +9,13 @@ MainMenu::MainMenu(class Game* game, const std::string& fontName)
         :UIScreen(game, fontName)
 {
     // add game logo
-    AddImage("../Assets/Logo.png", Vector2(0.0f, 100.0f), 0.4f, 0.0f, 1);
+    AddImage("../Assets/Logo.png", Vector2(0.0f, 180.0f), 0.4f, 0.0f, 1);
 
-    const float buttonsY = -220.0f;
-    const float buttonSpacing = 260.0f;
+    const float buttonsY = -250.0f;
+    const float buttonSpacing = 300.0f;
 
     // btn start
-    UIButton* startButton = AddButton("New Game", [this]() {
+    UIButton* startButton = AddButton("", [this]() {
         // close main menu and start the game
         SDL_Log("Starting Game");
         this->Close();
@@ -26,9 +26,10 @@ MainMenu::MainMenu(class Game* game, const std::string& fontName)
     startButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
     startButton->SetBackgroundScale(0.5f);
     startButton->SetMargin(Vector2(0.0f, 0.0f));
+    startButton->SetBackgroundTextures("../Assets/HUD/Buttons/MainMenu/btnStart.png", "../Assets/HUD/Buttons/MainMenu/btnStartHold.png");
 
     // btn quit
-    UIButton* quitButton = AddButton("Quit", [this]() {
+    UIButton* quitButton = AddButton("", [this]() {
         // close the game
         mGame->Quit();
     }, Vector2(buttonSpacing * 0.5f, buttonsY), 1.0f, 0.0f, 24, 1024, 20);
@@ -37,7 +38,7 @@ MainMenu::MainMenu(class Game* game, const std::string& fontName)
     quitButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
     quitButton->SetBackgroundScale(0.5f);
     quitButton->SetMargin(Vector2(0.0f, 0.0f));
-    quitButton->SetBackgroundTextures("../Assets/HUD/Rbuttons.png", "../Assets/HUD/holdRbuttons.png");
+    quitButton->SetBackgroundTextures("../Assets/HUD/Buttons/MainMenu/btnQuit.png", "../Assets/HUD/Buttons/MainMenu/btnQuitHold.png");
 }
 
 void MainMenu::HandleKeyPress(int key)
@@ -81,6 +82,7 @@ void MainMenu::HandleKeyPress(int key)
         break;
 
         case SDLK_KP_ENTER:
+        case SDLK_SPACE:
         case SDLK_RETURN:
         {
             // click no botão selecionado

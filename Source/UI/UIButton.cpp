@@ -125,14 +125,15 @@ void UIButton::Draw(class Shader* shader)
     }
 
     Texture* marginTexture = nullptr;
-    if(mHighlighted && mMarginHoldTexture)
-    {
-        marginTexture = mMarginHoldTexture;
-    }
-    else if(mMarginTexture)
-    {
-        marginTexture = mMarginTexture;
-    }
+    // remove margin
+    // if(mHighlighted && mMarginHoldTexture)
+    // {
+    //     marginTexture = mMarginHoldTexture;
+    // }
+    // else if(mMarginTexture)
+    // {
+    //     marginTexture = mMarginTexture;
+    // }
 
     if(marginTexture)
     {

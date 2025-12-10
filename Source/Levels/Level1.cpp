@@ -66,6 +66,9 @@ Level1::Level1(Game* game, HUD *hud) : Level(game, hud)
     InitializeIA();
 
     SDL_Log("\n\n========== LEVEL 1 INICIADO ========== ");
+
+    NotifyPlayer("Terminal de controle RBT ativado!\n\nSelecione sua unidade.");
+    NotifyEnemy("Acesso remoto ativado! Bea Bee utiliza um protocolo de segurança ultrapassado.");
 }
 
 void Level1::ConfigureCutscene()

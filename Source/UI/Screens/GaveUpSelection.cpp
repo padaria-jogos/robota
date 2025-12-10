@@ -1,8 +1,8 @@
 //
-// Created by mateus on 30/11/2025.
+// Created by mateus on 10/12/2025.
 //
 
-#include "ActionSelection.h"
+#include "GaveUpSelection.h"
 #include "../../Levels/Level.h"
 #include "../../Camera.h"
 
@@ -22,61 +22,27 @@ namespace
     const float newOffset = 60.0f;
     const Vector2 kCameraButtonOffset(-1.5f * kButtonColumnSpacing - newOffset, kButtonRowY);
     const Vector2 kBackButtonOffset(-1.0f * kButtonColumnSpacing - newOffset, kButtonRowY);
-    const Vector2 kLeftArmButtonOffset(-0.05f * kButtonColumnSpacing - newOffset, kButtonRowY);
-    const Vector2 kRightArmButtonOffset(1.34f * kButtonColumnSpacing - newOffset, kButtonRowY);
+    const Vector2 kLeftArmButtonOffset(-0.3f * kButtonColumnSpacing - newOffset, kButtonRowY);
+    const Vector2 kRightArmButtonOffset(1.10f * kButtonColumnSpacing - newOffset, kButtonRowY);
     const Vector2 kCancelArmButtonOffset(2.28f * kButtonColumnSpacing - newOffset, kButtonRowY);
 
 }
 
-ActionSelection::ActionSelection(class Game* game)
+GaveUpSelection::GaveUpSelection(class Game* game)
         :UIScreen(game, "../Assets/Fonts/Arial.ttf"),
         mGame(game)
 {
     // add game logo
-    // AddImage("../Assets/UIBackground.png", Vector2(0.0f, 0.0f), 0.7f, 0.0f, 1);
+    AddImage("../Assets/HUD/Levels/boxDesistir.png", Vector2(0.0f, 0.0f), 0.7f, 0.0f, 1);
 
-    AddImage("../Assets/HUD/Buttons/Level/btnBackground.png", Vector2(0.0f, -380.0f), 1.0f, 0.0f, 1);
-
-    // camera button
-    UIButton* cameraButton = AddButton("", [this]() {
-        auto* camera = mGame->GetCamera();
-        if (camera)
-        {
-            camera->HandleKeyPress(SDLK_c);
-        }
-    }, kCameraButtonOffset, 1.0f, 0.0f, kButtonPointSize, kSquareWrapLength, 1000);
-
-    cameraButton->SetText("");
-    cameraButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
-    cameraButton->SetScale(kSquareButtonScale);
-    cameraButton->SetBackgroundScale(1.0f);
-    cameraButton->SetBackgroundTextures("../Assets/HUD/Buttons/Level/btnCam.png", "../Assets/HUD/Buttons/Level/btnCamHold.png");
-    // cameraButton->SetMarginTextures("../Assets/HUD/marginBtnQuad.png", "../Assets/HUD/marginBtnhQuad.png");
-    cameraButton->SetMargin(kSquareTextMargin);
-
-    // btn voltar
-    UIButton* backButton = AddButton("", [this]() {
-        auto* level = mGame->GetLevel();
-        if (level)
-        {
-            level->HandleCancel();
-        }
-    }, kBackButtonOffset, 1.0f, 0.0f, kButtonPointSize, kSquareWrapLength, 1000);
-
-    backButton->SetText("");
-    backButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
-    backButton->SetScale(kSquareButtonScale);
-    backButton->SetBackgroundScale(1.0f);
-    backButton->SetBackgroundTextures("../Assets/HUD/Buttons/Level/btnBack.png", "../Assets/HUD/Buttons/Level/btnBackHold.png");
-    // backButton->SetMarginTextures("../Assets/HUD/marginBtnQuad.png", "../Assets/HUD/marginBtnhQuad.png");
-    backButton->SetMargin(kSquareTextMargin);
+    AddImage("../Assets/HUD/Buttons/Level/btnBackgroundMedium.png", Vector2(0.0f, -380.0f), 1.0f, 0.0f, 1);
 
     // btn esquerdo
     UIButton* leftArmButton = AddButton("Braço Esquerdo", [this]() {
         auto* level = mGame->GetLevel();
-        if (level) {
-            level->SetSelectedSlot(PartSlot::LeftArm);
-            level->HandleAction();
+        if (level)
+        {
+            level->HandleGaveUp(1);
         }
     }, kLeftArmButtonOffset, 1.0f, 0.0f, kButtonPointSize, kRectWrapLength, 1000);
 
@@ -86,17 +52,17 @@ ActionSelection::ActionSelection(class Game* game)
     leftArmButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
     leftArmButton->SetScale(kRectButtonScale);
     leftArmButton->SetBackgroundScale(1.0f);
-    leftArmButton->SetBackgroundTextures("../Assets/HUD/Buttons/Level/btnEsq.png", "../Assets/HUD/Buttons/Level/btnEsqHold.png");
+    leftArmButton->SetBackgroundTextures("../Assets/HUD/Buttons/Level/btnCancela.png", "../Assets/HUD/Buttons/Level/btnCancelaHold.png");
     leftArmButton->SetMargin(kRectTextMargin);
 
-    // btn direito
-    UIButton* rightArmButton = AddButton("Braço Direito", [this]() {
+    // btn esquerdo
+    UIButton* rightArmButton = AddButton("Braço Esquerdo", [this]() {
         auto* level = mGame->GetLevel();
-        if (level) {
-            level->SetSelectedSlot(PartSlot::RightArm);
-            level->HandleAction();
+        if (level)
+        {
+            level->HandleGaveUp(2);
         }
-    }, kRightArmButtonOffset, 1.0f, 0.0f, kButtonPointSize, kRectWrapLength, 2000);
+    }, kRightArmButtonOffset, 1.0f, 0.0f, kButtonPointSize, kRectWrapLength, 1000);
 
     rightArmButton->SetText("");
     rightArmButton->SetAlignment(UITextAlignment::Center);
@@ -104,25 +70,8 @@ ActionSelection::ActionSelection(class Game* game)
     rightArmButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
     rightArmButton->SetScale(kRectButtonScale);
     rightArmButton->SetBackgroundScale(1.0f);
-    rightArmButton->SetBackgroundTextures("../Assets/HUD/Buttons/Level/btnDir.png", "../Assets/HUD/Buttons/Level/btnDirHold.png");
+    rightArmButton->SetBackgroundTextures("../Assets/HUD/Buttons/Level/btnConfirma.png", "../Assets/HUD/Buttons/Level/btnConfirmaHold.png");
     rightArmButton->SetMargin(kRectTextMargin);
-
-    // btn cancel
-    // camera button
-    UIButton* cancelButton = AddButton("", [this]() {
-        auto* level = mGame->GetLevel();
-        if (level)
-        {
-            level->HandleGaveUp(0);
-        }
-    }, kCancelArmButtonOffset, 1.0f, 0.0f, kButtonPointSize, kSquareWrapLength, 1000);
-
-    cancelButton->SetText("");
-    cancelButton->SetTextColor(Vector3(1.0f, 1.0f, 1.0f));
-    cancelButton->SetScale(kSquareButtonScale);
-    cancelButton->SetBackgroundScale(1.0f);
-    cancelButton->SetBackgroundTextures("../Assets/HUD/Buttons/Level/btnCancel.png", "../Assets/HUD/Buttons/Level/btnCancelHold.png");
-    cancelButton->SetMargin(kSquareTextMargin);
 
 
     for (auto* button : mButtons)
@@ -146,7 +95,7 @@ ActionSelection::ActionSelection(class Game* game)
     }
 }
 
-void ActionSelection::HandleKeyPress(int key)
+void GaveUpSelection::HandleKeyPress(int key)
 {
     if (mButtons.empty())
         return;
