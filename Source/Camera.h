@@ -42,6 +42,8 @@ public:
     void HandleKeyPress(int key);
     void StartCutscene();
 
+    void TransitionToSkyPose();
+
 private:
     // Game
     class Game* mGame;

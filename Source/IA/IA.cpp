@@ -467,6 +467,8 @@ EnemyResolution IA::GetEnemyResolution(std::vector<std::vector<int>> mapData)
     if (target.x == -1) willAtk = false;
     EnemyResolution action;
 
+    SDL_Log("%s", mEnemyStats.name.c_str());
+
     if (mEnemyStats.name == "EvilRobota") {
         NaiveResolution(&action);
         return action;

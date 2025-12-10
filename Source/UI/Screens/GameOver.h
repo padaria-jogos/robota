@@ -9,7 +9,10 @@
 class GameOver : public UIScreen
 {
 public:
-    GameOver(class Game* game, const std::string& fontName);
+    GameOver(class Game* game);
 
     void HandleKeyPress(int key) override;
+
+private:
+    Game* mGame;
 };

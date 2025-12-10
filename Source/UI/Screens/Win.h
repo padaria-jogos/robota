@@ -5,6 +5,7 @@
 #pragma once
 
 #include "UIScreen.h"
+#include "Game.h"
 
 class Win : public UIScreen
 {
@@ -12,4 +13,7 @@ public:
     Win(class Game* game);
 
     void HandleKeyPress(int key) override;
+
+private:
+    Game* mGame;
 };

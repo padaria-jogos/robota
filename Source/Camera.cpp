@@ -276,3 +276,20 @@ void Camera::HandleKeyPress(int key)
     }
 
 }
+
+
+void Camera::TransitionToSkyPose()
+{
+    // camera transition time
+    mTransitionTime = 0.5f;
+
+    mCameraAngleIndex = mCameraPoses.size() - 1;
+    CameraPose targetPose = mCameraPoses[mCameraAngleIndex];
+
+    SDL_Log("Transitioning to Camera Pose %d", mCameraAngleIndex);
+
+    mStartPose = { mEye, mTarget, mUp };
+    mEndPose = targetPose;
+    mIsTransitioning = true;
+    mTransitionElapsed = 0.0f;
+}

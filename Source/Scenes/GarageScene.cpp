@@ -2,19 +2,24 @@
 // Created by mateus on 09/12/2025.
 //
 
-#include "Garage.h"
+#include "GarageScene.h"
 #include "Actors/Robot.h"
 #include "Actors/Block.h"
 
-Garage::Garage(Game* game) : Scene(game)
+GarageScene::GarageScene(Game* game) : Scene(game)
 {
     // create 3d scene
     CreateScene();
 
+    // AddImage("../Assets/HUD/Garage/boxBackground.png", Vector2(0.0f, 0.0f), 0.4f, 0.0f, 1);
+
+    // conseguir o nome das partes
+
     // Add the UI screen on top
+    mGarageUI = new GarageScreen(game, mRobot);
 }
 
-Garage::~Garage()
+GarageScene::~GarageScene()
 {
     // delete mMenuUI;
 
@@ -26,7 +31,7 @@ Garage::~Garage()
     mSceneActors.clear();
 }
 
-void Garage::CreateScene()
+void GarageScene::CreateScene()
 {
     // ----- CÂMERA -----
     Vector3 eye(1738.4f, -1828.0f, 581.0f);
@@ -52,7 +57,7 @@ void Garage::CreateScene()
             Block* block = new Block(mGame);
             block->SetScale(TILE_SCALE);
             block->SetPosition(Vector3(xPos, yPos, zPos));
-            block->SetTexture("../Assets/Textures/floor_default.png");
+            block->SetTexture("../Assets/Textures/floor_oficina.png");
             mSceneActors.push_back(block);
 
             xPos += TILE_SCALE.x;
@@ -105,20 +110,20 @@ void Garage::CreateScene()
 
 
     // ----- ROBÔ -----
-    Robot* robot = new Robot(mGame, Team::Player);
+    mRobot = new Robot(mGame, Team::Player);
 
     // Carregar partes prontas
-    robot->LoadFromJson("../Assets/Robots/Robota/Robota.json");
+    mRobot->LoadFromJson("../Assets/Robots/Robota/Robota.json");
 
     // Definir posição fixa
-    robot->SetPosition(Vector3(800.0f, -800.0f, 400.0f));
-    robot->SetRotation(Vector3(0.0f, 0.0f, Math::ToRadians(-45.0f)));
+    mRobot->SetPosition(Vector3(800.0f, -800.0f, 400.0f));
+    mRobot->SetRotation(Vector3(0.0f, 0.0f, Math::ToRadians(-45.0f)));
 
     // Ajustar escala se quiser
-    robot->SetScale(Vector3(60.0f, 60.0f, 60.0f));
+    mRobot->SetScale(Vector3(60.0f, 60.0f, 60.0f));
 
     // Guardar pra destruir depois
-    mSceneActors.push_back(robot);
+    mSceneActors.push_back(mRobot);
 
     // ----- LUZ ADICIONAL -----
     Actor* lightActor = new Actor(mGame);
@@ -132,13 +137,13 @@ void Garage::CreateScene()
 }
 
 
-void Garage::Update(float deltaTime)
+void GarageScene::Update(float deltaTime)
 {
     // Call base class update to handle UI
     // mMenuUI->HandleKeyPress(deltaTime);
 }
 
-void Garage::Draw()
+void GarageScene::Draw()
 {
 
 }
