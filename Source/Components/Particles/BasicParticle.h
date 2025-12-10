@@ -21,6 +21,7 @@ public:
     void SetFadeOut(bool fade) { mFadeOut = fade; }
     void SetViscosity(float viscosity) { mViscosity = viscosity; }
     void SetStretchWithVelocity(bool stretch);
+    void SetBaseScale(const Vector3 scale) { mBaseScale = scale; }
 
 private:
     class ParticleMeshComponent* mMeshComponent;
@@ -32,4 +33,6 @@ private:
     float mInitialLifetime;
     float mViscosity;
     bool mStretchWithVelocity = false;
+
+    Vector3 mBaseScale = Vector3(10.0f, 10.0f, 10.0f);
 };
