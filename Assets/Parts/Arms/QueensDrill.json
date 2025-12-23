@@ -3,8 +3,14 @@
   "slot": "LeftArm",
   "meshPath": "../Assets/Robots/BeaBee/BeaBeeLeftArm.gpmesh",
   "maxHP": 10,
-  "skill": "Punch",
-  "damage": 50,
+  "damage": 100,
   "range": 1,
+  "skillPattern": "LineStraight",
+
+  "areaSize": 2,
+  "areaWidth": 1,
+
+  "minRange": 1,
+  "isBreakable": true,
   "description": "Ferrão extremamente afiado. Ataque corpo a corpo."
 }

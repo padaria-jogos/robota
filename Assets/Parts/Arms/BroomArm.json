@@ -3,8 +3,14 @@
   "slot": "LeftArm",
   "meshPath": "../Assets/Robots/Robota/RobotaLeftArm.gpmesh",
   "maxHP": 10,
-  "skill": "Punch",
   "damage": 25,
   "range": 1,
+  "skillPattern": "LineStraight",
+
+  "areaSize": 2,
+  "areaWidth": 1,
+
+  "minRange": 1,
+  "isBreakable": true,
   "description": "Uma vassoura velha mas confiável. Ataque corpo a corpo."
 }

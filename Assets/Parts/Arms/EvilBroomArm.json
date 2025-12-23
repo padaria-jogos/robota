@@ -1,10 +1,14 @@
 {
-  "name": "Robota Broom",
+  "name": "Evil Robota Broom",
   "slot": "LeftArm",
   "meshPath": "../Assets/Robots/EvilRobota/EvilRobotaLeftArm.gpmesh",
   "maxHP": 10,
   "skill": "Punch",
   "damage": 75,
   "range": 1,
-  "description": "Uma vassoura velha mas confiável. Ataque corpo a corpo."
+  "skillPattern": "SingleTile",
+  "patternRadius": 0,
+  "patternWidth": 0,
+  "minRange": 1,
+  "isBreakable": true
 }

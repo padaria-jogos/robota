@@ -1,10 +1,14 @@
 {
-  "name": "Robota Dustpan",
+  "name": "Evil Robota Dustpan",
   "slot": "RightArm",
   "meshPath": "../Assets/Robots/EvilRobota/EvilRobotaRightArm.gpmesh",
   "maxHP": 20,
   "skill": "Missile",
   "damage": 50,
-  "range": 2,
+  "range": 5,
+  "patternRadius": 0,
+  "patternWidth": 0,
+  "minRange": 1,
+  "isBreakable": true,
   "description": "Lança projéteis de lixo reciclado a longa distância."
 }

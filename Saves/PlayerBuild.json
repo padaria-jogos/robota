@@ -2,44 +2,69 @@
   "name": "Robota",
   "parts": {
     "Head": {
+      "areaSize": 0,
+      "areaWidth": 0,
       "damage": 0,
+      "description": "Cabeça padrão com capacidade de auto-reparo básico.",
+      "isBreakable": false,
       "maxHP": 30,
       "meshPath": "../Assets/Robots/Robota/RobotaHead.gpmesh",
+      "minRange": 1,
       "name": "Robota Head",
       "range": 0,
-      "skill": "Repair"
+      "skillPattern": "SingleTile"
     },
     "LeftArm": {
+      "areaSize": 0,
+      "areaWidth": 0,
       "damage": 25,
+      "description": "Uma vassoura velha mas confiável. Ataque corpo a corpo.",
+      "isBreakable": true,
       "maxHP": 10,
       "meshPath": "../Assets/Robots/Robota/RobotaLeftArm.gpmesh",
+      "minRange": 1,
       "name": "Robota Broom",
       "range": 1,
-      "skill": "Punch"
+      "skillPattern": "SingleTile"
     },
     "Legs": {
+      "areaSize": 0,
+      "areaWidth": 0,
       "damage": 0,
+      "description": "Rodinhas enferrujadas. Dá pro gasto.",
+      "isBreakable": false,
       "maxHP": 20,
       "meshPath": "../Assets/Robots/Robota/RobotaLeg.gpmesh",
+      "minRange": 1,
       "name": "Robota Legs",
       "range": 2,
-      "skill": "None"
+      "skillPattern": "SingleTile"
     },
     "RightArm": {
+      "areaSize": 0,
+      "areaWidth": 0,
       "damage": 250,
+      "description": "Lança projéteis com explosão em área.",
+      "isBreakable": true,
       "maxHP": 20,
       "meshPath": "../Assets/Robots/Robota/RobotaRightArm.gpmesh",
+      "minRange": 1,
       "name": "Robota Dustpan",
-      "range": 2,
-      "skill": "Missile"
+      "range": 5,
+      "skillPattern": "SingleTile"
     },
     "Torso": {
+      "areaSize": 0,
+      "areaWidth": 0,
       "damage": 0,
+      "description": "",
+      "isBreakable": false,
       "maxHP": 50,
       "meshPath": "../Assets/Robots/Robota/RobotaTorso.gpmesh",
+      "minRange": 1,
       "name": "Trashcan Chest",
       "range": 0,
-      "skill": "None"
+      "skillPattern": "SingleTile"
     }
   }
 }

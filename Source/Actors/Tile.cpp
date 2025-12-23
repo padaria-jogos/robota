@@ -50,6 +50,9 @@ void Tile::UpdateTexture()
             case TileType::Attack:
                 textureName = "../Assets/TileSelectRed.png";
                 break;
+            case TileType::AoE:
+                textureName = "../Assets/TileSelectWarning.png";
+                break;
             default: // Default
                 textureName = "../Assets/TileSelectStd.png";
                 break;
@@ -63,6 +66,9 @@ void Tile::UpdateTexture()
                 break;
             case TileType::Attack:
                 textureName = "../Assets/TileRed.png";
+                break;
+            case TileType::AoE:
+                textureName = "../Assets/TileWarning.png";
                 break;
             default: // Default
                 textureName = "../Assets/TileGrid.png";

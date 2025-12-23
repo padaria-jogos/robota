@@ -20,6 +20,7 @@
 #include "UI/Screens/ActionSelection.h"
 #include "IA/IA.h"
 #include "ParticleManager.h"
+#include "Actors/SkillSystem.h"
 
 // IDs dos tiles no CSV
 enum TileID {
@@ -190,6 +191,18 @@ class Level
         // IA simples para testar o fluxo do jogo
         void CalculateEnemyAction();
         void ResolveTurn();
+
+        // Novo sistema de habilidades
+        SkillData GetSkillDataForPart(PartSlot slot, Robot* robot = nullptr);
+        void ResolveSkillAttack(Robot* attacker, const SkillData& skill, 
+                               int targetX, int targetY, PartSlot slot);
+        void UpdateAoEPreview();
+
+        // Preview de tiles afetados
+        void UpdateSkillPreview(int cursorX, int cursorY, const SkillData& skill);
+        void ClearSkillPreview();
+        
+        std::vector<AffectedTile> mCurrentPreviewTiles;
 
         ParticleManager* mParticleManager;
 };

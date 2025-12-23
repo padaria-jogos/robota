@@ -3,8 +3,14 @@
   "slot": "RightArm",
   "meshPath": "../Assets/Robots/BeaBee/BeaBeeRightArm.gpmesh",
   "maxHP": 10,
-  "skill": "Missile",
   "damage": 20,
-  "range": 3,
+  "range": 4,
+  "skillPattern": "Explosion",
+
+  "areaSize": 2,
+  "areaWidth": 0,
+
+  "minRange": 1,
+  "isBreakable": true,
   "description": "Lança projéteis de mel a longa distância deixando o chão pegajoso."
 }

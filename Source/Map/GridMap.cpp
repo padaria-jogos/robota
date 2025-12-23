@@ -237,10 +237,14 @@ std::vector<TileNode> GridMap::GetAttackableTiles(int startX, int startY, int mi
 
 void GridMap::ClearTileStates()
 {
-    // Apenas limpa os overlays visuais temporários (Path e Attack)
+    // Limpa todos os overlays visuais temporários
     for (auto* tile : mTiles) {
         TileType currentType = tile->GetType();
-        if (currentType == TileType::Path || currentType == TileType::Attack) {
+
+        if (currentType == TileType::Path ||
+            currentType == TileType::Attack ||
+            currentType == TileType::AoE)
+        {
             tile->SetTileType(TileType::Default);
         }
     }

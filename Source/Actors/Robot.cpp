@@ -107,30 +107,28 @@ bool Robot::CanUseSkill(PartSlot slot) const
         return false;
     }
 
-    if (mParts[index].skill == SkillType::None) return false;
-
     return true;
 }
 
 void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
 {
     if (!CanUseSkill(slotUsed)) return;
+    
     int damageDealt = mParts[(int)slotUsed].damage;
     std::string partName = mParts[(int)slotUsed].name;
-    SkillType skillType = mParts[(int)slotUsed].skill;
+    SkillPattern skillPattern = mParts[(int)slotUsed].skillPattern;
 
     SDL_Log("ATACANDO TILE (%d, %d) com %s!", targetX, targetY, partName.c_str());
 
-    // Verificar o que tem na grid
     GridMap* grid = mGame->GetLevel()->GetGrid();
     bool attackingSelf = (targetX == mGridX && targetY == mGridY);
     Actor* target = grid->GetUnitAt(targetX, targetY);
 
-    // Lançar projétil
-    if (skillType == SkillType::Missile && !attackingSelf) {
+    // Lançar projétil para padrões de explosão
+    if (skillPattern == SkillPattern::Explosion && !attackingSelf) {
         Vector3 startPos = GetPosition();
         Vector3 targetPos = grid->GetWorldPosition(targetX, targetY);
-        targetPos.z = startPos.z;  // Mesma altura
+        targetPos.z = startPos.z;
 
         Vector3 direction = Vector3::Normalize(targetPos - startPos);
 
@@ -154,28 +152,24 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
         return;
     }
 
-    // Calcula direção do ataque (de mim para o alvo)
     Vector3 attackDir = Vector3::Normalize(
         grid->GetWorldPosition(targetX, targetY) - GetPosition()
     );
     
-    // Verifica se é um Robot
     Robot* victim = dynamic_cast<Robot*>(target);
     if (victim)
     {
-        // Sorteia uma parte aleatória para receber o dano  TODO: Futuramente conseguir decidir onde o irá mirar
         int randomPart = Random::GetIntRange(0, (int)PartSlot::Count - 1);
         PartSlot targetSlot = (PartSlot)randomPart;
         
         SDL_Log("%s ATACOU %s visando %s!", GetName().c_str(), victim->GetName().c_str(), GetSlotName(targetSlot).c_str());
 
-        // Efeito baseado no ataque
-        if (skillType == SkillType::Punch) {
-            // Slash para ataque melee
+        // Efeito visual baseado no padrão
+        if (skillPattern == SkillPattern::SingleTile) {
             SlashConfig slashConfig;
             slashConfig.color = (mTeam == Team::Player) ? 
-                Vector3(0.3f, 0.8f, 1.0f) :    // Azul ciano para player
-                Vector3(1.0f, 0.3f, 0.3f);     // Vermelho para inimigo
+                Vector3(0.3f, 0.8f, 1.0f) :
+                Vector3(1.0f, 0.3f, 0.3f);
             slashConfig.particleCount = 40;
             slashConfig.speed = 1000.0f;
             slashConfig.lifetime = 0.25f;
@@ -187,7 +181,6 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
                 targetX, targetY, grid, attackDir, slashConfig
             );
         } else {
-            // Explosão para ataques de projétil/míssil
             ExplosionConfig expConfig;
             expConfig.color = Vector3(1.0f, 0.5f, 0.0f);
             expConfig.particleCount = 100;
@@ -206,14 +199,12 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
         return;
     }
     
-    // Verifica se é um Destructible
     Destructible* destructible = dynamic_cast<Destructible*>(target);
     if (destructible)
     {
         SDL_Log("%s DESTRUIU um objeto!", GetName().c_str());
 
-        // Slash para melee, explosão para resto
-        if (skillType == SkillType::Punch) {
+        if (skillPattern == SkillPattern::SingleTile) {
             SlashConfig slashConfig;
             slashConfig.color = Vector3(0.9f, 0.9f, 0.9f);
             slashConfig.particleCount = 50;
@@ -245,7 +236,6 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
         grid->SetUnitAt(nullptr, targetX, targetY);
         grid->SetTerrainType(targetX, targetY, TerrainType::Floor);
         
-        // Limpa qualquer efeito de partículas que estava no tile
         mGame->GetLevel()->GetParticleManager()->StopHoneyDripAtGrid(targetX, targetY);
         mGame->GetLevel()->GetParticleManager()->StopFireAtGrid(targetX, targetY);
     }
@@ -335,17 +325,6 @@ bool Robot::EquipPartFromJson(const std::string& partJsonPath)
         return false;
     }
 
-    // Helper para converter string de skill para enum
-    auto stringToSkillType = [](const std::string& str) -> SkillType {
-        if (str == "Punch") return SkillType::Punch;
-        if (str == "Missile") return SkillType::Missile;
-        if (str == "Dash") return SkillType::Dash;
-        if (str == "Shield") return SkillType::Shield;
-        if (str == "Repair") return SkillType::Repair;
-        return SkillType::None;
-    };
-
-    // Helper para converter string de slot para enum
     auto stringToPartSlot = [](const std::string& str) -> PartSlot {
         if (str == "Torso") return PartSlot::Torso;
         if (str == "Head") return PartSlot::Head;
@@ -355,23 +334,39 @@ bool Robot::EquipPartFromJson(const std::string& partJsonPath)
         return PartSlot::Null;
     };
 
+    auto stringToSkillPattern = [](const std::string& str) -> SkillPattern {
+        if (str == "SingleTile") return SkillPattern::SingleTile;
+        if (str == "Explosion") return SkillPattern::Explosion;
+        if (str == "LineStraight") return SkillPattern::LineStraight;
+        if (str == "Cross") return SkillPattern::Cross;
+        if (str == "Diamond") return SkillPattern::Diamond;
+        return SkillPattern::SingleTile;
+    };
+
     PartSlot slot = stringToPartSlot(j["slot"].get<std::string>());
     if (slot == PartSlot::Null) {
         SDL_Log("ERRO: Slot inválido em %s", partJsonPath.c_str());
         return false;
     }
 
-    RobotPart part(
-        j["name"].get<std::string>(),
-        j["meshPath"].get<std::string>(),
-        j["maxHP"].get<int>(),
-        stringToSkillType(j["skill"].get<std::string>()),
-        j["damage"].get<int>(),
-        j["range"].get<int>()
-    );
+    RobotPart part;
+    part.name = j["name"].get<std::string>();
+    part.meshPath = j["meshPath"].get<std::string>();
+    part.maxHP = j["maxHP"].get<int>();
+    part.currentHP = part.maxHP;
+    part.damage = j["damage"].get<int>();
+    part.range = j["range"].get<int>();
+    part.description = j.value("description", "");
+    part.isBroken = false;
+    
+    // Novos campos de skill
+    part.minRange = j.value("minRange", 1);
+    part.skillPattern = stringToSkillPattern(j.value("skillPattern", "SingleTile"));
+    part.areaSize = j.value("areaSize", 0);
+    part.areaWidth = j.value("areaWidth", 0);
+    part.isBreakable = j.value("isBreakable", false);
 
     EquipPart(slot, part);
-    // SDL_Log("Parte '%s' equipada no slot %s", part.name.c_str(), j["slot"].get<std::string>().c_str());
     return true;
 }
 
@@ -391,22 +386,10 @@ bool Robot::LoadFromJson(const std::string& jsonPath)
         return false;
     }
 
-    // Nome do robô
     if (j.contains("name")) {
         SetName(j["name"].get<std::string>());
     }
 
-    // Helper para converter string de skill para enum
-    auto stringToSkillType = [](const std::string& str) -> SkillType {
-        if (str == "Punch") return SkillType::Punch;
-        if (str == "Missile") return SkillType::Missile;
-        if (str == "Dash") return SkillType::Dash;
-        if (str == "Shield") return SkillType::Shield;
-        if (str == "Repair") return SkillType::Repair;
-        return SkillType::None;
-    };
-
-    // Helper para converter string de slot para enum
     auto stringToPartSlot = [](const std::string& str) -> PartSlot {
         if (str == "Torso") return PartSlot::Torso;
         if (str == "Head") return PartSlot::Head;
@@ -416,7 +399,15 @@ bool Robot::LoadFromJson(const std::string& jsonPath)
         return PartSlot::Null;
     };
 
-    // Carregar partes
+    auto stringToSkillPattern = [](const std::string& str) -> SkillPattern {
+        if (str == "SingleTile") return SkillPattern::SingleTile;
+        if (str == "Explosion") return SkillPattern::Explosion;
+        if (str == "LineStraight") return SkillPattern::LineStraight;
+        if (str == "Cross") return SkillPattern::Cross;
+        if (str == "Diamond") return SkillPattern::Diamond;
+        return SkillPattern::SingleTile;
+    };
+
     if (j.contains("parts")) {
         for (auto& [slotName, partData] : j["parts"].items()) {
             PartSlot slot = stringToPartSlot(slotName);
@@ -425,23 +416,30 @@ bool Robot::LoadFromJson(const std::string& jsonPath)
                 continue;
             }
 
-            // Se partData é uma string, é um caminho para outro JSON
             if (partData.is_string()) {
                 std::string partPath = partData.get<std::string>();
                 if (!EquipPartFromJson(partPath)) {
                     SDL_Log("ERRO: Falha ao carregar parte de %s", partPath.c_str());
                 }
             }
-            // Se é um objeto, carrega inline (compatibilidade com formato antigo)
             else if (partData.is_object()) {
-                RobotPart part(
-                    partData["name"].get<std::string>(),
-                    partData["meshPath"].get<std::string>(),
-                    partData["maxHP"].get<int>(),
-                    stringToSkillType(partData["skill"].get<std::string>()),
-                    partData["damage"].get<int>(),
-                    partData["range"].get<int>()
-                );
+                RobotPart part;
+                part.name = partData["name"].get<std::string>();
+                part.meshPath = partData["meshPath"].get<std::string>();
+                part.maxHP = partData["maxHP"].get<int>();
+                part.currentHP = part.maxHP;
+                part.damage = partData["damage"].get<int>();
+                part.range = partData["range"].get<int>();
+                part.description = partData.value("description", "");
+                part.isBroken = false;
+                
+                // Novos campos de skill
+                part.minRange = partData.value("minRange", 1);
+                part.skillPattern = stringToSkillPattern(partData.value("skillPattern", "SingleTile"));
+                part.areaSize = partData.value("areaSize", 0);
+                part.areaWidth = partData.value("areaWidth", 0);
+                part.isBreakable = partData.value("isBreakable", false);
+                
                 EquipPart(slot, part);
             }
         }
@@ -453,19 +451,17 @@ bool Robot::LoadFromJson(const std::string& jsonPath)
 
 bool Robot::SaveToJson(const std::string& jsonPath)
 {
-    // Helper para converter SkillType para string
-    auto skillTypeToString = [](SkillType skill) -> std::string {
-        switch (skill) {
-            case SkillType::Punch: return "Punch";
-            case SkillType::Missile: return "Missile";
-            case SkillType::Dash: return "Dash";
-            case SkillType::Shield: return "Shield";
-            case SkillType::Repair: return "Repair";
-            default: return "None";
+    auto skillPatternToString = [](SkillPattern pattern) -> std::string {
+        switch (pattern) {
+            case SkillPattern::SingleTile: return "SingleTile";
+            case SkillPattern::Explosion: return "Explosion";
+            case SkillPattern::LineStraight: return "LineStraight";
+            case SkillPattern::Cross: return "Cross";
+            case SkillPattern::Diamond: return "Diamond";
+            default: return "SingleTile";
         }
     };
 
-    // Helper para converter PartSlot para string
     auto partSlotToString = [](PartSlot slot) -> std::string {
         switch (slot) {
             case PartSlot::Torso: return "Torso";
@@ -480,12 +476,10 @@ bool Robot::SaveToJson(const std::string& jsonPath)
     nlohmann::json j;
     j["name"] = mName;
 
-    // Salvar todas as partes equipadas
     for (int i = 1; i < (int)PartSlot::Count; i++) {
         PartSlot slot = (PartSlot)i;
         const RobotPart& part = mParts[i];
         
-        // Pular partes vazias/quebradas se quiser
         if (part.name == "Empty") continue;
 
         std::string slotName = partSlotToString(slot);
@@ -493,13 +487,17 @@ bool Robot::SaveToJson(const std::string& jsonPath)
             {"name", part.name},
             {"meshPath", part.meshPath},
             {"maxHP", part.maxHP},
-            {"skill", skillTypeToString(part.skill)},
             {"damage", part.damage},
-            {"range", part.range}
+            {"range", part.range},
+            {"description", part.description},
+            {"skillPattern", skillPatternToString(part.skillPattern)},
+            {"minRange", part.minRange},
+            {"areaSize", part.areaSize},
+            {"areaWidth", part.areaWidth},
+            {"isBreakable", part.isBreakable}
         };
     }
 
-    // Escrever arquivo
     std::ofstream file(jsonPath);
     if (!file.is_open()) {
         SDL_Log("ERRO: Não foi possível salvar robô em: %s", jsonPath.c_str());

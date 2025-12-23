@@ -10,7 +10,8 @@
 enum class TileType {
     Default,    // Tile padrão
     Path,       // Overlay azul (indica movimento possível)
-    Attack      // Overlay vermelho (indica ataque possível)
+    Attack,      // Overlay vermelho (indica ataque possível)
+    AoE         // Overlay amarelo (indica area de efeito)
 };
 
 class Tile : public Actor {

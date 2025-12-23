@@ -41,6 +41,7 @@ Level0::Level0(Game* game, HUD *hud) : Level(game, hud)
     mPlayer->LoadFromJson("../Assets/Robots/Robota/Robota.json");
     mPlayer->SaveToJson("../Saves/PlayerBuild.json"); // Salvar build atual do player
     mPlayer->LoadFromJson("../Saves/PlayerBuild.json"); // Recarregar build
+    mPlayer->LoadFromJson("../Assets/Robots/BeaBee/BeaBee.json");
     mPlayer->SetRotation(Vector3(0.0f, 0.0f, Math::ToRadians(-180.0f)));
     
     // Setup do Enemy - carrega do JSON

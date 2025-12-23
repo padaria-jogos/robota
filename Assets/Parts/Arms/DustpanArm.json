@@ -3,8 +3,12 @@
   "slot": "RightArm",
   "meshPath": "../Assets/Robots/Robota/RobotaRightArm.gpmesh",
   "maxHP": 20,
-  "skill": "Missile",
   "damage": 250,
-  "range": 2,
-  "description": "Lança projéteis de lixo reciclado a longa distância."
+  "range": 5,
+  "skillPattern": "SingleTile",
+  "patternRadius": 0,
+  "patternWidth": 0,
+  "minRange": 1,
+  "isBreakable": true,
+  "description": "Lança projéteis com explosão em área."
 }

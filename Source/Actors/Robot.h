@@ -10,21 +10,14 @@
 
 #pragma once
 
-#include <string>
 #include "Actor.h"
-#include "Components/Drawing/MeshComponent.h"
-#include "Components/Lighting/PointLightComponent.h"
+#include "../Components/Drawing/MeshComponent.h"
+#include "../Components/Lighting/PointLightComponent.h"
+#include "SkillSystem.h"
+#include <vector>
+#include <string>
 
 // TODO: Murilo olha aqui dps os tipos mecanicas etc
-enum class SkillType {
-    None,
-    Punch,
-    Missile,
-    Dash,
-    Shield,
-    Repair
-};
-
 enum class Team {
     Player,
     Enemy,
@@ -47,25 +40,42 @@ enum PartSlot {
     Count
 };
 
-struct RobotPart {
+struct RobotPart
+{
     std::string name;
     std::string meshPath;
-
-    // Status
     int maxHP;
     int currentHP;
-    bool isBroken;
 
-    SkillType skill;
     int damage;
     int range;
-
-    RobotPart()
-        : name("Empty"), maxHP(0), currentHP(0), isBroken(true), skill(SkillType::None), damage(0), range(0) {}
-
-    RobotPart(std::string name, std::string path, int hp, SkillType sk, int dmg, int rng)
-        : name(name), meshPath(path), maxHP(hp), currentHP(hp), isBroken(false), skill(sk), damage(dmg), range(rng) {}
-
+    std::string description;
+    bool isBroken;
+    
+    // Sistema de skills - baseado apenas em padrão
+    int minRange;
+    SkillPattern skillPattern;
+    int areaSize;
+    int areaWidth;
+    bool isBreakable;
+    
+    // Constructor com valores default
+    RobotPart() 
+        : name(""),
+          meshPath(""),
+          maxHP(0),
+          currentHP(0),
+          damage(0),
+          range(0),
+          description(""),
+          isBroken(false),
+          minRange(1),
+          skillPattern(SkillPattern::SingleTile),
+          areaSize(0),
+          areaWidth(0),
+          isBreakable(false)
+    {
+    }
 };
 
 class Robot : public Actor{

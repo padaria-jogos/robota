@@ -19,6 +19,7 @@
 #include "UI/Screens/Win.h"
 #include "UI/Screens/MovementSelection.h"
 #include "UI/Screens/GaveUpSelection.h"
+#include "Actors/SkillSystem.h"
 
 // Constantes de altura Z para posicionamento de objetos
 namespace {
@@ -85,14 +86,15 @@ void Level::SetWorldLightIntensity(float intensity)
 
 void Level::MoveCursor(int xOffset, int yOffset)
 {
-    // não move quando a tela de seleção de habilidade está mostrando
+    // Bloqueia movimento se estiver apenas escolhendo a skill no menu (sem mirar)
     if (mBattleState == BattleState::SkillSelection)
         return;
 
-    if (mBattleState == BattleState::Exploration)
-        return;
+    // NOTA: Comentei isso aqui pois geralmente na exploração você quer mover o cursor
+    // para escolher para onde andar. Se descomentar, o cursor trava no player.
+    // if (mBattleState == BattleState::Exploration)
+    //    return;
 
-    // define a nova posição absoluta de acordo com offset
     if (!mGrid || !mCursor) return;
 
     int currentX = mCursor->GetGridX();
@@ -109,6 +111,8 @@ void Level::MoveCursor(int xOffset, int yOffset)
     else if (newY >= mGrid->GetRows()) newY = mGrid->GetRows() - 1;
 
     bool cursorMoved = newX != currentX || newY != currentY;
+
+    // Move o cursor visual e logicamente
     MoveInGrid(mCursor, newX, newY);
 
     if (cursorMoved)
@@ -117,6 +121,14 @@ void Level::MoveCursor(int xOffset, int yOffset)
         if (audio)
         {
             audio->PlaySound("vgmenuhighlight.wav");
+        }
+
+        // --- NOVO: ATUALIZA O PREVIEW DA ÁREA DE EFEITO (AoE) ---
+        // Se estamos mirando (TargetSelection), precisamos pintar de amarelo
+        // onde o ataque vai acertar conforme o cursor anda.
+        if (mBattleState == BattleState::TargetSelection)
+        {
+            UpdateAoEPreview();
         }
     }
 }
@@ -268,7 +280,7 @@ void Level::HandleExplorationPhase()
             SetSelectedSlot(PartSlot::RightArm);
             return;
         }
-        
+
         SetBattleState(BattleState::MoveSelection);
         // Ghost
         SpawnGhost();
@@ -346,7 +358,7 @@ void Level::HandleSkillSelectionPhase(PartSlot slot)
     mGrid->ClearTileStates();
 
     int range = mPlayer->GetPartRange(slot);
-    
+
     // Se stunned, permite atacar próprio tile (minRange = 0)
     int minRange = mPlayer->HasStatusEffect(StatusEffect::Stunned) ? 0 : 1;
 
@@ -366,7 +378,7 @@ void Level::HandleSkillSelectionPhase(PartSlot slot)
     }
 
     SetBattleState(BattleState::TargetSelection);
-    
+
     if (mPlayer->HasStatusEffect(StatusEffect::Stunned)) {
         NotifyPlayer("ROBÔ PRESO! Ataque no tile atual para se libertar!");
     }
@@ -382,15 +394,18 @@ void Level::HandleSkillSelectionPhase(PartSlot slot)
 void Level::HandleTargetingPhase()
 {
     Tile* targetTile = mGrid->GetTileAt(mCursor->GetGridX(), mCursor->GetGridY());
+    bool isValidTarget = targetTile &&
+                         (targetTile->GetType() == TileType::Attack ||
+                          targetTile->GetType() == TileType::AoE);
 
-    if (targetTile && targetTile->GetType() == TileType::Attack) {
+    if (isValidTarget) {
         // Caso especial: Atacando o próprio tile (mel) para se livrar do stun
         if (mPlayer->HasStatusEffect(StatusEffect::Stunned)) {
             int px = mPlayer->GetGridX();
             int py = mPlayer->GetGridY();
             int cx = mCursor->GetGridX();
             int cy = mCursor->GetGridY();
-            
+
             if (px == cx && py == cy) {
                 // Atacou o próprio tile com mel
                 TerrainType terrainType = mGrid->GetTerrainType(px, py);
@@ -401,7 +416,7 @@ void Level::HandleTargetingPhase()
 
                     // Remove o mel do tile (muda o tipo base)
                     mGrid->SetTerrainType(px, py, TerrainType::Floor);
-                    
+
                     // Troca a textura do Block para chão normal
                     Actor* floorActor = mGrid->GetFloorBlock(px, py);
                     if (floorActor) {
@@ -414,10 +429,10 @@ void Level::HandleTargetingPhase()
                     mPlayer->ClearLastEffectTile();
 
                     NotifyPlayer("Robô foi liberado.");
-                    
+
                     mGrid->ClearTileStates();
                     SetBattleState(BattleState::Exploration);
-                    
+
                     // Inimigo age sozinho
                     CalculateEnemyAction();
                     ResolveTurn();
@@ -425,7 +440,7 @@ void Level::HandleTargetingPhase()
                 }
             }
         }
-        
+
         mPlayerTurn.hasAction = true;
         mPlayerTurn.skillSlot = GetSelectedSlot();
         mPlayerTurn.targetX = mCursor->GetGridX();
@@ -462,14 +477,14 @@ void Level::HandleUnitDeath(Robot*& robot)
 void Level::HandleCancel()
 {
     if (!mPlayer) return;
-    
+
     // Se está stunned, não pode cancelar (deve atacar o mel)
-    if (mPlayer->HasStatusEffect(StatusEffect::Stunned) && 
+    if (mPlayer->HasStatusEffect(StatusEffect::Stunned) &&
         mBattleState == BattleState::SkillSelection) {
         NotifyPlayer("ROBÔ PRESO! Ataque no tile atual para se libertar!");
         return;
     }
-    
+
     // UNDO SELECTION
     switch (mBattleState) {
         case BattleState::MoveSelection:
@@ -619,24 +634,12 @@ void Level::UpdateIARobotStats(RobotStats *playerStats, RobotStats *enemyStats)
         outStats->name = robot->GetName();
         outStats->position = Vector2(robot->GetGridX(), robot->GetGridY());
 
-        auto ConvertSkill = [&](SkillType t) -> std::string {
-            switch (t) {
-                case SkillType::Punch:  return "Punch";
-                case SkillType::Missile:return "Missile";
-                case SkillType::Dash:   return "Dash";
-                case SkillType::Shield: return "Shield";
-                case SkillType::Repair: return "Repair";
-                default: return "None";
-            }
-        };
-
         auto FillPart = [&](const RobotPart& p, PartStats& ps)
         {
             ps.maxHP     = p.maxHP;
             ps.currentHP = p.currentHP;
             ps.damage    = p.damage;
             ps.range     = p.range;
-            ps.skill     = ConvertSkill(p.skill);
             ps.name      = p.name;
         };
 
@@ -1085,7 +1088,7 @@ void Level::ProcessTileEffects()
             }
         }
     }
-    
+
     // Processa efeitos para o Enemy TODO: Lembrar de considerar os status na IA
     if (mEnemy && !mEnemy->IsDead()) {
         int ex = mEnemy->GetGridX();
@@ -1136,7 +1139,7 @@ void Level::ProcessTileEffects()
                     HandleUnitDeath(mEnemy);
                 }
                     break;
-                    
+
                 default:
                     mParticleManager->StopHoneyDripAtGrid(ex, ey);
                     mParticleManager->StopFireAtGrid(ex, ey);
@@ -1156,8 +1159,8 @@ void Level::FinishResolution() {
     TurnAction* act2 = nullptr;
 
     if (mEnemy) {
-        int pSpeed = 10; // mPlayer->GetSpeed(); TODO: Definir forma de decidir quem bate primeiro
-        int eSpeed = 8;  // mEnemy->GetSpeed();
+        int pSpeed = 10;
+        int eSpeed = 8;
 
         if (pSpeed >= eSpeed) {
             first = mPlayer; second = mEnemy;
@@ -1173,9 +1176,9 @@ void Level::FinishResolution() {
 
     // Primeiro Ataca
     if (first && act1->hasAction && !first->IsDead()) {
-        first->AttackLocation(act1->targetX, act1->targetY, act1->skillSlot);
+        SkillData skill = GetSkillDataForPart(act1->skillSlot, first);
+        ResolveSkillAttack(first, skill, act1->targetX, act1->targetY, act1->skillSlot);
 
-        // Checa mortes
         if (mPlayer) HandleUnitDeath(mPlayer);
         if (mEnemy)  HandleUnitDeath(mEnemy);
     }
@@ -1186,7 +1189,8 @@ void Level::FinishResolution() {
     else if (second == mEnemy) secondAlive = (mEnemy != nullptr);
 
     if (secondAlive && second && act2 && act2->hasAction && !second->IsDead()) {
-        second->AttackLocation(act2->targetX, act2->targetY, act2->skillSlot);
+        SkillData skill = GetSkillDataForPart(act2->skillSlot, second);
+        ResolveSkillAttack(second, skill, act2->targetX, act2->targetY, act2->skillSlot);
 
         if (mPlayer) HandleUnitDeath(mPlayer);
         if (mEnemy)  HandleUnitDeath(mEnemy);
@@ -1198,6 +1202,10 @@ void Level::FinishResolution() {
     // Limpeza
     mPlayerTurn = TurnAction();
     mEnemyTurn = TurnAction();
+
+    if (mGrid) {
+        mGrid->ClearTileStates(); // Remove qualquer vermelho/amarelo que sobrou
+    }
 
     // volta com cursor para posição do player
     if (mPlayer)
@@ -1254,7 +1262,7 @@ bool Level::LoadLevelConfig(const std::string& jsonPath, LevelConfig& config)
     if (j.contains("csv")) {
         config.csvPath = j["csv"].get<std::string>();
     }
-    
+
     if (j.contains("theme")) {
         auto theme = j["theme"];
         if (theme.contains("floor")) {
@@ -1270,19 +1278,19 @@ bool Level::LoadLevelConfig(const std::string& jsonPath, LevelConfig& config)
             config.fireTexture = theme["fire"].get<std::string>();
         }
     }
-    
+
     if (j.contains("destructibles")) {
         for (auto& mesh : j["destructibles"]) {
             config.destructibleMeshes.push_back(mesh.get<std::string>());
         }
     }
-    
+
     if (j.contains("music")) {
         config.musicPath = j["music"].get<std::string>();
     }
 
-    SDL_Log("Config carregado: CSV=%s, Floor=%s, Wall=%s, Music=%s", 
-            config.csvPath.c_str(), 
+    SDL_Log("Config carregado: CSV=%s, Floor=%s, Wall=%s, Music=%s",
+            config.csvPath.c_str(),
             config.floorTexture.c_str(),
             config.wallTexture.c_str(),
             config.musicPath.c_str());
@@ -1294,7 +1302,7 @@ void Level::LoadLevel(const LevelConfig& config)
 {
     // Salva a config
     mLevelConfig = config;
-    
+
     std::ifstream file(config.csvPath);
     if (!file.is_open()) {
         SDL_Log("ERRO FATAL: Nao foi possivel abrir o level: %s", config.csvPath.c_str());
@@ -1335,7 +1343,7 @@ void Level::LoadLevel(const LevelConfig& config)
     // Calcular bounding box da área útil (células != -1 e != 0)
     int minX = cols, maxX = -1;
     int minY = rows, maxY = -1;
-    
+
     for (int y = 0; y < rows; y++) {
         for (int x = 0; x < cols; x++) {
             if (mapData[y][x] != -1 && mapData[y][x] != 0) {
@@ -1346,7 +1354,7 @@ void Level::LoadLevel(const LevelConfig& config)
             }
         }
     }
-    
+
     // Se não encontrou nenhuma célula válida, usa o mapa completo
     if (maxX < minX) {
         minX = 0;
@@ -1354,16 +1362,16 @@ void Level::LoadLevel(const LevelConfig& config)
         minY = 0;
         maxY = rows - 1;
     }
-    
+
     int gridRows = maxY - minY + 1;
     int gridCols = maxX - minX + 1;
 
     // Criar todos os Blocks (renderizados primeiro)
     SDL_Log("Criando Blocks de chao e paredes...");
-    
+
     // Armazena Blocks de chão e destrutíveis para guardar referências depois
     std::vector<std::pair<Vector2, Actor*>> floorBlockRefs;
-    
+
     for (int y = minY; y <= maxY; y++)
     {
         for (int x = minX; x <= maxX; x++)
@@ -1371,7 +1379,7 @@ void Level::LoadLevel(const LevelConfig& config)
             int tileID = mapData[y][x];
             int gridX = x - minX;
             int gridY = y - minY;
-            
+
             Vector3 basePos = Vector3(
                 (gridX - gridCols / 2.0f) * 500.0f + 250.0f,
                 (gridY - gridRows / 2.0f) * 500.0f + 250.0f,
@@ -1383,7 +1391,7 @@ void Level::LoadLevel(const LevelConfig& config)
                 case TILE_VOID:
                 case TILE_EMPTY:
                     break;
-                    
+
                 case TILE_FLOOR:
                 case TILE_PLAYER_SPAWN:
                 case TILE_ENEMY_SPAWN:
@@ -1395,7 +1403,7 @@ void Level::LoadLevel(const LevelConfig& config)
                     floorBlockRefs.emplace_back(Vector2(gridX, gridY), floor);
                 }
                 break;
-                
+
                 case TILE_HONEY:
                 {
                     auto* honeyFloor = new Block(mGame);
@@ -1405,7 +1413,7 @@ void Level::LoadLevel(const LevelConfig& config)
                     floorBlockRefs.emplace_back(Vector2(gridX, gridY), honeyFloor);
                 }
                 break;
-                
+
                 case TILE_FIRE:
                 {
                     auto* fireFloor = new Block(mGame);
@@ -1415,7 +1423,7 @@ void Level::LoadLevel(const LevelConfig& config)
                     floorBlockRefs.emplace_back(Vector2(gridX, gridY), fireFloor);
                 }
                 break;
-                
+
                 case TILE_DESTRUCTIBLE:
                 {
                     // Chão base
@@ -1424,30 +1432,30 @@ void Level::LoadLevel(const LevelConfig& config)
                     floor->SetScale(TILE_SCALE);
                     floor->SetTexture(mLevelConfig.floorTexture);
                     floorBlockRefs.emplace_back(Vector2(gridX, gridY), floor);
-                    
+
                     // Objeto destrutível em cima
                     if (!mLevelConfig.destructibleMeshes.empty()) {
                         auto* destructible = new Destructible(mGame);
-                        
+
                         // Usa mesma posição E escala do tile
                         Vector3 objPos = basePos;
                         objPos.z = -250; // acima e menor
-                        
+
                         destructible->SetPosition(objPos);
                         destructible->SetScale(TILE_SCALE);
-                        
+
                         // Escolhe um mesh aleatório da lista
                         int randomIndex = rand() % mLevelConfig.destructibleMeshes.size();
                         std::string meshPath = mLevelConfig.destructibleMeshes[randomIndex];
                         auto* mesh = mGame->GetRenderer()->GetMesh(meshPath);
                         destructible->SetMesh(mesh);
-                        
+
                         // Guarda referência para registrar no GridMap depois
                         floorBlockRefs.emplace_back(Vector2(gridX, gridY), destructible);
                     }
                 }
                 break;
-                
+
                 case TILE_WALL:
                 {
                     // Chão base (não metálico)
@@ -1455,7 +1463,7 @@ void Level::LoadLevel(const LevelConfig& config)
                     floor->SetPosition(basePos);
                     floor->SetScale(TILE_SCALE);
                     floor->SetTexture(mLevelConfig.floorTexture);
-                    
+
                     // Parede em cima (metálica)
                     auto* wall = new Block(mGame, 0.6f);
                     Vector3 wallPos = basePos;
@@ -1481,7 +1489,7 @@ void Level::LoadLevel(const LevelConfig& config)
 
     SDL_Log("Criando GridMap %dx%d e configurando tiles...", gridRows, gridCols);
     mGrid = new GridMap(mGame, gridRows, gridCols, 500.0f);
-    
+
     // Guardar referências dos Blocks no GridMap
     for (const auto& [pos, block] : floorBlockRefs) {
         mGrid->SetFloorBlock(pos.x, pos.y, block);
@@ -1495,7 +1503,7 @@ void Level::LoadLevel(const LevelConfig& config)
             int tileID = mapData[y][x];
             int gridX = x - minX;
             int gridY = y - minY;
-            
+
             Tile* tile = mGrid->GetTileAt(gridX, gridY);
 
             switch (tileID)
@@ -1516,28 +1524,28 @@ void Level::LoadLevel(const LevelConfig& config)
                     }
                     mGrid->SetTerrainType(gridX, gridY, TerrainType::Floor);
                     break;
-                
+
                 case TILE_WALL:
                     if (tile) {
                         tile->SetState(ActorState::Active);
                     }
                     mGrid->SetTerrainType(gridX, gridY, TerrainType::Wall);
                     break;
-                
+
                 case TILE_FIRE:
                     if (tile) {
                         tile->SetState(ActorState::Active);
                     }
                     mGrid->SetTerrainType(gridX, gridY, TerrainType::Fire);
                     break;
-                
+
                 case TILE_DESTRUCTIBLE:
                 {
                     if (tile) {
                         tile->SetState(ActorState::Active);
                     }
                     mGrid->SetTerrainType(gridX, gridY, TerrainType::Wall);  // Bloqueia movimento como parede
-                    
+
                     // Encontra o destrutível criado anteriormente para este gridX, gridY
                     for (const auto& [pos, actor] : floorBlockRefs) {
                         if (pos.x == gridX && pos.y == gridY) {
@@ -1549,7 +1557,7 @@ void Level::LoadLevel(const LevelConfig& config)
                     }
                 }
                 break;
-                
+
                 case TILE_PLAYER_SPAWN:
                     if (tile) {
                         tile->SetState(ActorState::Active);
@@ -1569,7 +1577,7 @@ void Level::LoadLevel(const LevelConfig& config)
                     mGrid->SetUnitAt(mEnemy, gridX, gridY);
                     MoveInGrid(mEnemy, gridX, gridY);
                     break;
-                
+
                 case TILE_HONEY:
                     if (tile) {
                         tile->SetState(ActorState::Active);
@@ -1590,4 +1598,190 @@ Level::~Level() {
     // Limpa ParticleManager
     delete mParticleManager;
     mParticleManager = nullptr;
+}
+
+SkillData Level::GetSkillDataForPart(PartSlot slot, Robot* robot)
+{
+    SkillData skill;
+
+    if (!robot) robot = mPlayer;  // Default para player se não especificado
+    if (!robot) return skill;
+
+    const RobotPart& part = robot->GetPart(slot);
+
+    // Carrega diretamente do RobotPart
+    skill.name = part.name;
+    skill.damage = part.damage;
+    skill.range = part.range;
+    skill.minRange = part.minRange;
+    skill.pattern = part.skillPattern;
+    skill.areaSize = part.areaSize;
+    skill.areaWidth = part.areaWidth;
+    skill.isBreakable = part.isBreakable;
+    skill.description = part.description;
+
+    return skill;
+}
+
+void Level::ResolveSkillAttack(
+    Robot* attacker,
+    const SkillData& skill,
+    int targetX,
+    int targetY,
+    PartSlot slotUsed
+)
+{
+    if (!attacker || !mGrid) return;
+
+    SDL_Log("=== RESOLVENDO ATAQUE: %s com %s ===",
+            attacker->GetName().c_str(),
+            skill.name.c_str());
+
+    // Calcula quais tiles serão afetados baseado no padrão
+    auto affectedTiles = SkillCalculator::GetAffectedTiles(
+        attacker->GetGridX(),
+        attacker->GetGridY(),
+        targetX,
+        targetY,
+        skill
+    );
+
+    SDL_Log("Padrão de ataque atingindo %zu tiles", affectedTiles.size());
+
+    int robotsDamaged = 0;
+    int destructiblesDestroyed = 0;
+
+    // Processa cada tile afetado
+    for (const auto& tile : affectedTiles)
+    {
+        int tx = tile.x;
+        int ty = tile.y;
+
+        // Verifica se está dentro da grid
+        if (tx < 0 || ty < 0 || tx >= mGrid->GetCols() || ty >= mGrid->GetRows())
+            continue;
+
+        // ---------- VERIFICAR ROBÔ INIMIGO ----------
+        Actor* unitAtTile = mGrid->GetUnitAt(tx, ty);
+        if (unitAtTile)
+        {
+            Robot* targetRobot = dynamic_cast<Robot*>(unitAtTile);
+
+            // Se é um robô e não é aliado
+            if (targetRobot && targetRobot->GetTeam() != attacker->GetTeam())
+            {
+                int damage = skill.damage;
+
+                // Determina qual parte foi atingida (simplificado: pernas por padrão)
+                PartSlot hitSlot = PartSlot::Legs;
+
+                targetRobot->TakeDamage(damage, hitSlot);
+                robotsDamaged++;
+
+                SDL_Log("  -> Robô '%s' atingido em (%d, %d) recebeu %d de dano",
+                        targetRobot->GetName().c_str(), tx, ty, damage);
+            }
+        }
+
+        // ---------- VERIFICAR OBJETO DESTRUTÍVEL ----------
+        if (skill.isBreakable)
+        {
+            Actor* floorActor = mGrid->GetUnitAt(tx, ty);
+            if (floorActor)
+            {
+                Destructible* destructible = dynamic_cast<Destructible*>(floorActor);
+                if (destructible)
+                {
+                    // Remove da grid
+                    mGrid->SetUnitAt(nullptr, tx, ty);
+
+                    // Marca para destruição
+                    destructible->SetState(ActorState::Destroy);
+
+                    // IMPORTANTE: Muda o terrain type para permitir movimento
+                    mGrid->SetTerrainType(tx, ty, TerrainType::Floor);
+
+                    destructiblesDestroyed++;
+
+                    SDL_Log("  -> Destrutível destruído em (%d, %d)", tx, ty);
+                }
+            }
+        }
+
+        // ---------- EFEITO VISUAL ----------
+        // TODO: Adicionar efeito visual no tile atingido
+        SDL_Log("    Efeito visual em (%d, %d)", tx, ty);
+    }
+
+    // Log e notificação do resultado
+    std::ostringstream msg;
+    msg << attacker->GetName() << " usou " << skill.name << "! ";
+    msg << "Atingiu " << affectedTiles.size() << " tiles. ";
+
+    if (robotsDamaged > 0) {
+        msg << robotsDamaged << " robô(s) danificado(s). ";
+    }
+    if (destructiblesDestroyed > 0) {
+        msg << destructiblesDestroyed << " objeto(s) destruído(s). ";
+    }
+
+    if (attacker->GetTeam() == Team::Player) {
+        NotifyPlayer(msg.str());
+    } else {
+        NotifyEnemy(msg.str());
+    }
+
+    SDL_Log("=== FIM DO ATAQUE ===");
+}
+
+void Level::UpdateAoEPreview()
+{
+    // Limpa o visual anterior (Volta tudo para Attack/Vermelho ou Path/Azul base)
+    mGrid->ClearTileStates();
+
+    // Redesenha o Range Vermelho (Cópia da lógica do HandleSkillSelectionPhase)
+    int range = mPlayer->GetPartRange(GetSelectedSlot());
+    int minRange = mPlayer->HasStatusEffect(StatusEffect::Stunned) ? 0 : 1;
+
+    auto rangeTiles = mGrid->GetAttackableTiles(
+        mGhostPlayer->GetGridX(),
+        mGhostPlayer->GetGridY(),
+        minRange,
+        range
+    );
+
+    for (const auto& node : rangeTiles) {
+        Tile* t = mGrid->GetTileAt(node.x, node.y);
+        if (t) t->SetTileType(TileType::Attack); // Vermelho
+    }
+
+    // Agora desenha o AoE (Amarelo) em cima do cursor atual
+    int cx = mCursor->GetGridX();
+    int cy = mCursor->GetGridY();
+
+    // Só desenha se o cursor estiver num tile válido de ataque (dentro do vermelho)
+    // OU se for uma skill que permite mirar livre (opcional, mas comum em RPGs)
+    Tile* cursorTile = mGrid->GetTileAt(cx, cy);
+
+    if (cursorTile && cursorTile->GetType() == TileType::Attack)
+    {
+        // Pega dados da skill atual
+        SkillData skill = GetSkillDataForPart(GetSelectedSlot(), mPlayer);
+
+        // Calcula quem vai ser atingido
+        auto aoeTiles = SkillCalculator::GetAffectedTiles(
+            mGhostPlayer->GetGridX(),
+            mGhostPlayer->GetGridY(),
+            cx, cy, // Alvo é o cursor
+            skill
+        );
+
+        // Pinta de Amarelo (AoE)
+        for (const auto& pos : aoeTiles) {
+            Tile* t = mGrid->GetTileAt(pos.x, pos.y);
+            if (t) {
+                t->SetTileType(TileType::AoE); // <--- AQUI USA SUA NOVA TEXTURA
+            }
+        }
+    }
 }
