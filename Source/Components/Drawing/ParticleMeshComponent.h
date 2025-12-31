@@ -8,7 +8,7 @@
 class ParticleMeshComponent : public MeshComponent
 {
 public:
-    ParticleMeshComponent(class Actor* owner);
+    ParticleMeshComponent(class Actor* owner, bool isTransparent = false);
 
     void Draw(class Shader* shader) override;
 

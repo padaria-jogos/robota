@@ -1,6 +1,7 @@
 #include <GL/glew.h>
 #include "Renderer.h"
 #include "Shader.h"
+#include "../Actors/Actor.h"
 #include "../Components/Drawing/MeshComponent.h"
 #include "../Components/Lighting/PointLightComponent.h"
 #include "../UI/UIElement.h"
@@ -163,81 +164,103 @@ void Renderer::Clear()
 
 void Renderer::Draw()
 {
-    // Enable depth buffering/disable alpha blend
-    glEnable(GL_DEPTH_TEST);
-    //glDisable(GL_BLEND); HEITOR
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Set the mesh shader active
+    // Opacos
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE); // Habilita escrita no Z-Buffer
+    glDisable(GL_BLEND);  // Desliga transparência por enquanto (performance e correção)
+
+    // Ativa Shader de Mesh
     mMeshShader->SetActive();
 
-    // Update view-projection matrix
+    // Atualiza matrizes
     mMeshShader->SetMatrixUniform("uViewProj", mView * mProjection);
-    
-    // Three-Point Lighting Setup
-    // Luzes fixas no mundo (não seguem a câmera)
-    
-    // Key Light: Acima da arena (como sol)
+
+    // Luz
     Vector3 keyLightPos = Vector3(0.0f, -1000.0f, 3000.0f);
     mMeshShader->SetVectorUniform("uKeyLightPos", keyLightPos);
-    
-    // Fill Light: Lateral direita e alto
     Vector3 fillLightPos = Vector3(-1500.0f, -500.0f, 2500.0f);
     mMeshShader->SetVectorUniform("uFillLightPos", fillLightPos);
-    
-    // Rim Light: Atras esquerda e alto
     Vector3 rimLightPos = Vector3(1500.0f, 500.0f, 2800.0f);
     mMeshShader->SetVectorUniform("uRimLightPos", rimLightPos);
-    
-    // Posição da câmera para efeito especular metálico
     mMeshShader->SetVectorUniform("uCameraPos", mCameraPos);
-    
-    // Intensidade das luzes do mundo
     mMeshShader->SetFloatUniform("uWorldLightIntensity", mWorldLightIntensity);
-    
-    mMeshShader->SetIntUniform("uCelLevels", 3);  // 3 faixas de luz
-    
+    mMeshShader->SetIntUniform("uCelLevels", 3);
+
     // Luzes dinamicas
     int numLights = Math::Min(static_cast<int>(mPointLights.size()), 8);
     mMeshShader->SetIntUniform("uNumPointLights", numLights);
-    
+
     for (int i = 0; i < numLights; i++)
     {
         auto light = mPointLights[i];
         if (light->IsEnabled())
         {
-            std::string posName = "uPointLightPositions[" + std::to_string(i) + "]";
-            std::string colorName = "uPointLightColors[" + std::to_string(i) + "]";
-            std::string intensityName = "uPointLightIntensities[" + std::to_string(i) + "]";
-            std::string radiusName = "uPointLightRadii[" + std::to_string(i) + "]";
-            
-            mMeshShader->SetVectorUniform(posName.c_str(), light->GetPosition());
-            mMeshShader->SetVectorUniform(colorName.c_str(), light->GetColor());
-            mMeshShader->SetFloatUniform(intensityName.c_str(), light->GetIntensity());
-            mMeshShader->SetFloatUniform(radiusName.c_str(), light->GetRadius());
+            std::string idx = std::to_string(i);
+            mMeshShader->SetVectorUniform(("uPointLightPositions[" + idx + "]").c_str(), light->GetPosition());
+            mMeshShader->SetVectorUniform(("uPointLightColors[" + idx + "]").c_str(), light->GetColor());
+            mMeshShader->SetFloatUniform(("uPointLightIntensities[" + idx + "]").c_str(), light->GetIntensity());
+            mMeshShader->SetFloatUniform(("uPointLightRadii[" + idx + "]").c_str(), light->GetRadius());
         }
     }
 
-    // Draw mesh components
+    // Desenha apenas os OPACOS
     for (auto mc : mMeshComps)
     {
-        mc->Draw(mMeshShader);
+        if (mc->IsVisible() && !mc->GetIsTransparent())
+        {
+            mc->Draw(mMeshShader);
+        }
     }
 
-    // Disable depth buffering
+    // Algoritmo do pintor nos transparentes
+    Vector3 camPos = mCameraPos;
+    std::sort(mMeshComps.begin(), mMeshComps.end(),
+        [camPos](MeshComponent* a, MeshComponent* b) {
+            Vector3 posA = a->GetOwner()->GetPosition();
+            Vector3 posB = b->GetOwner()->GetPosition();
+
+            float distSqA = (posA - camPos).LengthSq();
+            float distSqB = (posB - camPos).LengthSq();
+
+            return distSqA > distSqB;
+        }
+    );
+
+    // Transparentes
+
+    // Habilita a mistura de cores (Alpha Blending)
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Desligar a escrita no Depth Mask
+    // Assim, a parte preta transparente da textura não fura o chão.
+    glDepthMask(GL_FALSE);
+
+    // Desenha apenas os transparentes
+    for (auto mc : mMeshComps)
+    {
+        if (mc->IsVisible() && mc->GetIsTransparent())
+        {
+            mc->Draw(mMeshShader);
+        }
+    }
+
+    // UI (Sprites 2D)
+
+    // Restaura Depth Mask para o próximo frame
+    glDepthMask(GL_TRUE);
+
+    // Desabilita Depth Test para a UI ficar sempre na frente
     glDisable(GL_DEPTH_TEST);
 
-    // Enable alpha blending on the color buffer
     glEnable(GL_BLEND);
     glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE);
 
-    // Activate sprite shader/verts
     mSpriteShader->SetActive();
     mSpriteVerts->SetActive();
 
-    // Draw UI components
     for (auto ui : mUIComps)
     {
         ui->Draw(mSpriteShader);

@@ -12,7 +12,7 @@ Tile::Tile(Game* game)
     , mType(TileType::Default)
     , mIsSelected(false)
 {
-    mMeshComp = new MeshComponent(this);
+    mMeshComp = new MeshComponent(this, true);
     Mesh* mesh = game->GetRenderer()->GetMesh("../Assets/Tile.gpmesh");
     mMeshComp->SetMesh(mesh);
     

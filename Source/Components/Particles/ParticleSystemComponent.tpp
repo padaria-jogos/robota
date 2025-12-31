@@ -24,22 +24,26 @@ ParticleSystemComponent<T>::~ParticleSystemComponent()
 }
 
 template <typename T>
-void ParticleSystemComponent<T>::EmitParticle(float lifetime, float speed, const Vector3& offsetPosition)
+T* ParticleSystemComponent<T>::EmitParticle(float lifetime, float speed, const Vector3& offsetPosition)
 {
     for (auto p : mParticles)
     {
         if (p->IsDead())
         {
-            // Wake up the particle
+            // Acorda a partícula
             Vector3 spawnPos = mOwner->GetPosition() + offsetPosition;
             p->Awake(spawnPos, mOwner->GetRotation(), lifetime);
 
-            // Forward velocity
+            // Define velocidade inicial (se for usada)
             Vector3 direction = mOwner->GetForward();
             p->Emit(direction, speed);
 
-            // Break inner loop to emit only one particle per iteration
-            break;
+            // Retorna o ponteiro para quem chamou
+            return p;
         }
     }
+
+    // Se percorreu toda a piscina e não achou ninguém morto (pool cheia)
+    SDL_Log("AVISO: Pool de partículas cheio!");
+    return nullptr;
 }

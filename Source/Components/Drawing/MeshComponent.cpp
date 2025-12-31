@@ -7,7 +7,7 @@
 #include "../../Actors/Actor.h"
 #include "../../Game.h"
 
-MeshComponent::MeshComponent(Actor* owner)
+MeshComponent::MeshComponent(Actor* owner, bool isTransparent)
         : Component(owner)
         , mMesh(nullptr)
         , mTextureIndex(0)
@@ -17,6 +17,7 @@ MeshComponent::MeshComponent(Actor* owner)
         , mRotationOffset(Quaternion::Identity)
         , mMetallic(0.7f)
         , mUnlit(false)
+        , mIsTransparent(isTransparent)
 {
     mOwner->GetGame()->GetRenderer()->AddMeshComp(this);
 }

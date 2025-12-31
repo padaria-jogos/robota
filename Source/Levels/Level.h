@@ -19,7 +19,6 @@
 #include "UI/Screens/HUD.h"
 #include "UI/Screens/ActionSelection.h"
 #include "IA/IA.h"
-#include "ParticleManager.h"
 #include "Actors/SkillSystem.h"
 
 // IDs dos tiles no CSV
@@ -96,6 +95,7 @@ class Level
         GridCursor* GetCursor() { return mCursor; }
         BattleState GetBattleState() const { return mBattleState; }
         PartSlot GetSelectedSlot() const { return mSelectedSlot; }
+        class ParticleManager* GetParticleManager() const { return mParticleManager; }
 
         void SetSelectedSlot(PartSlot slot) { mSelectedSlot = slot; }
         void SetBattleState(BattleState state) { mBattleState = state; }
@@ -110,7 +110,7 @@ class Level
 
         SoundHandle mLevelMusic;
 
-        ParticleManager* GetParticleManager() { return mParticleManager; }
+
         std::string GetEnemyName() {return mEnemy->GetName();}
 
         void HandleGaveUp(int action);
@@ -165,6 +165,9 @@ class Level
         bool mIsResolving;
         int mStepIndex;
 
+        // Particles
+        class ParticleManager* mParticleManager;
+
         // IA
         IA *mIA;
         std::vector<std::vector<int>> mIAGridData;
@@ -198,11 +201,6 @@ class Level
                                int targetX, int targetY, PartSlot slot);
         void UpdateAoEPreview();
 
-        // Preview de tiles afetados
-        void UpdateSkillPreview(int cursorX, int cursorY, const SkillData& skill);
-        void ClearSkillPreview();
-        
         std::vector<AffectedTile> mCurrentPreviewTiles;
 
-        ParticleManager* mParticleManager;
 };

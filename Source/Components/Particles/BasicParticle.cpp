@@ -14,20 +14,11 @@ BasicParticle::BasicParticle(Game* game)
     , mGravity(0.0f)
     , mFadeOut(true)
     , mInitialLifetime(1.0f)
+    , mGrowthRate(0.0f)
     , mViscosity(0.0f)
+    , mStretchWithVelocity(false)
 {
-    Mesh* mesh = game->GetRenderer()->GetMesh("../Assets/Particle.gpmesh");
-    if (!mesh) {
-        SDL_Log("Warning: Particle.gpmesh not found, using Cube.gpmesh");
-        mesh = game->GetRenderer()->GetMesh("../Assets/Cube.gpmesh");
-    }
-
-    mMeshComponent = new ParticleMeshComponent(this);
-    mMeshComponent->SetMesh(mesh);
-
-    mRigidBody = new RigidBodyComponent(this, 0.1f, 0.0f, false);
-
-    SetScale(Vector3(10.0f, 10.0f, 10.0f));
+    mMeshComponent = new ParticleMeshComponent(this, true);
     mMeshComponent->SetVisible(false);
 }
 
@@ -35,18 +26,33 @@ BasicParticle::~BasicParticle()
 {
 }
 
+void BasicParticle::SetMesh(Mesh* mesh)
+{
+    if (mMeshComponent)
+    {
+        mMeshComponent->SetMesh(mesh);
+        mMeshComponent->SetVisible(true);
+        return;
+    }
+    SDL_Log("Mesh is null in the particle");
+}
+
+
 void BasicParticle::Kill()
 {
     Particle::Kill();
     mMeshComponent->SetVisible(false);
-    mRigidBody->SetVelocity(Vector3::Zero);
-    mRigidBody->SetAcceleration(Vector3::Zero);
 
     // Reset completo da partícula
-    mStretchWithVelocity = false;
-    SetScale(Vector3(10.0f, 10.0f, 10.0f)); // Escala padrão
-    mViscosity = 0.0f;
+    mVelocity = Vector3::Zero;
+    mAngularVelocity = Vector3::Zero;
     mGravity = 0.0f;
+    mViscosity = 0.0f;
+    mGrowthRate = 0.0f;
+    mStretchWithVelocity = false;
+
+    SetScale(Vector3(10.0f, 10.0f, 10.0f)); // Escala padrão
+    SetRotation(Vector3::Zero);
 }
 
 void BasicParticle::Awake(const Vector3& position, const Vector3& rotation, float lifetime)
@@ -60,17 +66,11 @@ void BasicParticle::Awake(const Vector3& position, const Vector3& rotation, floa
     mStretchWithVelocity = false;
     mViscosity = 0.0f;
     mGravity = 0.0f;
-    mRigidBody->SetAcceleration(Vector3::Zero);
 }
 
 void BasicParticle::Emit(const Vector3& direction, float speed)
 {
-    mRigidBody->SetVelocity(direction * speed);
-
-    if (mGravity != 0.0f) {
-        Vector3 gravity(0.0f, 0.0f, mGravity);
-        mRigidBody->ApplyForce(gravity);
-    }
+    SetVelocity(direction * speed);
 }
 
 void BasicParticle::SetColor(const Vector3& color)
@@ -90,50 +90,61 @@ void BasicParticle::OnUpdate(float deltaTime)
         return;
     }
 
-    // Estica partícula baseado na velocidade (efeito de gota caindo)
-    if (mStretchWithVelocity && mRigidBody) {
-        Vector3 velocity = mRigidBody->GetVelocity();
-        float speed = velocity.Length();
+    if (Math::Abs(mGravity) > 0.001f)
+    {
+        mVelocity.z -= mGravity * deltaTime;
+    }
 
+    if (mAngularVelocity.LengthSq() > 0.001f)
+    {
+        Vector3 currentRot = GetRotation();
+        Vector3 nextRot = currentRot + (mAngularVelocity * deltaTime);
+
+        SetRotation(nextRot);
+    }
+
+    // Viscosity effect (For Honey)
+    if (mViscosity > 0.0f)
+    {
+        mVelocity *= (1.0f - mViscosity * deltaTime);
+    }
+
+    SetPosition(GetPosition() + mVelocity * deltaTime);
+
+    // Growth Effect (For explosions etc)
+    if (Math::Abs(mGrowthRate) > 0.01f)
+    {
+        Vector3 currentScale = GetScale();
+        float growthAmount = mGrowthRate * deltaTime;
+        Vector3 newScale = currentScale + Vector3(growthAmount);
+
+        if (newScale.x < 0.0f) newScale = Vector3::Zero;
+        SetScale(newScale);
+    }
+
+    // StretchEffect
+    if (mStretchWithVelocity) {
+        float speed = mVelocity.Length();
         if (speed > 10.0f) {
-            // Quanto mais rápido, mais esticado
             float stretchFactor = Math::Clamp(speed / 100.0f, 1.0f, 3.0f);
 
-            Vector3 stretchedScale(
-                mBaseScale.x,
-                mBaseScale.y,
-                mBaseScale.z * stretchFactor
-            );
-
-            SetScale(stretchedScale);
-        } else {
-            SetScale(mBaseScale);
+            Vector3 baseScale = GetScale();
+            SetScale(Vector3(baseScale.x, baseScale.y, baseScale.z * stretchFactor));
         }
     }
 
-    // Aplica viscosidade (amortecimento da velocidade)
-    if (mViscosity > 0.0f && mRigidBody) {
-        Vector3 currentVel = mRigidBody->GetVelocity();
-        Vector3 dampedVel = currentVel * (1.0f - mViscosity * deltaTime);
-        mRigidBody->SetVelocity(dampedVel);
-    }
-
+    //FadeOut
     if (mFadeOut && mMeshComponent) {
-        float currentLife = GetLifeTime();
-        float initialLife = mInitialLifetime;
-        
-        if (initialLife > 0.0f) {
-            // Calcula alpha baseado no lifetime restante (0.0 = morto, 1.0 = novo)
-            float alpha = Math::Clamp(currentLife / initialLife, 0.0f, 1.0f);
-            
-            // Fade mais agressivo nos últimos 30% da vida
-            if (alpha < 0.3f) {
-                alpha = alpha / 0.3f;  // Remapeia 0-0.3 para 0-1
-            }
-            
+        float currentLife = GetLifeTime(); // Quanto tempo falta
+        float totalLife = mInitialLifetime;
+
+        if (totalLife > 0.0f) {
+            // Começa opaco (1.0) e vai sumindo
+            float alpha = Math::Clamp(currentLife / totalLife, 0.0f, 1.0f);
             mMeshComponent->SetAlpha(alpha);
         }
     }
+
 }
 
 void BasicParticle::SetStretchWithVelocity(bool stretch)

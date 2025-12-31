@@ -27,7 +27,11 @@ file(GLOB_RECURSE SRC_FILES
 # executable
 add_executable(${PROJECT_NAME} ${SRC_FILES}
         Source/Levels/Level2.cpp
-        Source/Levels/Level2.h)
+        Source/Levels/Level2.h
+        Source/Components/Particles/BillboardParticle.cpp
+        Source/Components/Particles/BillboardParticle.h
+        Source/Components/Particles/ParticleManager.cpp
+        Source/Components/Particles/ParticleManager.h)
 
 # includes
 target_include_directories(${PROJECT_NAME} PRIVATE ${SOURCE_DIRS})

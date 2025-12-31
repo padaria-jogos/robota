@@ -9,6 +9,8 @@
 #include "Destructible.h"
 #include <fstream>
 
+#include "Components/Particles/ParticleManager.h"
+
 Robot::Robot(class Game *game, Team team) : Actor(game)
                                             , mName("Robo")
                                             , mTeam(team)
@@ -85,7 +87,20 @@ void Robot::TakeDamage(int damage, PartSlot slotHit) {
         }
     }
 
+    // Aplicar dano
     mParts[index].currentHP -= damage;
+
+    // Criar partículas ANTES de quebrar a parte
+    if (mGame && mGame->GetLevel() && mGame->GetLevel()->GetParticleManager())
+    {
+        auto* particleManager = mGame->GetLevel()->GetParticleManager();
+        auto* grid = mGame->GetLevel()->GetGrid();
+        
+        if (particleManager && grid)
+        {
+            particleManager->CreateExplosionSphereAtGrid(mGridX, mGridY, grid);
+        }
+    }
 
     if (mParts[index].currentHP <= 0) {
         mParts[index].currentHP = 0;
@@ -131,15 +146,6 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
         targetPos.z = startPos.z;
 
         Vector3 direction = Vector3::Normalize(targetPos - startPos);
-
-        ProjectileConfig projConfig;
-        projConfig.color = (mTeam == Team::Player) ? Vector3(0.2f, 0.5f, 1.0f) : Vector3(1.0f, 0.3f, 0.0f);
-        projConfig.speed = 4000.0f;
-        projConfig.lifetime = 1.0f;
-        projConfig.scale = 30.0f;
-        projConfig.gravity = 0.0f;
-
-        mGame->GetLevel()->GetParticleManager()->EmitProjectile(startPos, direction, projConfig);
     }
 
     if (!target) {
@@ -164,37 +170,6 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
         
         SDL_Log("%s ATACOU %s visando %s!", GetName().c_str(), victim->GetName().c_str(), GetSlotName(targetSlot).c_str());
 
-        // Efeito visual baseado no padrão
-        if (skillPattern == SkillPattern::SingleTile) {
-            SlashConfig slashConfig;
-            slashConfig.color = (mTeam == Team::Player) ? 
-                Vector3(0.3f, 0.8f, 1.0f) :
-                Vector3(1.0f, 0.3f, 0.3f);
-            slashConfig.particleCount = 40;
-            slashConfig.speed = 1000.0f;
-            slashConfig.lifetime = 0.25f;
-            slashConfig.particleScale = 30.0f;
-            slashConfig.arcAngle = 90.0f;
-            slashConfig.arcRadius = 120.0f;
-            
-            mGame->GetLevel()->GetParticleManager()->CreateSlashEffectAtGrid(
-                targetX, targetY, grid, attackDir, slashConfig
-            );
-        } else {
-            ExplosionConfig expConfig;
-            expConfig.color = Vector3(1.0f, 0.5f, 0.0f);
-            expConfig.particleCount = 100;
-            expConfig.minSpeed = 200.0f;
-            expConfig.maxSpeed = 400.0f;
-            expConfig.lifetime = 1.0f;
-            expConfig.particleScale = 30.0f;
-            expConfig.gravity = 0.0f;
-            
-            mGame->GetLevel()->GetParticleManager()->CreateExplosionAtGrid(
-                targetX, targetY, grid, expConfig
-            );
-        }
-
         victim->TakeDamage(damageDealt, targetSlot);
         return;
     }
@@ -204,40 +179,11 @@ void Robot::AttackLocation(int targetX, int targetY, PartSlot slotUsed)
     {
         SDL_Log("%s DESTRUIU um objeto!", GetName().c_str());
 
-        if (skillPattern == SkillPattern::SingleTile) {
-            SlashConfig slashConfig;
-            slashConfig.color = Vector3(0.9f, 0.9f, 0.9f);
-            slashConfig.particleCount = 50;
-            slashConfig.speed = 1200.0f;
-            slashConfig.lifetime = 0.3f;
-            slashConfig.particleScale = 35.0f;
-            slashConfig.arcAngle = 110.0f;
-            
-            mGame->GetLevel()->GetParticleManager()->CreateSlashEffectAtGrid(
-                targetX, targetY, grid, attackDir, slashConfig
-            );
-        } else {
-            ExplosionConfig expConfig;
-            expConfig.color = Vector3(0.8f, 0.5f, 0.1f);
-            expConfig.particleCount = 100;
-            expConfig.minSpeed = 200.0f;
-            expConfig.maxSpeed = 400.0f;
-            expConfig.lifetime = 1.0f;
-            expConfig.particleScale = 30.0f;
-            expConfig.gravity = 0.0f;
-            
-            mGame->GetLevel()->GetParticleManager()->CreateExplosionAtGrid(
-                targetX, targetY, grid, expConfig
-            );
-        }
 
         destructible->OnDestroy();
         destructible->SetState(ActorState::Destroy);
         grid->SetUnitAt(nullptr, targetX, targetY);
         grid->SetTerrainType(targetX, targetY, TerrainType::Floor);
-        
-        mGame->GetLevel()->GetParticleManager()->StopHoneyDripAtGrid(targetX, targetY);
-        mGame->GetLevel()->GetParticleManager()->StopFireAtGrid(targetX, targetY);
     }
 }
 

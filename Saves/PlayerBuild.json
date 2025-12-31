@@ -15,8 +15,8 @@
       "skillPattern": "SingleTile"
     },
     "LeftArm": {
-      "areaSize": 0,
-      "areaWidth": 0,
+      "areaSize": 2,
+      "areaWidth": 1,
       "damage": 25,
       "description": "Uma vassoura velha mas confiável. Ataque corpo a corpo.",
       "isBreakable": true,
@@ -25,7 +25,7 @@
       "minRange": 1,
       "name": "Robota Broom",
       "range": 1,
-      "skillPattern": "SingleTile"
+      "skillPattern": "LineStraight"
     },
     "Legs": {
       "areaSize": 0,

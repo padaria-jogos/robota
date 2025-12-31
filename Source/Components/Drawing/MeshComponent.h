@@ -11,7 +11,7 @@
 class MeshComponent : public Component
 {
 public:
-    MeshComponent(class Actor* owner);
+    MeshComponent(class Actor* owner, bool isTransparent = false);
     ~MeshComponent();
 
     // Draw this mesh component
@@ -20,6 +20,8 @@ public:
     // Set/get the visibility of the mesh
     void SetVisible(bool visible) { mIsVisible = visible; }
     bool IsVisible() const { return mIsVisible; }
+    void SetIsTransparent(bool isTransparent) { mIsTransparent = isTransparent; }
+    bool GetIsTransparent() const { return mIsTransparent; }
 
     // Set the mesh/texture index used by mesh component
     virtual void SetMesh(class Mesh* mesh) { mMesh = mesh; }
@@ -50,4 +52,5 @@ protected:
     Quaternion mRotationOffset;
     float mMetallic;  // 0.0 = não metálico, 1.0 = totalmente metálico
     bool mUnlit;      // true = sem iluminação, apenas cor da textura
+    bool mIsTransparent;
 };

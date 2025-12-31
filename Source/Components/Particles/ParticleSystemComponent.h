@@ -16,7 +16,7 @@ public:
     ParticleSystemComponent(class Actor* owner, int poolSize = 100, int updateOrder = 10);
     ~ParticleSystemComponent();
 
-    void EmitParticle(float lifetime, float speed, const Vector3& offsetPosition = Vector3::Zero);
+    T* EmitParticle(float lifetime, float speed, const Vector3& offsetPosition);
 
 private:
 

@@ -20,6 +20,7 @@
 #include "UI/Screens/MovementSelection.h"
 #include "UI/Screens/GaveUpSelection.h"
 #include "Actors/SkillSystem.h"
+#include "Components/Particles/ParticleManager.h"
 
 // Constantes de altura Z para posicionamento de objetos
 namespace {
@@ -48,10 +49,11 @@ Level::Level(class Game *game, HUD *hud) :
     mGaveUpSelection(nullptr),
     mTileSelection(nullptr),
     mSkybox(nullptr),
-    mIA(nullptr)
+    mIA(nullptr),
+    mParticleManager(nullptr)
 {
+    mParticleManager = new ParticleManager(game);
     mBattleState = BattleState::Exploration;
-    mParticleManager = new ParticleManager(game, 2000);
 
     // ---------- SOUND ----------
     mGame->GetAudio()->StopAllSounds();
@@ -410,9 +412,6 @@ void Level::HandleTargetingPhase()
                 // Atacou o próprio tile com mel
                 TerrainType terrainType = mGrid->GetTerrainType(px, py);
                 if (terrainType == TerrainType::Honey) {
-                    // Remove efeito do mel
-                    mParticleManager->StopHoneyDripAtGrid(px, py);
-                    mParticleManager->StopFireAtGrid(px, py);
 
                     // Remove o mel do tile (muda o tipo base)
                     mGrid->SetTerrainType(px, py, TerrainType::Floor);
@@ -887,11 +886,6 @@ void Level::OnUpdate(float deltaTime)
             mActionSelection = nullptr;
         }
     }
-
-    if (mParticleManager)
-    {
-        mParticleManager->Update(deltaTime);
-    }
 }
 
 void Level::ExecuteNextStep() {
@@ -1027,27 +1021,12 @@ void Level::ProcessTileEffects()
         if (lastX != -1 && lastY != -1 && (lastX != px || lastY != py)) {
             // Saiu de um tile com efeito
             SDL_Log("Player saiu do tile (%d,%d), limpando efeitos", lastX, lastY);
-            mParticleManager->StopHoneyDripAtGrid(lastX, lastY);
-            mParticleManager->StopFireAtGrid(lastX, lastY);
             mPlayer->ClearLastEffectTile();
         }
 
         if (true) {
             switch (terrainType) {
                 case TerrainType::Honey: {
-                    // Efeito visual de mel pingando
-                    HoneyConfig honeyConfig;
-                    honeyConfig.color = Vector3(1.0f, 0.75f, 0.1f);         // Amarelo-dourado vibrante
-                    honeyConfig.particlesPerSecond = 60;                                // Mais partículas = fluxo contínuo
-                    honeyConfig.minSpeed = 30.0f;                                       // Bem devagar
-                    honeyConfig.maxSpeed = 80.0f;
-                    honeyConfig.particleLifetime = 1.5f;                                // Dura o suficiente para acumular
-                    honeyConfig.particleScale = 40.0f;                                  // Menor (gotas, não blocos)
-                    honeyConfig.spreadRadius = 120.0f;                                  // Mais espalhado
-                    honeyConfig.gravity = -80.0f;                                       // Cai devagar
-                    honeyConfig.viscosity = 0.9f;                                       // Bem viscoso
-
-                    mParticleManager->StartHoneyDripAtGrid(px, py, mGrid, honeyConfig);
                     mPlayer->SetLastEffectTile(px, py);
 
                     // Aplica stun (não pode se mover no próximo turno)
@@ -1057,18 +1036,7 @@ void Level::ProcessTileEffects()
                 }
 
                 case TerrainType::Fire: {
-                    // Efeito visual de fogo
-                    FireConfig fireConfig;
-                    fireConfig.baseColor = Vector3(1.0f, 0.3f, 0.0f);      // Laranja
-                    fireConfig.tipColor = Vector3(1.0f, 1.0f, 0.0f);       // Amarelo
-                    fireConfig.particlesPerSecond = 60;
-                    fireConfig.minSpeed = 200.0f;
-                    fireConfig.maxSpeed = 300.0f;
-                    fireConfig.particleLifetime = 0.75f;
-                    fireConfig.particleScale = 60.0f;
-                    fireConfig.spreadRadius = 70.0f;
 
-                    mParticleManager->StartFireAtGrid(px, py, mGrid, fireConfig);
                     mPlayer->SetLastEffectTile(px, py);
 
                     // Causa dano
@@ -1082,8 +1050,6 @@ void Level::ProcessTileEffects()
                 }
 
                 default:
-                    mParticleManager->StopHoneyDripAtGrid(px, py);
-                    mParticleManager->StopFireAtGrid(px, py);
                     break;
             }
         }
@@ -1101,20 +1067,12 @@ void Level::ProcessTileEffects()
 
         if (lastX != -1 && lastY != -1 && (lastX != ex || lastY != ey)) {
             SDL_Log("Enemy saiu do tile (%d,%d), limpando efeitos", lastX, lastY);
-            mParticleManager->StopHoneyDripAtGrid(lastX, lastY);
-            mParticleManager->StopFireAtGrid(lastX, lastY);
             mEnemy->ClearLastEffectTile();
         }
 
         if (true) {
             switch (terrainType) {
                 case TerrainType::Honey: {
-                    HoneyConfig honeyConfig;
-                    honeyConfig.color = Vector3(1.0f, 0.8f, 0.2f);
-                    honeyConfig.particlesPerSecond = 20;
-                    honeyConfig.viscosity = 0.8f;
-
-                    mParticleManager->StartHoneyDripAtGrid(ex, ey, mGrid, honeyConfig);
                     mEnemy->SetLastEffectTile(ex, ey);
 
                     mEnemy->ApplyStatusEffect(StatusEffect::Stunned);
@@ -1124,13 +1082,6 @@ void Level::ProcessTileEffects()
 
                 case TerrainType::Fire:
                 {
-                    // Efeito visual de fogo
-                    FireConfig fireConfig;
-                    fireConfig.baseColor = Vector3(1.0f, 0.3f, 0.0f);
-                    fireConfig.tipColor = Vector3(1.0f, 0.9f, 0.2f);
-                    fireConfig.particlesPerSecond = 35;
-
-                    mParticleManager->StartFireAtGrid(ex, ey, mGrid, fireConfig);
                     mEnemy->SetLastEffectTile(ex, ey);
 
                     int fireDamage = 10;
@@ -1141,8 +1092,6 @@ void Level::ProcessTileEffects()
                     break;
 
                 default:
-                    mParticleManager->StopHoneyDripAtGrid(ex, ey);
-                    mParticleManager->StopFireAtGrid(ex, ey);
                     break;
             }
         }
@@ -1596,8 +1545,6 @@ void Level::LoadLevel(const LevelConfig& config)
 
 Level::~Level() {
     // Limpa ParticleManager
-    delete mParticleManager;
-    mParticleManager = nullptr;
 }
 
 SkillData Level::GetSkillDataForPart(PartSlot slot, Robot* robot)

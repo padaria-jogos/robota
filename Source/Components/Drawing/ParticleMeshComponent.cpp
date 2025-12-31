@@ -11,8 +11,8 @@
 #include "../../Actors/Actor.h"
 #include "../../Game.h"
 
-ParticleMeshComponent::ParticleMeshComponent(Actor* owner)
-    : MeshComponent(owner)
+ParticleMeshComponent::ParticleMeshComponent(Actor* owner, bool isTransparent)
+    : MeshComponent(owner, isTransparent)
 {
     SetUnlit(true);
 }
