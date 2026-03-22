@@ -30,8 +30,8 @@ add_executable(${PROJECT_NAME} ${SRC_FILES}
         Source/Levels/Level2.h
         Source/Components/Particles/BillboardParticle.cpp
         Source/Components/Particles/BillboardParticle.h
-        Source/Components/Particles/ParticleManager.cpp
-        Source/Components/Particles/ParticleManager.h)
+        Source/ParticleManager.cpp
+        Source/ParticleManager.h)
 
 # includes
 target_include_directories(${PROJECT_NAME} PRIVATE ${SOURCE_DIRS})

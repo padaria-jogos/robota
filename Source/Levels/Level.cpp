@@ -20,7 +20,7 @@
 #include "UI/Screens/MovementSelection.h"
 #include "UI/Screens/GaveUpSelection.h"
 #include "Actors/SkillSystem.h"
-#include "Components/Particles/ParticleManager.h"
+//#include "Components/Particles/ParticleManager.h"
 
 // Constantes de altura Z para posicionamento de objetos
 namespace {
@@ -52,7 +52,7 @@ Level::Level(class Game *game, HUD *hud) :
     mIA(nullptr),
     mParticleManager(nullptr)
 {
-    mParticleManager = new ParticleManager(game);
+    //mParticleManager = new ParticleManager(game);
     mBattleState = BattleState::Exploration;
 
     // ---------- SOUND ----------
@@ -125,7 +125,6 @@ void Level::MoveCursor(int xOffset, int yOffset)
             audio->PlaySound("vgmenuhighlight.wav");
         }
 
-        // --- NOVO: ATUALIZA O PREVIEW DA ÁREA DE EFEITO (AoE) ---
         // Se estamos mirando (TargetSelection), precisamos pintar de amarelo
         // onde o ataque vai acertar conforme o cursor anda.
         if (mBattleState == BattleState::TargetSelection)
@@ -1727,7 +1726,7 @@ void Level::UpdateAoEPreview()
         for (const auto& pos : aoeTiles) {
             Tile* t = mGrid->GetTileAt(pos.x, pos.y);
             if (t) {
-                t->SetTileType(TileType::AoE); // <--- AQUI USA SUA NOVA TEXTURA
+                t->SetTileType(TileType::AoE);
             }
         }
     }

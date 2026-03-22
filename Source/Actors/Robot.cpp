@@ -9,7 +9,6 @@
 #include "Destructible.h"
 #include <fstream>
 
-#include "Components/Particles/ParticleManager.h"
 
 Robot::Robot(class Game *game, Team team) : Actor(game)
                                             , mName("Robo")
@@ -91,16 +90,16 @@ void Robot::TakeDamage(int damage, PartSlot slotHit) {
     mParts[index].currentHP -= damage;
 
     // Criar partículas ANTES de quebrar a parte
-    if (mGame && mGame->GetLevel() && mGame->GetLevel()->GetParticleManager())
-    {
-        auto* particleManager = mGame->GetLevel()->GetParticleManager();
-        auto* grid = mGame->GetLevel()->GetGrid();
-        
-        if (particleManager && grid)
-        {
-            particleManager->CreateExplosionSphereAtGrid(mGridX, mGridY, grid);
-        }
-    }
+    // if (mGame && mGame->GetLevel() && mGame->GetLevel()->GetParticleManager())
+    // {
+    //     auto* particleManager = mGame->GetLevel()->GetParticleManager();
+    //     auto* grid = mGame->GetLevel()->GetGrid();
+    //
+    //     if (particleManager && grid)
+    //     {
+    //         //particleManager->CreateExplosionSphereAtGrid(mGridX, mGridY, grid);
+    //     }
+    // }
 
     if (mParts[index].currentHP <= 0) {
         mParts[index].currentHP = 0;

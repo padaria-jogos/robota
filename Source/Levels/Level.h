@@ -95,7 +95,7 @@ class Level
         GridCursor* GetCursor() { return mCursor; }
         BattleState GetBattleState() const { return mBattleState; }
         PartSlot GetSelectedSlot() const { return mSelectedSlot; }
-        class ParticleManager* GetParticleManager() const { return mParticleManager; }
+        //class ParticleManager* GetParticleManager() const { return mParticleManager; }
 
         void SetSelectedSlot(PartSlot slot) { mSelectedSlot = slot; }
         void SetBattleState(BattleState state) { mBattleState = state; }
